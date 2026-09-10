@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dlm-iclr"
+version = "0.1.0"
+description = "Crystal diffusion language models with continuous refinement and learned KEEP/EDIT"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+models = ["torch>=2.4", "transformers>=4.54,<5", "peft>=0.16", "safetensors>=0.5", "accelerate>=0.33", "pymatgen>=2024.7"]
+refiner = ["torch>=2.4", "torch-geometric>=1.7.2,<3", "torch-scatter>=2.1", "einops>=0.8", "tqdm>=4.66", "pymatgen>=2024.7"]
+physics = ["chgnet>=0.4.2,<0.5", "ase>=3.23", "pymatgen>=2024.7", "smact>=2.6"]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+dlm-iclr = "dlm_iclr.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+dlm_iclr = ["data/plans/*.jsonl", "data/plans/*.json", "data/training/*.jsonl", "assets/*.pt", "assets/*.json", "_vendor/crysllmgen/LICENSE"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82"]

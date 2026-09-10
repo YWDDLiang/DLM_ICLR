@@ -1,0 +1,3 @@
+from __future__ import annotations
+
+CRYSLLMGEN_TEXT_PROMPT = "Below is a description of a bulk material. Generate a description of the lengths and angles of the lattice vectors and then the element type and coordinates for each atom within the lattice:\n"
