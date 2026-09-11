@@ -110,13 +110,13 @@ sbatch --partition YOUR_PARTITION --gres=gpu:5 --cpus-per-task=20 \
   --run outputs/h1a2-1050 --gpus 5 --physics-workers 4 --nu-workers 4
 ```
 
-Let \(e_h\) be the terminal CHGNet energy per atom minus the reference hull
+Let $e_h$ be the terminal CHGNet energy per atom minus the reference hull
 energy per atom for the same composition. The output fields are:
 
 | Report name | Per-request field | Predicate |
 |---|---|---|
-| SUN | `strict_sun` | \(e_h \leq 0\) AND novel AND unique representative |
-| MSUN | `meta_sun` | \(e_h \leq 0.1\,\mathrm{eV/atom}\) AND novel AND unique representative |
+| SUN | `strict_sun` | $e_h \leq 0$ AND novel AND unique representative |
+| MSUN | `meta_sun` | $e_h \leq 0.1\,\mathrm{eV/atom}$ AND novel AND unique representative |
 
 MSUN includes strict SUN. Novelty compares the **saved output geometry before
 CHGNet relaxation** against same-formula training structures. Uniqueness compares

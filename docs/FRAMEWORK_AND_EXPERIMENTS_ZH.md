@@ -73,9 +73,9 @@ S1 使用第一轮独立 TRAIN 反馈更新后的 G/E/value。S0 和 S1 的 Plan
 
 对 N 个原子的结构，动态序列长度为
 
-\[
+```math
 L=7+4N.
-\]
+```
 
 排列为一个原子数 token、六个晶格参数 token，然后每个原子一个元素 token 和三个分数坐标 token：
 
@@ -105,13 +105,13 @@ G 加载晶体 B0 适配器及其扩展后的输入/输出表。普通 LLaDA 权
 
 对当前位置 i，可把实际受约束的采样分布写作
 
-\[
+```math
 q_\theta(v\mid P,b_{\mathrm{visible}})
 =\frac{\exp(\tilde\ell_\theta(v)/T)\,\mathbf 1[v\in A_i]}
 {\sum_{u\in A_i}\exp(\tilde\ell_\theta(u)/T)},\qquad T=0.7.
-\]
+```
 
-这里 \(A_i\) 是该类型与当前几何上下文的允许集，\(\tilde\ell\) 包含周期别名合并等处理。随机流按请求绑定，批次与恢复过程有轨迹记录。`cfg_scale=0`；当前实现没有使用分类器自由引导放大条件。
+这里 $A_i$ 是该类型与当前几何上下文的允许集，$\tilde\ell$ 包含周期别名合并等处理。随机流按请求绑定，批次与恢复过程有轨迹记录。`cfg_scale=0`；当前实现没有使用分类器自由引导放大条件。
 
 ### 4.2 几何支持与恢复
 
@@ -125,24 +125,24 @@ q_\theta(v\mid P,b_{\mathrm{visible}})
 
 F 使用预训练 CrysLLMGen `model_494.pt`，训练噪声日程为 1000 步，公开默认精修步数为 800。元素与原子数固定，更新晶格矩阵和分数坐标。该阶段的权重在当前 S0/S1 实验中冻结。
 
-当前接口把 G 的坐标和晶格直接作为 \(x_T,L_T\)，从 `t=800` 向下执行上游 predictor/corrector 采样；没有额外先把 G 输出扩散到纯噪声。也没有声称任意 G 输出恰好来自该时间点的前向噪声分布。
+当前接口把 G 的坐标和晶格直接作为 $x_T,L_T$，从 `t=800` 向下执行上游 predictor/corrector 采样；没有额外先把 G 输出扩散到纯噪声。也没有声称任意 G 输出恰好来自该时间点的前向噪声分布。
 
-以代码中已经乘过归一化因子的坐标预测量 \(d_x\) 表示，corrector 和 predictor 的形式为
+以代码中已经乘过归一化因子的坐标预测量 $d_x$ 表示，corrector 和 predictor 的形式为
 
-\[
+```math
 x_{t-1/2}=x_t-\eta_t d_x+\sqrt{2\eta_t}\,\xi,
 \qquad \eta_t=10^{-5}(\sigma_t/\sigma_{\min})^2,
-\]
+```
 
-\[
+```math
 x_{t-1}=\left[x_{t-1/2}-(\sigma_t^2-\sigma_{t-1}^2)d'_x
 +\sqrt{\sigma_{t-1}^2(\sigma_t^2-\sigma_{t-1}^2)/\sigma_t^2}\,\xi'\right]\bmod1,
-\]
+```
 
-\[
+```math
 L_{t-1}=\frac{1}{\sqrt{\alpha_t}}\left[L_t-
 \frac{1-\alpha_t}{\sqrt{1-\bar\alpha_t}}d_L\right]+\tilde\sigma_t\xi_L.
-\]
+```
 
 每一步在 corrector 和 predictor 各调用一次 decoder，800 步对应 1600 次 F decoder 前向。这些调用与 G/E 的 DLM 调用属于不同模型，不能混成一个“80 次调用”的预算。
 
@@ -160,11 +160,11 @@ E 在 B0 上增加旧状态与当前状态条件模块、数值适配器和决�
 
 数值适配器包括 27 维 cell 输入、21 维 site 输入和 4 维 task 输入。坐标使用 sin/cos 周期编码，并保留是否已知的标志。旧/新 cell、旧/新 site 和任务状态以残差形式注入 DLM 的数值位置；新增模块保持 FP32。
 
-最终隐藏状态中，六个 cell 位置平均成 \(h_c\)，各元素位置的 site 隐藏状态平均成 \(h_s\)，拼成
+最终隐藏状态中，六个 cell 位置平均成 $h_c$，各元素位置的 site 隐藏状态平均成 $h_s$，拼成
 
-\[
+```math
 h=[h_c;h_s]\in\mathbb R^{8192}.
-\]
+```
 
 动作范围头与数量头读取 h；位置头读取各 site 隐藏状态。另保留四输出 quality head；当前新 minibatch 决策监督使用其中第 4 个接受输出，最终选择由独立的自主 value 网络完成。
 
@@ -192,7 +192,7 @@ value 的输入是上述 8192 维 h，以及 9 个由 current/已提交 proposal
 
 1. N/20；
 2. 被编辑 site 的比例；
-3. 动作数值 token 数占 \(6+3N\) 的比例；
+3. 动作数值 token 数占 $6+3N$ 的比例；
 4. 是否修改 cell；
 5. 周期居中分数坐标位移 RMS；
 6. 周期居中分数坐标最大位移；
@@ -204,21 +204,21 @@ Cartesian 位移描述使用 current 晶格，不是对晶格变化后所有物�
 
 网络为
 
-\[
+```math
 z=[\operatorname{SiLU}(W_hh+b_h);g]\in\mathbb R^{137},\qquad
 v=W_o\frac{z-\mu}{s}+b_o\in\mathbb R^2,
-\]
+```
 
-其中 \(W_h\) 将 8192 维映射到 128 维。归一化使用 TRAIN 的来源均衡统计，标准差下限为 0.05。两维监督目标分别是 **novel AND stable（NS）**、**novel AND metastable（NMS）**。这里不直接学习依赖整批顺序的 U，因此预测 NS/NMS 与最终 SUN/MSUN 是不同量。
+其中 $W_h$ 将 8192 维映射到 128 维。归一化使用 TRAIN 的来源均衡统计，标准差下限为 0.05。两维监督目标分别是 **novel AND stable（NS）**、**novel AND metastable（NMS）**。这里不直接学习依赖整批顺序的 U，因此预测 NS/NMS 与最终 SUN/MSUN 是不同量。
 
 ### 7.2 精确零增量 KEEP
 
 对候选 p 与 current c，比较
 
-\[
+```math
 \Delta v(p)=v(P,c,p,a)-v(P,c,c,\varnothing),\qquad
 u(p)=2\Delta v_{NS}+\Delta v_{NMS}.
-\]
+```
 
 KEEP 的增量精确为零。按 utility、NS 增量、优先 KEEP、候选原顺序依次打破平局。只有候选的排序键超过 KEEP 才提交。
 
@@ -240,20 +240,20 @@ G 的 teacher 候选可来自连续 F/E，但最终全 token teacher 必须重�
 
 ### 8.2 G 的条件偏好目标
 
-每个来源随机选择两个数值 cut，chosen/rejected 使用匹配的 cut/seed。实现中的 \(\ell_\theta\) 是该 cut 下**下一个数值 token 的受约束条件 log-probability**，并非计算整份晶体的精确联合似然。
+每个来源随机选择两个数值 cut，chosen/rejected 使用匹配的 cut/seed。实现中的 $\ell_\theta$ 是该 cut 下**下一个数值 token 的受约束条件 log-probability**，并非计算整份晶体的精确联合似然。
 
 偏好项为
 
-\[
+```math
 \mathcal L_G=-\log\sigma\{\beta[(\ell_\theta^+-\ell_{ref}^+)-(\ell_\theta^--\ell_{ref}^-)]\}
 -w_a\ell_\theta^+ +\lambda D_{KL}(q_{ref}\Vert q_\theta).
-\]
+```
 
-健康 anchor 行只使用对应的 anchor 拟合项；批次按来源数和 mask cuts 归一化。默认 \(\beta=0.1,w_a=0.2,\lambda=1\)，采样温度 0.7，4 epochs、batch 32、LoRA LR=5e-6。参考参数在该次更新开始时冻结，KL 是软正则。
+健康 anchor 行只使用对应的 anchor 拟合项；批次按来源数和 mask cuts 归一化。默认 $\beta=0.1,w_a=0.2,\lambda=1$，采样温度 0.7，4 epochs、batch 32、LoRA LR=5e-6。参考参数在该次更新开始时冻结，KL 是软正则。
 
 ### 8.3 E 的内容和决策目标
 
-E 对正内容目标的动作数值位置计算 dense typed-token CE，并加参考方向 \(KL(q_{ref}\Vert q_\theta)\)。一个来源按其动作位置平均后贡献一次，避免打开更多 token 的样本仅因长度占更大权重。
+E 对正内容目标的动作数值位置计算 dense typed-token CE，并加参考方向 $KL(q_{ref}\Vert q_\theta)$。一个来源按其动作位置平均后贡献一次，避免打开更多 token 的样本仅因长度占更大权重。
 
 决策监督包含范围 CE、局部 site 的 categorical 交叉熵、局部数量 CE，以及接受输出的 BCE。已知 SUN 的 TRAIN 行对范围/接受项给予 2 倍权重；该标志用于离线损失，不注入自主选择接口。决策损失从内容隐藏特征 detach，内容学习主要由 CE/KL 提供梯度。
 
@@ -299,18 +299,18 @@ G 的每个来源访问 4 遍，E 的来源访问 8 遍；value 每行访问 64 
 
 参考 hull 为固定的官方 GGA/GGA+U 条目集。条目输入能量为总能量；评价比较同组成的每原子 hull 能量：
 
-\[
+```math
 e_h=E_{terminal}/N-E_{hull}(composition),\quad
 S=\mathbf1[e_h\leq0],\quad MS=\mathbf1[e_h\leq0.1].
-\]
+```
 
-这里式中 \(E_{terminal}\) 表示总终态能量；保存字段 `terminal_energy_eV_atom` 已经除过 N，使用保存字段时不要再次除 N。
+这里式中 $E_{terminal}$ 表示总终态能量；保存字段 `terminal_energy_eV_atom` 已经除过 N，使用保存字段时不要再次除 N。
 
 N/U 匹配使用**CHGNet 弛豫之前的选定输出**，参数为 `StructureMatcher(ltol=0.2, stol=0.3, angle_tol=5)`。N 比较同 formula 的 MP-20 训练结构；U 按原请求顺序，将当前结构与所有更早的同 formula 输出比较。更早结构即使不稳定或不新颖也仍是唯一性见证，不采用传递聚类。
 
-\[
+```math
 SUN=S\land N\land U,\qquad MSUN=MS\land N\land U.
-\]
+```
 
 MSUN 包含 SUN。另存 `verified_strict_sun`/`verified_meta_sun`，额外要求终态验证。主计数使用保存的终态能量定义，不能把主计数和验证子集混用。Direct validity 不被额外插入上述既有 SUN 谓词。
 

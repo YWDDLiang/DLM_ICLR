@@ -30,7 +30,7 @@ flowchart TD
 
 ## 2. current、动作与实际提交的补丁
 
-F 输出连续结构 \(c=(L,F,Z)\)：晶格矩阵、分数坐标和元素。DLM 操作离散视图 \(b=Q(c)\)，长度为 \(7+4N\)，排列为 N、六个晶格参数和每个原子的 element/XYZ。
+F 输出连续结构 $c=(L,F,Z)$：晶格矩阵、分数坐标和元素。DLM 操作离散视图 $b=Q(c)$，长度为 $7+4N$，排列为 N、六个晶格参数和每个原子的 element/XYZ。
 
 动作空间为 `none`、`local_xyz`、`all_xyz`、`full_cell`。局部动作可以选择 1/2/4/8 个 site；full-cell 同时打开六个晶格参数和全部坐标。原子数、元素身份与计数固定。
 
@@ -54,7 +54,7 @@ E 同时读取旧 current token 与正在编辑的 proposal token，附带坐标
 
 默认状态宽度为 128，径向基数 16，cutoff=6 Å，周期像半径 2。cell/site/task 数值适配器输入维数分别为 27/21/4；周期坐标以 sin/cos 编码，并保留可用性标志。新增数值模块保持 FP32。
 
-DLM 最后一层的六个晶格位置平均成 \(h_c\)，各元素位置的 site 隐藏态平均成 \(h_s\)，拼成 8192 维向量 \(h=[h_c;h_s]\)。范围头和数量头读取 h，位置头读取各 site 向量。这些是结构表征，不是 CHGNet 的预测能量或力。
+DLM 最后一层的六个晶格位置平均成 $h_c$，各元素位置的 site 隐藏态平均成 $h_s$，拼成 8192 维向量 $h=[h_c;h_s]$。范围头和数量头读取 h，位置头读取各 site 向量。这些是结构表征，不是 CHGNet 的预测能量或力。
 
 ### 3.2 有限候选池
 
@@ -80,22 +80,22 @@ E 保留原 quality head 的接受概率作诊断。**当前最终选择不使�
 
 value 将 8192 维 h 投影到 128 维并通过 SiLU，拼接 9 个几何量，用 TRAIN 统计归一化，再经 137→2 线性层输出：
 
-\[
+```math
 v=W_o\frac{[\operatorname{SiLU}(W_hh+b_h);g]-\mu}{s}+b_o.
-\]
+```
 
 几何量包括 N/20、动作 site/token 比例、是否改 cell、周期分数位移 RMS/最大值、以 current 晶格计算的 Cartesian 位移 RMS/最大值和几何可用标志。历史字段名带 `changed` 的比例量按动作范围计算；位移量按实际连续补丁计算。
 
-两维学习 \(NS=N\land S\) 和 \(NMS=N\land MS\)，不直接包含依赖整批顺序的 U。输出是回归值，不保证在 [0,1]，也不保证校准为概率。
+两维学习 $NS=N\land S$ 和 $NMS=N\land MS$，不直接包含依赖整批顺序的 U。输出是回归值，不保证在 [0,1]，也不保证校准为概率。
 
 ### 4.2 同视图增量与精确零 KEEP
 
 对候选 p，减去同一网络对空动作 current 视图的预测：
 
-\[
+```math
 \Delta v(p)=v(P,c,p,a)-v(P,c,c,\varnothing),\qquad
 u(p)=2\Delta v_{NS}(p)+\Delta v_{NMS}(p).
-\]
+```
 
 空动作 KEEP 的增量精确为零，无需再拟合一个 KEEP 接受阈值。实际排序键为 `(utility, ΔNS, prefer_KEEP)`：
 
@@ -207,9 +207,9 @@ flowchart LR
 
 每个可用、真正提交的候选产生一个 current/proposal 比较，包含 token、动作、9 个几何量和前后目标：
 
-\[
+```math
 y(c)=(N(c)S(c),N(c)MS(c)),\quad y(p)=(N(p)S(p),N(p)MS(p)).
-\]
+```
 
 U 与整个面板和顺序有关，不作单条 value 目标。已知 S/MS 为 false 时，即使 N 尚未计算，合取仍为 false。明确失败的零目标、未收敛和未知处理依照 `endpoint_targets`；不能概括成“所有缺失值都设为零”。
 

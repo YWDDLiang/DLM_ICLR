@@ -26,9 +26,9 @@ Let `x(c,p,a)` be the 8192-dimensional model feature of current `c`, proposal `p
 
 For each candidate, the predicted gain is
 
-\[
+```math
 \Delta v = v(x(c,p,a),g(c,p,a)) - v(x(c,c,\varnothing),g(c,c,\varnothing)).
-\]
+```
 
 KEEP has exactly zero gain. Selection maximizes `2 * ΔNS + ΔNMS`; utility ties use ΔNS, then prefer KEEP, then retain candidate order. The values are regression scores, not guaranteed calibrated probabilities.
 
