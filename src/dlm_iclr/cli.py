@@ -65,10 +65,35 @@ def parser():
             run.add_argument("--rounds", type=int)
             run.add_argument("--training-plans")
             run.add_argument("--training-seed", type=int)
-    evaluation = commands.add_parser("evaluate", help="Evaluate saved selected structures")
+    direct = commands.add_parser("evaluate-direct", help="Full Direct metrics or fast comp/struct validity")
+    direct_input = direct.add_mutually_exclusive_group(required=True)
+    direct_input.add_argument("--run", type=Path, help="Inference directory containing structures.jsonl")
+    direct_input.add_argument(
+        "--structures", type=Path, help="Saved generation JSONL, including failed requests"
+    )
+    direct.add_argument("--output", type=Path)
+    direct.add_argument("--metrics", choices=("full", "comp_struct"), default="full")
+    direct.add_argument("--reference", type=Path, help="Held-out CIF CSV or structure JSONL for full Direct")
+    direct.add_argument("--dataset", choices=("mp20", "carbon", "perovskite"), default="mp20")
+    direct.add_argument("--workers", type=int, default=1, help="CPU fingerprint workers (full mode only)")
+    direct.add_argument("--cache", type=Path)
+    evaluation = commands.add_parser(
+        "evaluate",
+        aliases=["evaluate-sun"],
+        help="SUN and MSUN on saved selected structures",
+    )
     evaluation.add_argument("--config", type=Path, required=True)
-    evaluation.add_argument("--run", type=Path, required=True)
-    evaluation.add_argument("--gpus", type=int, default=1)
+    evaluation_input = evaluation.add_mutually_exclusive_group(required=True)
+    evaluation_input.add_argument("--run", type=Path, help="Inference directory containing structures.jsonl")
+    evaluation_input.add_argument(
+        "--structures", type=Path, help="Saved generation JSONL, including failed requests"
+    )
+    evaluation.add_argument("--output", type=Path)
+    evaluation.add_argument(
+        "--labels", type=Path, help="Reuse matching physics/labels.jsonl without relaxation"
+    )
+    evaluation.add_argument("--cache", type=Path)
+    evaluation.add_argument("--gpus", type=int, default=1, help="Number of GPUs; 0 uses CPU")
     evaluation.add_argument("--physics-workers", type=int, default=4)
     evaluation.add_argument("--nu-workers", type=int, default=4)
     training = commands.add_parser(
@@ -134,6 +159,51 @@ def main(argv=None):
             args.source, args.output, exclusions=[*PRESETS, *args.exclude], limit=args.limit
         )
         print(json.dumps({key: value for key, value in report.items() if key != "omitted"}), flush=True)
+    elif args.command in ("evaluate-direct", "evaluate", "evaluate-sun"):
+        if args.structures and args.output is None:
+            command.error("--structures requires --output")
+        source = args.structures or args.run / "structures.jsonl"
+        if args.command == "evaluate-direct":
+            from .direct import evaluate_direct
+            from .evaluation_inputs import load_records
+
+            if args.metrics == "full" and args.reference is None:
+                command.error("Full Direct requires --reference; use --metrics comp_struct for validity only")
+            if args.workers < 1:
+                command.error("--workers must be positive")
+            output = args.output or args.run / "evaluation/direct" / args.metrics
+            _, report = evaluate_direct(
+                load_records(source),
+                output,
+                metrics=args.metrics,
+                reference=args.reference,
+                dataset=args.dataset,
+                workers=args.workers,
+                cache=args.cache,
+            )
+            from .io import file_hash
+
+            report["input_sha256"] = file_hash(source)
+            write_json(output / "summary.json", report)
+        else:
+            from .evaluation import evaluate_sun
+
+            if args.gpus < 0 or args.physics_workers < 1 or not 1 <= args.nu_workers <= 64:
+                command.error(
+                    "--gpus must be nonnegative, --physics-workers positive, and --nu-workers 1..64"
+                )
+            output = args.output or args.run / "evaluation"
+            _, report = evaluate_sun(
+                load_config(args.config),
+                source,
+                output,
+                labels=args.labels,
+                devices=[f"cuda:{i}" for i in range(args.gpus)] or ["cpu"],
+                workers_per_device=args.physics_workers,
+                nu_workers=args.nu_workers,
+                cache=args.cache or (args.run.parent / "cache" if args.run else None),
+            )
+        print(json.dumps(report["metrics"]), flush=True)
     elif args.command == "worker":
         from .execution import inference_worker
 
@@ -191,17 +261,6 @@ def main(argv=None):
             command.error("--gpus must be positive")
         devices = [f"cuda:{i}" for i in range(args.gpus)]
         setup_device(devices[0])
-        if args.command == "evaluate":
-            _, report = evaluate_output(
-                config,
-                args.run,
-                devices=devices,
-                workers_per_device=args.physics_workers,
-                nu_workers=args.nu_workers,
-                cache=args.run.parent / "cache",
-            )
-            print(json.dumps(report["counts"]), flush=True)
-            return
         for name in ("plan_source", "requests", "legal_only"):
             value = getattr(args, name)
             if value is not None:

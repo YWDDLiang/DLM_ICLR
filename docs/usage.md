@@ -49,6 +49,16 @@ scores, report = evaluate_output(config, "outputs/sample", devices=["cuda:0"])
 
 The lower-level `Constructor`, `Refiner`, `Editor`, `ValueNetwork`, and `Labeler` APIs can be used independently. `Editor.edit` takes Plans and continuous/token input views; it does not accept physical results. `Labeler` and score computation are separate modules.
 
+## Standalone evaluation
+
+Use `evaluate-direct --run DIRECTORY --reference /data/mp20/test.csv` for the
+complete Direct generation metrics, or add `--metrics comp_struct` to compute
+only `comp_valid` and `struct_valid` without a reference or fingerprints.
+`evaluate-sun --config CONFIG --run DIRECTORY` reports SUN and MSUN together;
+`--labels FILE.jsonl` reuses existing physical labels. Both support standalone
+`--structures FILE.jsonl --output DIRECTORY` input. See
+[evaluation.md](evaluation.md) for complete commands and metric definitions.
+
 ## Execution and restart
 
 `scripts/run.sh` and `scripts/run.sbatch` invoke the same CLI. Set `PYTHON` to choose an interpreter. Pass ordinary `sbatch` options for your partition, GPUs, CPUs, memory and time. The code works without Slurm when a usable CUDA device is available.

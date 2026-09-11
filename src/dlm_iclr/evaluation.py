@@ -262,3 +262,78 @@ def score_records(records, labels, hull_cache, novelty_reference, output, *, cac
     write_rows(output / "scores.jsonl", rows)
     write_json(output / "summary.json", report)
     return rows, report
+
+
+def evaluate_sun(
+    config,
+    structures,
+    output,
+    *,
+    labels=None,
+    devices=("cuda:0",),
+    workers_per_device=4,
+    nu_workers=4,
+    cache=None,
+):
+    """Evaluate SUN and MSUN from a saved JSONL, optionally reusing bound labels.
+
+    Reusing labels performs no CHGNet calls and requires no generator/editor
+    checkpoints. The existing all-request SUN scorer and thresholds are retained.
+    """
+    from .evaluation_inputs import load_records
+
+    if workers_per_device < 1 or not 1 <= nu_workers <= 64 or not devices:
+        raise ValueError("Evaluation needs positive worker counts and at least one device")
+    hull_path = Path(config.assets.hull_cache)
+    if hull_path.is_dir():
+        hull_path /= "official_slim_cache.jsonl"
+    if not config.assets.hull_cache or not hull_path.is_file():
+        raise ValueError("SUN/MSUN requires assets.hull_cache with the official reference entries")
+    if not config.assets.novelty_reference or not Path(config.assets.novelty_reference).is_file():
+        raise ValueError("SUN/MSUN requires assets.novelty_reference containing the training structures")
+    output = Path(output)
+    cache = Path(cache) if cache else output / "cache"
+    records = load_records(structures)
+    labels_path = Path(labels) if labels is not None else None
+    if labels_path is not None:
+        physical_labels = read_rows(labels_path)
+        if len(physical_labels) != len(records):
+            raise ValueError("Saved physical labels must cover every requested structure in input order")
+        for record, label in zip(records, physical_labels, strict=True):
+            if any(label.get(key) != record[key] for key in ("source_id", "ordinal")):
+                raise ValueError("Saved physical label source/order does not match the evaluation input")
+            if label.get("record_key") != record_key(record):
+                raise ValueError("Physical label does not belong to this output structure")
+    else:
+        from .physics import label_records
+        from .execution import setup_device
+
+        if not config.assets.chgnet or not Path(config.assets.chgnet).is_file():
+            raise ValueError("SUN/MSUN requires assets.chgnet unless --labels is supplied")
+        setup_device(devices[0])
+        physical_labels = label_records(
+            records,
+            config.assets.chgnet,
+            output / "physics",
+            devices=devices,
+            workers_per_device=workers_per_device,
+            cache=cache / "physics",
+        )
+    rows, report = score_records(
+        records,
+        physical_labels,
+        config.assets.hull_cache,
+        config.assets.novelty_reference,
+        output,
+        cache=cache / "scoring",
+        workers=nu_workers,
+    )
+    report.update(
+        input_sha256=file_hash(structures),
+        reused_labels_sha256=file_hash(labels_path) if labels_path else None,
+        metrics={"SUN": report["percent"]["strict_sun"], "MSUN": report["percent"]["meta_sun"]},
+        metric_fields={"SUN": "strict_sun", "MSUN": "meta_sun"},
+        stability_thresholds_eV_atom={"SUN": 0.0, "MSUN": 0.1},
+    )
+    write_json(output / "summary.json", report)
+    return rows, report

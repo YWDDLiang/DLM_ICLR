@@ -20,6 +20,7 @@ The retained numerical environment is:
 | CHGNet weights | 0.3.0 |
 | ASE | 3.28.0 |
 | SMACT | 3.1.0 |
+| matminer (full Direct) | 0.9.3 |
 
 The CHGNet package version and weight version are different quantities. The evaluation uses the 0.3.0 weights through the 0.4.2 library.
 
@@ -33,6 +34,12 @@ python -m pip install -e '.[models,refiner,physics]'
 ```
 
 The ranges in `pyproject.toml` support installation; they are not a claim that every permitted library combination has numerical parity with the recorded environment. Use the table above when reproducing the reported results. The DataLoader adapter supports both the older `torch_geometric.data` location and the newer `torch_geometric.loader` location.
+
+Standalone evaluation has smaller dependency sets. Install `.[validity]` for
+Direct `--metrics comp_struct` or SUN/MSUN with reused labels; install `.[direct]`
+for full Direct including matminer fingerprints. Neither path requires PyTorch
+or CUDA. Fresh SUN/MSUN relaxation requires `.[physics]` and the CHGNet asset.
+See [evaluation.md](evaluation.md) for commands and reference requirements.
 
 Every model worker uses one CPU thread and deterministic PyTorch execution, with `CUBLAS_WORKSPACE_CONFIG=:4096:8`. Each F request uses batch size one and resets its own Python, NumPy and PyTorch random streams before creating the DataLoader iterator. Independent processes can share a GPU without changing the per-request sampling definition. The default is one refiner worker per GPU; `--refiner-workers` changes process concurrency.
 

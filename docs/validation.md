@@ -11,3 +11,28 @@ A complete engineering run used 16 TRAIN conditions and four separate evaluation
 This integration run intentionally used one actor epoch and two value epochs. Both four-request snapshots had SUN 0 and MSUN 3. It establishes that the complete workflow runs; it is not evidence of scientific improvement or a substitute for the formal experiments.
 
 All 20 unit tests passed without skips in the reference environment. They include exact Plan selection and seed preservation, TRAIN exclusions, continuous KEEP and local-coordinate preservation, consistent atom permutations, missing reference coverage, unknown metric bounds and portable value-model loading. CIF-directory, CIF-CSV and structure-JSONL imports were also exercised with preserved source splits and explicit out-of-representation failures.
+
+## Standalone evaluation addition
+
+All 28 tests pass without skips after adding the Direct and SUN/MSUN command
+interfaces. The additional CPU validation used Python 3.12 on Windows with
+UTF-8 enabled, PyTorch 2.4.0 CPU, and the NumPy/SciPy/pymatgen/SMACT/matminer/ASE
+versions recorded in [direct_upstream_parity.json](validation/direct_upstream_parity.json).
+
+The eight new tests cover a validity-only command with full-evaluator/model
+imports blocked, consistency of basic validity between modes, all-request
+coverage precision, cached fingerprints, undefined empty-set Wasserstein
+distances, the upstream independent-nearest-neighbor coverage definition,
+spawned CPU fingerprint workers, preserved legacy failure rows, and SUN/MSUN
+label reuse with wrong-geometry/order rejection and explicit missing-reference
+bounds. The SUN reuse test also blocks PyTorch and CHGNet imports.
+
+An independent synthetic fixture containing six generated structures and four
+references compared all seven Direct metrics against unchanged `Crystal`,
+`GenEval`, `StandardScaler`, `filter_fps`, and `compute_cov` definitions extracted
+from the retained CrysLLMGen source. Every metric matched exactly at upstream
+reporting precision; the fast mode matched both basic validity metrics. The
+fixture contains four compositions, a duplicate, and an atom-overlap case.
+Its values and source hashes are in the linked JSON record. This validates
+metric implementation and command behavior; it is separate from the formal
+three-run experiment and the previously completed GPU relaxation validation.

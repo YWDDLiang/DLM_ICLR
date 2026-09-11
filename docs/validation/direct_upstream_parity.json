@@ -1,0 +1,46 @@
+{
+  "check": "frozen_upstream_Direct_generation_formula_parity",
+  "passed": true,
+  "fixture_generated": 6,
+  "fixture_reference": 4,
+  "fixture_description": "four compositions, one duplicate, one atom-overlap case; synthetic engineering fixture",
+  "upstream_commit": "94bb287751cd20a882c7c1df7ca736633d78e5e1",
+  "upstream_source_sha256": {
+    "compute_metrics.py": "c48730ee405c205a912f450c297cc787ed61cefbc3723b3a7dbf2926c60434cd",
+    "eval_utils.py": "68e6d0a9703f412cfd3215e6d0ae687e5b153e941d16f3fa4f2fffeedb505cb6",
+    "constants.py": "90c57482f307f2d3251cdfd768d724bb03d2857fb9e50b64dec83d553cb97608",
+    "data_utils.py": "4eb35ada9ca2ee68b612c104411e5b5371296f2a29155e697b3dd5629ee35168"
+  },
+  "method": "Executed unmodified AST definitions of Crystal, GenEval, StandardScaler, filter_fps and compute_cov from the frozen source; compared all seven rounded generation metrics",
+  "upstream_metrics": {
+    "comp_valid": 100.0,
+    "struct_valid": 83.3333,
+    "valid": 83.3333,
+    "wdist_density": 0.0255,
+    "wdist_num_elems": 0.05,
+    "cov_recall": 100.0,
+    "cov_precision": 100.0
+  },
+  "standalone_metrics": {
+    "comp_valid": 100.0,
+    "struct_valid": 83.3333,
+    "valid": 83.3333,
+    "wdist_density": 0.0255,
+    "wdist_num_elems": 0.05,
+    "cov_recall": 100.0,
+    "cov_precision": 100.0
+  },
+  "basic_mode_metrics": {
+    "comp_valid": 100.0,
+    "struct_valid": 83.3333
+  },
+  "packages": {
+    "numpy": "1.26.4",
+    "scipy": "1.15.3",
+    "pymatgen": "2025.6.14",
+    "smact": "3.1.0",
+    "matminer": "0.9.3",
+    "ase": "3.28.0"
+  },
+  "scope": "Direct formula/fixture parity only; not formal experiment performance or new CHGNet relaxation validation"
+}

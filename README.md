@@ -57,6 +57,39 @@ sbatch --partition YOUR_PARTITION --gres=gpu:5 --cpus-per-task=20 \
 
 Output includes `structures.jsonl`, the selected Plan list, individual G/F/E records, candidate choices and actual forward counts. A repeated command resumes completed inference records in the same output directory when its inputs and settings match. [Usage](docs/usage.md) explains the Python interface, data preparation and execution options.
 
+## Evaluate saved outputs
+
+Direct evaluation supports the full generation metric set and a fast option
+that computes only `comp_valid` and `struct_valid`:
+
+```bash
+python -m pip install -e '.[direct]'
+
+# Full Direct: validity, density/element-count Wasserstein distances, COV recall/precision
+dlm-iclr evaluate-direct --run outputs/h1a2-1050 \
+  --reference /data/mp20/test.csv --workers 8
+
+# Only composition and structure validity; no reference, fingerprints, models or GPU
+dlm-iclr evaluate-direct --run outputs/h1a2-1050 --metrics comp_struct
+```
+
+For the fast option alone, `pip install -e '.[validity]'` is sufficient. Full
+Direct is the default; `--metrics full` can also select it explicitly. Both
+modes retain every requested row and use the same two basic validity checks.
+
+SUN and MSUN use the existing physical evaluator and directed novelty/uniqueness:
+
+```bash
+dlm-iclr evaluate-sun --config configs/local.json \
+  --run outputs/h1a2-1050 --gpus 5 --physics-workers 4 --nu-workers 4
+```
+
+`evaluate` remains an alias for `evaluate-sun`. Use `--labels` to reuse saved
+geometry-bound physical labels without running CHGNet again. Both commands also
+accept `--structures FILE.jsonl --output DIRECTORY`. [Evaluation](docs/evaluation.md)
+documents all metrics, dependencies, CPU execution, caches, input formats and
+the explicit unknown/count-bound reporting policy.
+
 ## Train and self-improve
 
 Convert MP-20 or another CIF dataset, then exclude all evaluation compositions:
