@@ -1,12 +1,20 @@
 # Method and default training recipe
 
+The [detailed Chinese framework and experiment report](FRAMEWORK_AND_EXPERIMENTS_ZH.md)
+expands every module, representation, objective, default, data boundary and failure
+case, and ends with the chronological method history. This page is its concise
+English companion. Further self-improvement was cancelled after the first S1;
+the training recipe below is retained as an optional experimental implementation.
+The [KEEP/EDIT walkthrough](KEEP_EDIT_ZH.md) follows actual positive/negative
+TRAIN records and replays real KEEP and EDIT choices from saved candidate scores.
+
 ## Representation and generation
 
 A rich Plan specifies atom count, species counts and categorical material context. The dynamic body has `7 + 4N` tokens: one count, six lattice parameters, and `element / x / y / z` for each site. The retained vocabulary covers 1–20 sites and elements through Pu.
 
 G fixes the count and species tokens. It reveals the lattice, then species-grouped X, Y and Z coordinates using the retained paired random streams. Periodic coordinate aliases are combined and the existing numerical geometry support is applied. Recovery reopens failed sites, neighboring sites, then the full numeric body. A final Z continuation can relax inter-site distance support while retaining the original duplicate-coordinate guard. A lattice failure can reopen gamma conditional on alpha/beta. These attempts retain the same Plan and are recorded, including unsuccessful requests and actual model calls.
 
-F runs the trained CrysLLMGen refinement for 800 predictor/corrector steps, with two decoder evaluations per step. Its seed and batch-one execution are preserved. The raw lattice matrix is saved; the endpoint uses the original lengths/angles readout.
+F runs the trained CrysLLMGen refinement for 800 predictor/corrector steps, with two decoder evaluations per step. The initial state is the generated geometry, without an added initial forward-noising step. Its seed and batch-one execution are preserved. The raw lattice matrix is saved; the endpoint uses the original lengths/angles readout.
 
 ## Autonomous KEEP/EDIT
 
@@ -33,6 +41,13 @@ The nine additional inputs describe site count, edited-site and token fractions,
 Each round generates feedback from separate TRAIN Plans. The same source's current state and candidate endpoints are compared after physical evaluation. E uses one actor-supervision row per source, choosing a verified useful candidate where available. Rejection labels describe that measured candidate pool and do not prove that no possible useful edit exists.
 
 G learns from full-token structures. Candidate selection for a teacher may use the measured continuous endpoints, but the complete token teacher is constructed and **evaluated separately** before its label is used. A continuous structure's physical label is not assigned to a geometrically different quantized body.
+
+The G preference loss samples two numeric cuts per source and uses the next scalar
+token's conditional log-probability at each cut. It is not an exact full-crystal
+joint log-likelihood. Reference KL uses the old-to-current direction. G updates
+LoRA while retaining the trained IO tables; E additionally updates its state,
+numeric and decision modules. Decision losses detach content features, and the
+current minibatch recipe supervises the quality head's acceptance output.
 
 | Component | Default settings |
 |---|---|

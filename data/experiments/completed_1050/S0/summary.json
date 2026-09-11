@@ -1,0 +1,271 @@
+{
+  "counts": {
+    "reconstructed": 1049,
+    "comp_valid": 923,
+    "struct_valid": 1048,
+    "strict_stable": null,
+    "meta_stable": null,
+    "strict_sun": null,
+    "meta_sun": null,
+    "terminal_verified": 1038,
+    "verified_strict_sun": null,
+    "verified_meta_sun": null,
+    "requests": 1050
+  },
+  "known_counts": {
+    "reconstructed": 1049,
+    "comp_valid": 923,
+    "struct_valid": 1048,
+    "strict_stable": 120,
+    "meta_stable": 618,
+    "strict_sun": 112,
+    "meta_sun": 560,
+    "terminal_verified": 1038,
+    "verified_strict_sun": 112,
+    "verified_meta_sun": 560
+  },
+  "unknown_counts": {
+    "reconstructed": 0,
+    "comp_valid": 0,
+    "struct_valid": 0,
+    "strict_stable": 30,
+    "meta_stable": 30,
+    "strict_sun": 29,
+    "meta_sun": 29,
+    "terminal_verified": 0,
+    "verified_strict_sun": 29,
+    "verified_meta_sun": 29
+  },
+  "count_bounds": {
+    "reconstructed": [
+      1049,
+      1049
+    ],
+    "comp_valid": [
+      923,
+      923
+    ],
+    "struct_valid": [
+      1048,
+      1048
+    ],
+    "strict_stable": [
+      120,
+      150
+    ],
+    "meta_stable": [
+      618,
+      648
+    ],
+    "strict_sun": [
+      112,
+      141
+    ],
+    "meta_sun": [
+      560,
+      589
+    ],
+    "terminal_verified": [
+      1038,
+      1038
+    ],
+    "verified_strict_sun": [
+      112,
+      141
+    ],
+    "verified_meta_sun": [
+      560,
+      589
+    ]
+  },
+  "percent": {
+    "reconstructed": 99.9047619047619,
+    "comp_valid": 87.9047619047619,
+    "struct_valid": 99.80952380952381,
+    "strict_stable": null,
+    "meta_stable": null,
+    "strict_sun": null,
+    "meta_sun": null,
+    "terminal_verified": 98.85714285714286,
+    "verified_strict_sun": null,
+    "verified_meta_sun": null
+  },
+  "label_statuses": {
+    "verified": 1038,
+    "not_converged": 4,
+    "invalid_terminal": 6,
+    "generation_failure": 1,
+    "invalid_raw": 1
+  },
+  "missing_hull_systems": [
+    "Al-Rh-Yb",
+    "Al-Yb",
+    "Al-Yb-Zn",
+    "Au-H-Yb",
+    "Au-In-Yb",
+    "B-Ca-O-Yb",
+    "B-Ru-Yb",
+    "Bi-Yb-Zn",
+    "C-Ir-Yb",
+    "Ca-Fe-O-Yb",
+    "Cd-Lu-Yb",
+    "Cu-Ge-Yb",
+    "Cu-Ho-Yb",
+    "F-In-Yb",
+    "Fe-Ge-Yb",
+    "Ga-Ni-Yb",
+    "Ga-Yb",
+    "Ge-Mn-Yb",
+    "Ge-Rh-Yb",
+    "H-Si-Yb",
+    "In-La-Yb",
+    "K-Ni-O-Yb",
+    "O-Yb-Zr",
+    "Os-Sn-Yb",
+    "Pt-Yb",
+    "Rb-S-Yb",
+    "Sb-Yb",
+    "Sn-Yb",
+    "Tl-Yb"
+  ],
+  "denominator": "all_requested_Plans_in_original_order",
+  "main_stability": "terminal_energy_minus_reference_hull",
+  "novelty_uniqueness_geometry": "output_structure_before_CHGNet_relaxation",
+  "hull_reference_sha256": "890b1d16e0a570d1920924e530855a7e95e172d7a0e78a48d33884be0767c454",
+  "complete": false,
+  "snapshot": "S0",
+  "count_percent_bounds": {
+    "reconstructed": [
+      99.9047619047619,
+      99.9047619047619
+    ],
+    "comp_valid": [
+      87.9047619047619,
+      87.9047619047619
+    ],
+    "struct_valid": [
+      99.80952380952381,
+      99.80952380952381
+    ],
+    "strict_stable": [
+      11.428571428571429,
+      14.285714285714286
+    ],
+    "meta_stable": [
+      58.857142857142854,
+      61.714285714285715
+    ],
+    "strict_sun": [
+      10.666666666666666,
+      13.428571428571429
+    ],
+    "meta_sun": [
+      53.333333333333336,
+      56.095238095238095
+    ],
+    "terminal_verified": [
+      98.85714285714286,
+      98.85714285714286
+    ],
+    "verified_strict_sun": [
+      10.666666666666666,
+      13.428571428571429
+    ],
+    "verified_meta_sun": [
+      53.333333333333336,
+      56.095238095238095
+    ]
+  },
+  "novelty_protocol": {
+    "matcher_contract": {
+      "matcher": {
+        "settings": {
+          "version": "1.0",
+          "@module": "pymatgen.analysis.structure_matcher",
+          "@class": "StructureMatcher",
+          "comparator": {
+            "version": "1.0",
+            "@module": "pymatgen.analysis.structure_matcher",
+            "@class": "SpeciesComparator"
+          },
+          "stol": 0.3,
+          "ltol": 0.2,
+          "angle_tol": 5,
+          "primitive_cell": true,
+          "scale": true,
+          "attempt_supercell": false,
+          "allow_subset": false,
+          "supercell_size": "num_sites",
+          "ignored_species": []
+        },
+        "pymatgen_version": "2025.6.14",
+        "implementation": "pymatgen.analysis.structure_matcher.StructureMatcher",
+        "source_sha256": "b6a7cd674aaf579ca4eae594f2592cad3ead8dba3af7c6713de4e73f212ca809"
+      },
+      "frozen_nu_sha256": "dlm_iclr_directed_input_NU_v1"
+    },
+    "training_identity": {
+      "source_sha256": "9b8031cf4ea7bb62709c74735da7ec11d00e367c5eaa05658fad5b5e7a530dde",
+      "parse_failures": []
+    },
+    "uniqueness_semantics": "later_to_every_earlier_same_formula_in_original_order",
+    "novelty_semantics": "generated_to_each_same_formula_training_structure",
+    "complete_sun_predicates": true
+  },
+  "inference": {
+    "requests": 1050,
+    "successful_outputs": 1049,
+    "physical_inputs_during_selection": false,
+    "output_sha256": "5d78aa6c00c74e1e058c557d0463d1b630f529eca2ef9308897e25f0c070c460",
+    "maximum_editor_calls": 73,
+    "G_successes": 1049,
+    "G_calls_total": 52088,
+    "E_edits": 495,
+    "E_calls_total": 51409,
+    "E_calls_mean": 48.96095238095238,
+    "E_calls_max": 73,
+    "F_sources": {
+      "continuous_F": 1047,
+      "G_after_invalid_F_geometry": 2,
+      "G": 1
+    }
+  },
+  "timing": {
+    "G": {
+      "seconds": 2164.7908059936017,
+      "workers": 5,
+      "devices": [
+        "cuda:0",
+        "cuda:1",
+        "cuda:2",
+        "cuda:3",
+        "cuda:4"
+      ],
+      "requests": 1050
+    },
+    "F": {
+      "seconds": 1982.9258137568831,
+      "workers": 40,
+      "devices": [
+        "cuda:0",
+        "cuda:1",
+        "cuda:2",
+        "cuda:3",
+        "cuda:4"
+      ],
+      "requests": 1050
+    },
+    "E": {
+      "seconds": 537.8194664157927,
+      "workers": 5,
+      "devices": [
+        "cuda:0",
+        "cuda:1",
+        "cuda:2",
+        "cuda:3",
+        "cuda:4"
+      ],
+      "requests": 1050
+    }
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "denominator": 1050,
+  "fields": {
+    "reconstructed": {
+      "both_known": 1050,
+      "S0_true": 1049,
+      "S1_true": 1050,
+      "gained": 1,
+      "lost": 0,
+      "net": 1
+    },
+    "comp_valid": {
+      "both_known": 1050,
+      "S0_true": 923,
+      "S1_true": 924,
+      "gained": 1,
+      "lost": 0,
+      "net": 1
+    },
+    "struct_valid": {
+      "both_known": 1050,
+      "S0_true": 1048,
+      "S1_true": 1050,
+      "gained": 2,
+      "lost": 0,
+      "net": 2
+    },
+    "strict_stable": {
+      "both_known": 1020,
+      "S0_true": 120,
+      "S1_true": 119,
+      "gained": 26,
+      "lost": 27,
+      "net": -1
+    },
+    "meta_stable": {
+      "both_known": 1020,
+      "S0_true": 618,
+      "S1_true": 616,
+      "gained": 102,
+      "lost": 104,
+      "net": -2
+    },
+    "strict_sun": {
+      "both_known": 1021,
+      "S0_true": 112,
+      "S1_true": 107,
+      "gained": 27,
+      "lost": 32,
+      "net": -5
+    },
+    "meta_sun": {
+      "both_known": 1021,
+      "S0_true": 560,
+      "S1_true": 562,
+      "gained": 124,
+      "lost": 122,
+      "net": 2
+    },
+    "terminal_verified": {
+      "both_known": 1050,
+      "S0_true": 1038,
+      "S1_true": 1034,
+      "gained": 12,
+      "lost": 16,
+      "net": -4
+    },
+    "verified_strict_sun": {
+      "both_known": 1021,
+      "S0_true": 112,
+      "S1_true": 107,
+      "gained": 27,
+      "lost": 32,
+      "net": -5
+    },
+    "verified_meta_sun": {
+      "both_known": 1021,
+      "S0_true": 560,
+      "S1_true": 562,
+      "gained": 124,
+      "lost": 122,
+      "net": 2
+    }
+  },
+  "scope": "one completed, truncated S0/S1 comparison; no multi-run claim"
+}

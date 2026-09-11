@@ -36,3 +36,23 @@ fixture contains four compositions, a duplicate, and an atom-overlap case.
 Its values and source hashes are in the linked JSON record. This validates
 metric implementation and command behavior; it is separate from the formal
 three-run experiment and the previously completed GPU relaxation validation.
+
+## Publication of existing experiments
+
+The data audit in `scripts/verify_experiment_data.py` checks 54 published files,
+2100 generated-structure/score bindings, 1050 paired requests, counts and missing
+label bounds, runtime budgets, source exposure, and two actual KEEP/EDIT choices.
+It verifies continuous KEEP and preservation of unmodified coordinate fields in
+the saved EDIT example. The E exposure audit distinguishes 445 content-supervised
+sources from 972 decision-supervised sources, with eight actual visits each.
+
+The historical projection contains 57 result rows with 15 source capsules, plus
+10 separately labelled earlier development receipts. Source hashes and published
+hashes are recorded where infrastructure paths or serialization changed.
+Documentation links and decoded public metadata were checked for missing local
+targets and private infrastructure paths. Data files use exact-byte Git handling
+so platform line-ending conversion does not invalidate their manifest hashes.
+
+This audit replays saved data and decisions; it does not rerun G/F/E experiments
+or CHGNet relaxation. The original three-by-three experiment remains cancelled
+after its completed S0/S1 pair. The new audit is also part of GitHub CI.

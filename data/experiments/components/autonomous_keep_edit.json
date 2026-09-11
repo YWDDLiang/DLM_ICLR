@@ -1,0 +1,816 @@
+{
+  "schema": "final_autonomous_KEEP_EDIT_research_v1",
+  "status": "complete",
+  "research_start_utc": "2026-09-10T13:02:01+00:00",
+  "completed_utc": "2026-09-10T18:41:15+00:00",
+  "active_deadline_utc": "2026-09-10T19:16:40+00:00",
+  "selection": {
+    "candidates": [
+      {
+        "development_delta": {
+          "MSUN": 6,
+          "SUN": -2,
+          "Stable": -2
+        },
+        "development_result_sha256": "7934af0075d870c105b16bea6a423ccf45aada1c91c05a02ad59e6d0c773a519",
+        "kind": "linear",
+        "model": "<private-path>",
+        "model_sha256": "3ab4965ce8d376a38c65ac59a627a56ea37035ab4f2a1d3580e5a2e6855f334c",
+        "name": "mini_2e6"
+      },
+      {
+        "development_delta": {
+          "MSUN": 4,
+          "SUN": 1,
+          "Stable": 0
+        },
+        "development_result_sha256": "d0ac9bd819b52ff92e3811007ae345a9cd483e16cccb46144568a2941b297b28",
+        "kind": "mlp",
+        "model": "<private-path>",
+        "model_sha256": "848fca1c6c9919bb5f3bbdfd72645b765116960d7faefcfe8e5c2ef9d3e91f35",
+        "name": "mini_2e6"
+      },
+      {
+        "development_delta": {
+          "MSUN": 11,
+          "SUN": 3,
+          "Stable": 0
+        },
+        "development_result_sha256": "2121c3c99dd8587584353eb41c6a905133769af4a4e86202e59978617131e9f7",
+        "kind": "distill",
+        "model": "<private-path>",
+        "model_sha256": "f80727b816aed46ff3b05ef5d215243a3fe654eca2f803d62d38ca96913d5ed7",
+        "name": "mini_2e6"
+      },
+      {
+        "development_delta": {
+          "MSUN": 6,
+          "SUN": 0,
+          "Stable": 0
+        },
+        "development_result_sha256": "186bb63684937bc4632a217f6a228911e22fe84fa97f05087475ea1620a35658",
+        "kind": "linear",
+        "model": "<private-path>",
+        "model_sha256": "4ca8d8221de19e8a4dc4ecdf3671add8b6d82df7ba8609acda216673abcb2222",
+        "name": "retained_e3"
+      },
+      {
+        "development_delta": {
+          "MSUN": 10,
+          "SUN": -2,
+          "Stable": -4
+        },
+        "development_result_sha256": "857502537d2905a457fb06ee3887b9bf0aea9ed9493ecd24f3bf8ae95300e298",
+        "kind": "mlp",
+        "model": "<private-path>",
+        "model_sha256": "8fadc374530c471621cb4e35a3445284c66c79041aaa44ef0d1c68dd1c643318",
+        "name": "retained_e3"
+      },
+      {
+        "development_delta": {
+          "MSUN": 9,
+          "SUN": -4,
+          "Stable": -7
+        },
+        "development_result_sha256": "d3fae0f115015c14dc98d71059f3198b76a5f244af30f319a8e99d18a9f6ab72",
+        "kind": "distill",
+        "model": "<private-path>",
+        "model_sha256": "b9f469d2fc9ad26668348ad8071510b1c296aee3ddd8c6676e75e73520abd1ee",
+        "name": "retained_e3"
+      },
+      {
+        "development_delta": {
+          "MSUN": 12,
+          "SUN": 2,
+          "Stable": -1
+        },
+        "development_result_sha256": "ba26b9f077f3138ea046fa31028bf245afe3eb4aae8eef03a6e366afce48406d",
+        "kind": "mlp",
+        "model": "<private-path>",
+        "model_sha256": "db98d8d79de5579dce68e3fd6a4183d9f96b115143b4db4afdadc20fa0c54df6",
+        "name": "mini_k8"
+      },
+      {
+        "development_delta": {
+          "MSUN": 14,
+          "SUN": 3,
+          "Stable": 1
+        },
+        "development_result_sha256": "45112748f2d0fbc6521fd1b802b04f5c88b98d940cfbbcce1805112e4e34fc0e",
+        "kind": "distill",
+        "model": "<private-path>",
+        "model_sha256": "532931df9a8ec7c09259b884bb9b51700ffc2772b779e92b7475db170ab2ef1a",
+        "name": "mini_k8"
+      }
+    ],
+    "future_policy_changes_on_this_validation": false,
+    "runtime_inputs": "Plan, current/proposed structures and learned model features only",
+    "schema": "autonomous_value_sealed_validation_selection_v1",
+    "selected": {
+      "development_delta": {
+        "MSUN": 14,
+        "SUN": 3,
+        "Stable": 1
+      },
+      "development_result_sha256": "45112748f2d0fbc6521fd1b802b04f5c88b98d940cfbbcce1805112e4e34fc0e",
+      "kind": "distill",
+      "model": "<private-path>",
+      "model_sha256": "532931df9a8ec7c09259b884bb9b51700ffc2772b779e92b7475db170ab2ef1a",
+      "name": "mini_k8"
+    },
+    "selection_basis": "exploratory development selection over the already reviewed 247+246 source panels",
+    "selection_order": [
+      "combined_development_SUN_gain",
+      "combined_development_MSUN_gain",
+      "combined_development_Stable_gain"
+    ],
+    "unseen_sources": 96,
+    "unseen_validation_quality_consulted": false,
+    "utility_weights": [
+      2,
+      1
+    ]
+  },
+  "selected_training": {
+    "complete": true,
+    "epochs": 64,
+    "input_contract": {
+      "KEEP_rule": "subtract the learned value of the current view; identity gain is exactly zero",
+      "candidate_physics_inputs": false,
+      "current_physics_inputs": false,
+      "current_stability_novelty_or_hull_inputs": false,
+      "geometry_features": [
+        "sites_scaled",
+        "changed_site_fraction",
+        "changed_token_fraction",
+        "cell_changed",
+        "fractional_displacement_rms",
+        "fractional_displacement_max",
+        "cartesian_displacement_rms",
+        "cartesian_displacement_max",
+        "geometry_delta_available"
+      ],
+      "inputs": [
+        "DLM forward features from Plan/current/proposal/action",
+        "geometry computed from current and proposal"
+      ],
+      "physical_feedback_use": "offline supervised targets only",
+      "privileged_teacher_distillation_training_only": true
+    },
+    "kind": "distill",
+    "maximum_visits": 64,
+    "minimum_visits": 64,
+    "model_sha256": "532931df9a8ec7c09259b884bb9b51700ffc2772b779e92b7475db170ab2ef1a",
+    "optimizer_steps": 1024,
+    "parameter_delta_squared": {
+      "head.bias": 0.00018932854248881418,
+      "head.weight": 0.048475039956989284,
+      "hidden.bias": 6.202078202404902e-06,
+      "hidden.weight": 0.7953533786778317
+    },
+    "rows": 3930,
+    "sources": 492,
+    "train_only": true,
+    "train_rows_sha256": "d09755009246e516a1c5e956906f2171d04efc66ab5c0ce8744754e0ad7907ba"
+  },
+  "selected_fit": {
+    "autonomous_inputs": true,
+    "complete": true,
+    "kind": "distill",
+    "physical_feedback_only_after_selection": true,
+    "results": {
+      "all": {
+        "KEEP": {
+          "MS": 567,
+          "MSUN": 482,
+          "SUN": 103,
+          "Stable": 118
+        },
+        "actual_edits": 460,
+        "counts": {
+          "MS": 571,
+          "MSUN": 533,
+          "SUN": 117,
+          "Stable": 126
+        },
+        "delta": {
+          "MS": 4,
+          "MSUN": 51,
+          "SUN": 14,
+          "Stable": 8
+        },
+        "gains": {
+          "MS": [
+            56,
+            174,
+            192,
+            197,
+            211,
+            223,
+            345,
+            355,
+            424,
+            499,
+            536,
+            558,
+            651,
+            679,
+            689,
+            730,
+            831,
+            973
+          ],
+          "MSUN": [
+            26,
+            33,
+            36,
+            56,
+            81,
+            87,
+            109,
+            110,
+            112,
+            132,
+            174,
+            177,
+            192,
+            197,
+            211,
+            214,
+            219,
+            223,
+            226,
+            239,
+            243,
+            267,
+            285,
+            289,
+            308,
+            310,
+            328,
+            339,
+            345,
+            355,
+            362,
+            375,
+            424,
+            437,
+            442,
+            452,
+            482,
+            491,
+            499,
+            507,
+            536,
+            540,
+            558,
+            598,
+            604,
+            610,
+            651,
+            679,
+            689,
+            730,
+            731,
+            754,
+            761,
+            792,
+            831,
+            881,
+            908,
+            909,
+            924,
+            943,
+            973
+          ],
+          "SUN": [
+            85,
+            87,
+            125,
+            214,
+            217,
+            243,
+            349,
+            372,
+            499,
+            578,
+            598,
+            731,
+            761,
+            792,
+            929,
+            974,
+            986
+          ],
+          "Stable": [
+            85,
+            125,
+            214,
+            217,
+            349,
+            372,
+            499,
+            578,
+            929,
+            974,
+            986
+          ]
+        },
+        "losses": {
+          "MS": [
+            63,
+            138,
+            144,
+            290,
+            291,
+            343,
+            467,
+            517,
+            626,
+            653,
+            840,
+            899,
+            940,
+            951
+          ],
+          "MSUN": [
+            63,
+            138,
+            291,
+            348,
+            473,
+            626,
+            653,
+            840,
+            899,
+            951
+          ],
+          "SUN": [
+            291,
+            626,
+            966
+          ],
+          "Stable": [
+            291,
+            626,
+            966
+          ]
+        },
+        "max_DLM_calls": 49,
+        "panel": "<private-path>",
+        "requests": 1000,
+        "role": "all",
+        "scores_sha256": "e0070be0e4fe117acc1f19949b41748a0be477eca63998c0da7d3a115a7739b4"
+      },
+      "dev": {
+        "KEEP": {
+          "MS": 135,
+          "MSUN": 115,
+          "SUN": 24,
+          "Stable": 29
+        },
+        "actual_edits": 113,
+        "counts": {
+          "MS": 135,
+          "MSUN": 123,
+          "SUN": 26,
+          "Stable": 30
+        },
+        "delta": {
+          "MS": 0,
+          "MSUN": 8,
+          "SUN": 2,
+          "Stable": 1
+        },
+        "gains": {
+          "MS": [
+            558,
+            651,
+            973
+          ],
+          "MSUN": [
+            289,
+            310,
+            437,
+            482,
+            558,
+            598,
+            604,
+            610,
+            651,
+            973
+          ],
+          "SUN": [
+            578,
+            598,
+            986
+          ],
+          "Stable": [
+            578,
+            986
+          ]
+        },
+        "losses": {
+          "MS": [
+            291,
+            343,
+            840
+          ],
+          "MSUN": [
+            291,
+            840
+          ],
+          "SUN": [
+            291
+          ],
+          "Stable": [
+            291
+          ]
+        },
+        "max_DLM_calls": 49,
+        "panel": "<private-path>",
+        "requests": 247,
+        "role": "dev",
+        "scores_sha256": "e0070be0e4fe117acc1f19949b41748a0be477eca63998c0da7d3a115a7739b4"
+      },
+      "final": {
+        "KEEP": {
+          "MS": 145,
+          "MSUN": 121,
+          "SUN": 28,
+          "Stable": 32
+        },
+        "actual_edits": 120,
+        "counts": {
+          "MS": 142,
+          "MSUN": 127,
+          "SUN": 29,
+          "Stable": 32
+        },
+        "delta": {
+          "MS": -3,
+          "MSUN": 6,
+          "SUN": 1,
+          "Stable": 0
+        },
+        "gains": {
+          "MS": [
+            355,
+            679,
+            689
+          ],
+          "MSUN": [
+            267,
+            285,
+            355,
+            375,
+            491,
+            507,
+            679,
+            689,
+            754,
+            761,
+            908,
+            909
+          ],
+          "SUN": [
+            761,
+            929,
+            974
+          ],
+          "Stable": [
+            929,
+            974
+          ]
+        },
+        "losses": {
+          "MS": [
+            467,
+            626,
+            653,
+            899,
+            940,
+            951
+          ],
+          "MSUN": [
+            348,
+            473,
+            626,
+            653,
+            899,
+            951
+          ],
+          "SUN": [
+            626,
+            966
+          ],
+          "Stable": [
+            626,
+            966
+          ]
+        },
+        "max_DLM_calls": 49,
+        "panel": "<private-path>",
+        "requests": 246,
+        "role": "final",
+        "scores_sha256": "e0070be0e4fe117acc1f19949b41748a0be477eca63998c0da7d3a115a7739b4"
+      },
+      "train": {
+        "KEEP": {
+          "MS": 286,
+          "MSUN": 245,
+          "SUN": 51,
+          "Stable": 57
+        },
+        "actual_edits": 227,
+        "counts": {
+          "MS": 293,
+          "MSUN": 282,
+          "SUN": 62,
+          "Stable": 64
+        },
+        "delta": {
+          "MS": 7,
+          "MSUN": 37,
+          "SUN": 11,
+          "Stable": 7
+        },
+        "gains": {
+          "MS": [
+            56,
+            174,
+            192,
+            197,
+            211,
+            223,
+            345,
+            424,
+            499,
+            536,
+            730,
+            831
+          ],
+          "MSUN": [
+            26,
+            33,
+            36,
+            56,
+            81,
+            87,
+            109,
+            110,
+            112,
+            132,
+            174,
+            177,
+            192,
+            197,
+            211,
+            214,
+            219,
+            223,
+            226,
+            239,
+            243,
+            308,
+            328,
+            339,
+            345,
+            362,
+            424,
+            442,
+            452,
+            499,
+            536,
+            540,
+            730,
+            731,
+            792,
+            831,
+            881,
+            924,
+            943
+          ],
+          "SUN": [
+            85,
+            87,
+            125,
+            214,
+            217,
+            243,
+            349,
+            372,
+            499,
+            731,
+            792
+          ],
+          "Stable": [
+            85,
+            125,
+            214,
+            217,
+            349,
+            372,
+            499
+          ]
+        },
+        "losses": {
+          "MS": [
+            63,
+            138,
+            144,
+            290,
+            517
+          ],
+          "MSUN": [
+            63,
+            138
+          ],
+          "SUN": [],
+          "Stable": []
+        },
+        "max_DLM_calls": 49,
+        "panel": "<private-path>",
+        "requests": 506,
+        "role": "train",
+        "scores_sha256": "e0070be0e4fe117acc1f19949b41748a0be477eca63998c0da7d3a115a7739b4"
+      }
+    }
+  },
+  "unseen_validation": {
+    "autonomous_inputs": true,
+    "complete": true,
+    "kind": "distill",
+    "physical_feedback_only_after_selection": true,
+    "results": {
+      "fresh": {
+        "KEEP": {
+          "MS": 56,
+          "MSUN": 49,
+          "SUN": 6,
+          "Stable": 6
+        },
+        "actual_edits": 40,
+        "counts": {
+          "MS": 56,
+          "MSUN": 54,
+          "SUN": 6,
+          "Stable": 6
+        },
+        "delta": {
+          "MS": 0,
+          "MSUN": 5,
+          "SUN": 0,
+          "Stable": 0
+        },
+        "gains": {
+          "MS": [
+            0,
+            16
+          ],
+          "MSUN": [
+            0,
+            10,
+            16,
+            35,
+            45,
+            51
+          ],
+          "SUN": [
+            67
+          ],
+          "Stable": [
+            67
+          ]
+        },
+        "losses": {
+          "MS": [
+            7,
+            57
+          ],
+          "MSUN": [
+            57
+          ],
+          "SUN": [
+            57
+          ],
+          "Stable": [
+            57
+          ]
+        },
+        "max_DLM_calls": 49,
+        "panel": "<private-path>",
+        "requests": 96,
+        "role": "fresh",
+        "scores_sha256": "5828529064d3bbeb13e6c6ef3cbabd0ec7690155758b9131a469d49f42ac278c"
+      }
+    }
+  },
+  "input_boundary_correction": "Earlier current-feedback-dependent gains are offline comparators, not autonomous-inference evidence.",
+  "failure_837": {
+    "generation_recovered": true,
+    "physically_verified": true,
+    "final_F_hull": 0.1249286288,
+    "SUN": false,
+    "DLM_forward_calls": 47
+  },
+  "failure_549": {
+    "repaired": false,
+    "global_editor_and_same_Plan_restart_failed": true,
+    "restart_DLM_calls": 163,
+    "restart_was_over_normal_80_call_budget_diagnostic": true
+  },
+  "further_validation_tuning": false,
+  "frozen_model_export": {
+    "path": "<private-path>",
+    "sha256": "035b64ee578834fb82fc6e8bdef0aa984e1326eb7267fbae2ab7dd80d9efcade",
+    "tensor_parity": true
+  },
+  "validation_examples": {
+    "57": {
+      "formula": "GeTe2",
+      "action": {
+        "mode": 1,
+        "name": "local_xyz",
+        "positions": [
+          12,
+          13,
+          14
+        ],
+        "sites": [
+          1
+        ]
+      },
+      "before": {
+        "terminal_status": "verified",
+        "terminal_verified": true,
+        "e_above_hull_eV_atom": -0.08797464074740935,
+        "strict_stable": true,
+        "meta_stable": true,
+        "strict_sun": true,
+        "meta_sun": true,
+        "novel": true,
+        "unique": null
+      },
+      "after": {
+        "terminal_status": "verified",
+        "terminal_verified": true,
+        "e_above_hull_eV_atom": 0.3117851286922879,
+        "strict_stable": false,
+        "meta_stable": false,
+        "strict_sun": false,
+        "meta_sun": false,
+        "novel": null,
+        "unique": null
+      },
+      "source_id": "25462ad9306ee6eb3648bf2be8a696c919be3694:expanded_source_3:5815"
+    },
+    "67": {
+      "formula": "Pd2Er2",
+      "action": {
+        "mode": 1,
+        "name": "local_xyz",
+        "positions": [
+          12,
+          13,
+          14
+        ],
+        "sites": [
+          1
+        ]
+      },
+      "before": {
+        "terminal_status": "verified",
+        "terminal_verified": true,
+        "e_above_hull_eV_atom": 0.001013885570068318,
+        "strict_stable": false,
+        "meta_stable": true,
+        "strict_sun": false,
+        "meta_sun": true,
+        "novel": true,
+        "unique": null
+      },
+      "after": {
+        "terminal_status": "verified",
+        "terminal_verified": true,
+        "e_above_hull_eV_atom": -0.00043331520507816634,
+        "strict_stable": true,
+        "meta_stable": true,
+        "strict_sun": true,
+        "meta_sun": true,
+        "novel": true,
+        "unique": null
+      },
+      "source_id": "25462ad9306ee6eb3648bf2be8a696c919be3694:expanded_source_5:7812"
+    }
+  },
+  "scope": "Completed component study, distinct from the later 1050-request S0/S1 experiment.",
+  "source_sha256": "d9dfc5c17b08f40a58ae39d9ff3670b59843239b6e062ac1930970ca35c86d6e",
+  "historical_planned_followup": {
+    "formal_runs": 3,
+    "formal_rounds_per_run": 3,
+    "formal_fixed_legal_plans": 1050,
+    "other_two_formal_runs_private": true,
+    "execution_status": "cancelled after first S1; see completed_1050/experiment_status.json"
+  }
+}

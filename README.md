@@ -4,6 +4,34 @@ Crystal diffusion language models with continuous refinement and learned KEEP/ED
 
 The pipeline samples an exact-composition crystal with a diffusion language model (**G**), refines its continuous geometry with CrysLLMGen (**F**, 800 steps), and compares learned edit proposals against keeping that geometry (**E**). The editor uses the Plan, structures, its own model features and a forward-call budget. Physical evaluation supplies offline training targets and is performed after output selection.
 
+**Method and existing data:** [详细框架、方法、实验与演进报告（中文）](docs/FRAMEWORK_AND_EXPERIMENTS_ZH.md)
+· [Results](docs/results.md) · [Experiment data](data/experiments/README.md).
+
+**KEEP/EDIT in depth:** [数据如何构造、各部分如何训练、推理为何选择 KEEP 或 EDIT](docs/KEEP_EDIT_ZH.md),
+including actual candidate scores, continuous-patch examples and positive/negative TRAIN records.
+
+The planned repeated self-improvement experiment was stopped by the user after
+the first completed S1. The published S0/S1 pair has 1050 requests per snapshot:
+
+| Metric | S0 confirmed | S1 confirmed | Unknown in each snapshot |
+|---|---:|---:|---:|
+| Composition valid | 923 | 924 | 0 |
+| Structure valid | 1048 | 1050 | 0 |
+| SUN | 112 | 107 | 29 |
+| MSUN | 560 | 562 | 29 |
+
+These are confirmed counts, not complete point rates for unresolved predicates.
+The pair shows no clear SUN improvement. There is no completed three-run result
+or best-of-three selection. The repository includes all 2100 selected structures
+and scores, paired gains/losses, training exposure, runtime and model identities,
+plus separately scoped component and historical evidence.
+
+Verify the saved data without running a model:
+
+```bash
+python scripts/verify_experiment_data.py
+```
+
 ```mermaid
 flowchart LR
     P[Saved or generated Plan] --> G[Crystal DLM]
@@ -90,7 +118,11 @@ accept `--structures FILE.jsonl --output DIRECTORY`. [Evaluation](docs/evaluatio
 documents all metrics, dependencies, CPU execution, caches, input formats and
 the explicit unknown/count-bound reporting policy.
 
-## Train and self-improve
+## Offline training and optional self-improvement research
+
+The retained training commands reproduce the experimental update mechanism.
+Repeated self-improvement is not presented as an established quality gain;
+the completed experiment was cancelled after S1 because of runtime cost.
 
 Convert MP-20 or another CIF dataset, then exclude all evaluation compositions:
 
@@ -103,7 +135,7 @@ dlm-iclr prepare-train --source outputs/data/train.jsonl \
 
 The adapter accepts CSV with a `cif` column, JSONL with `cif` or `structure`, and directories of CIF files. MP-20 is the evaluated dataset; support for these common formats does not imply benchmark validation on other datasets. The retained representation supports 1–20 sites and atomic numbers up to 94 (Pu).
 
-Run a complete sequence of fixed-Plan evaluation and three offline training rounds:
+The optional command for fixed-Plan evaluation and three offline training rounds is:
 
 ```bash
 bash scripts/run.sh self-improve --config configs/local.json \

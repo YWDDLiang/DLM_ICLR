@@ -1,0 +1,52 @@
+{
+  "assets": {
+    "base_model": "<external base_model asset>",
+    "generator": "<external generator asset>",
+    "editor": "<external editor asset>",
+    "value": "bundled",
+    "refiner": "<external refiner asset>",
+    "planner_base": "<external planner_base asset>",
+    "planner": "<external planner asset>",
+    "chgnet": "<external chgnet asset>",
+    "hull_cache": "<external hull_cache asset>",
+    "novelty_reference": "<external novelty_reference asset>"
+  },
+  "inference": {
+    "plan_source": "H1A2_1200",
+    "requests": 1050,
+    "legal_only": true,
+    "seed": 17,
+    "planner_requests": 1200,
+    "refiner_steps": 800,
+    "editor_candidates": 8,
+    "editor_max_calls": 80,
+    "editor_batch_size": 64,
+    "temperature": 0.7,
+    "construction_recovery": true,
+    "adaptive_lattice_recovery": true,
+    "sun_weight": 2.0,
+    "msun_weight": 1.0
+  },
+  "training": {
+    "plans": "CLEAN_TRAIN_1000",
+    "rounds": 3,
+    "seed": 20260911,
+    "epochs": 8,
+    "batch_size": 16,
+    "generator_lr": 5e-06,
+    "generator_epochs": 4,
+    "generator_batch_size": 32,
+    "generator_beta": 0.1,
+    "generator_anchor_weight": 0.2,
+    "mask_cuts": 2,
+    "editor_content_lr": 2e-06,
+    "editor_heads_lr": 0.0001,
+    "reference_kl_weight": 1.0,
+    "value_epochs": 64,
+    "value_sources_per_batch": 32,
+    "value_head_lr": 0.001,
+    "value_hidden_lr": 1e-05,
+    "teacher_mix": 0.5,
+    "permute_atoms": true
+  }
+}

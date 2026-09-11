@@ -2,3 +2,5 @@
 *.pt binary
 *.png binary
 *.jsonl text eol=lf
+# Published experiment manifests hash exact bytes on every platform.
+data/experiments/** -text

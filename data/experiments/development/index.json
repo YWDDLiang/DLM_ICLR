@@ -1,0 +1,76 @@
+{
+  "status": "archived_existing_development_evidence",
+  "not_comparable_as_one_leaderboard": true,
+  "capsules": [
+    {
+      "name": "CLEAN_1000_INITIALIZATION_AND_DATA_AUDIT_20260910",
+      "file": "CLEAN_1000_INITIALIZATION_AND_DATA_AUDIT_20260910.json.gz",
+      "source_sha256": "f80d1b728ca9be5fb22b4fa4ef27d3ac76fcb16d337b39399e330f62c00db662",
+      "public_sha256": "12f98a68ffec4dced013904419ba92bb8142207bcf2cdbe623a361f4e4e9040d",
+      "scope": "Earlier 1000-source TRAIN panel with known-SUN routing/protection and token readout; not the current 1050 evaluation cohort or blind autonomous test."
+    },
+    {
+      "name": "CLEAN_1000_S0_COMPLETED_MAIN_20260910",
+      "file": "CLEAN_1000_S0_COMPLETED_MAIN_20260910.json.gz",
+      "source_sha256": "ec92629297688f718430bcfa6049a66c1507b4f9ba096d4ec90d4d862f4e0d6d",
+      "public_sha256": "061060e6fcc110c5192208c3c78b020495e5044fba19e1f33047998893ce943d",
+      "scope": "Earlier 1000-source TRAIN panel with known-SUN routing/protection and token readout; not the current 1050 evaluation cohort or blind autonomous test."
+    },
+    {
+      "name": "CLEAN_1000_S1_COMPLETED_MAIN_20260910",
+      "file": "CLEAN_1000_S1_COMPLETED_MAIN_20260910.json.gz",
+      "source_sha256": "c5bab74f20b480f45799649d68964e1761ca63cc44253ea62960d661c3ea8858",
+      "public_sha256": "be4a2748fb8c4e6976cd550fa27c0f03abb8b14db7abb10273eabb7c43c43a6b",
+      "scope": "Earlier 1000-source TRAIN panel with known-SUN routing/protection and token readout; not the current 1050 evaluation cohort or blind autonomous test."
+    },
+    {
+      "name": "CLEAN_1000_PAUSED_AFTER_S1_20260910",
+      "file": "CLEAN_1000_PAUSED_AFTER_S1_20260910.json.gz",
+      "source_sha256": "5b7fc89986feaa34de713e5b8662e2d0272f734a661792ea1101e6251d9df45d",
+      "public_sha256": "875b528aa265780bede3938caf557bd4f2f746cbd4231690a07815dff5a32526",
+      "scope": "Earlier 1000-source TRAIN panel with known-SUN routing/protection and token readout; not the current 1050 evaluation cohort or blind autonomous test."
+    },
+    {
+      "name": "CLEAN_1000_G1_WEIGHT_UPDATE_20260910",
+      "file": "CLEAN_1000_G1_WEIGHT_UPDATE_20260910.json.gz",
+      "source_sha256": "3b32c6bcb1911d6a0aacd9a8d492d1140386c82e5cc19bcdfa814d7f2c5e3024",
+      "public_sha256": "80c24ac616438edcf80fc166a26fbbf535d9fd977ace4821ac20990c21363b99",
+      "scope": "Earlier 1000-source TRAIN panel with known-SUN routing/protection and token readout; not the current 1050 evaluation cohort or blind autonomous test."
+    },
+    {
+      "name": "CLEAN_1000_E1_WEIGHT_UPDATE_20260910",
+      "file": "CLEAN_1000_E1_WEIGHT_UPDATE_20260910.json.gz",
+      "source_sha256": "c043b3624110500ddfed8acdc3fc97c7f8d57953fca7cc17e9e08eccade33bf5",
+      "public_sha256": "580e1a36ff0afb72cc7eafe16785541d74fe9c47de5298d1a291a00e262222b7",
+      "scope": "Earlier 1000-source TRAIN panel with known-SUN routing/protection and token readout; not the current 1050 evaluation cohort or blind autonomous test."
+    },
+    {
+      "name": "EDITOR_T2T_PRIMARY_RESULT_SUMMARY_20260910",
+      "file": "EDITOR_T2T_PRIMARY_RESULT_SUMMARY_20260910.json.gz",
+      "source_sha256": "6cb3cf9cf5c7ee9ff68f3ebd8db4e9cc43e2cc7179960f728436ca9ee9b78cba",
+      "public_sha256": "8b6f8f56ccbbe8773c15ba9e00697873af84c109e18844d2ee7ef3c2bbf90095",
+      "scope": "Archived editor/ranking development study. Known current-state physical context or privileged scoring may be present; do not treat these gains as autonomous inference evidence. The later autonomous component study documents the corrected input boundary."
+    },
+    {
+      "name": "KEEP_EDIT_FOCUS_FINAL_20260910",
+      "file": "KEEP_EDIT_FOCUS_FINAL_20260910.json.gz",
+      "source_sha256": "b3f6a99bbb70989f1180a830196f14b670f0e2cfe7846e333ecdeb82bcc92365",
+      "public_sha256": "13ac8081f9561f432875a2ba4d46b2eb8e730d2cf7fb735202051a4d6a781c87",
+      "scope": "Archived editor/ranking development study. Known current-state physical context or privileged scoring may be present; do not treat these gains as autonomous inference evidence. The later autonomous component study documents the corrected input boundary."
+    },
+    {
+      "name": "SUN_RANK_SCOPE_FINAL_20260910",
+      "file": "SUN_RANK_SCOPE_FINAL_20260910.json.gz",
+      "source_sha256": "592b0df8b1bcda12aef06bf43e8b2c16c2df313bde16f00d52b769a40fdbc03f",
+      "public_sha256": "ffe5790847c8b7586592997076b2f9890d3d5a627454bf6f6d8c58b5e0d49dd9",
+      "scope": "Archived editor/ranking development study. Known current-state physical context or privileged scoring may be present; do not treat these gains as autonomous inference evidence. The later autonomous component study documents the corrected input boundary."
+    },
+    {
+      "name": "RETAINED_GAIN_IDENTITY_RESULT_20260910",
+      "file": "RETAINED_GAIN_IDENTITY_RESULT_20260910.json.gz",
+      "source_sha256": "ca9902853b8d435a99fa831debf11d95e3fae0d55d0d42c8cf24d7d0be2b9ada",
+      "public_sha256": "514dc3b02a9ac7a429186644518fee406e5628ddc145da7b3ed37bfd5aa002c6",
+      "scope": "Archived editor/ranking development study. Known current-state physical context or privileged scoring may be present; do not treat these gains as autonomous inference evidence. The later autonomous component study documents the corrected input boundary."
+    }
+  ]
+}

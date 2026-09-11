@@ -1,0 +1,49 @@
+{
+  "checkpoint_sha256": "d14ab7c0f093efe64b60a7bcd540bca10e74fb7f46c86108a079af60524659d1",
+  "implementation_sha256": {
+    "physics.py": "eacb05b8e26221ab42d4d1f506da5741fc262fbc2a101a4fc1b6f67dae0a2a20",
+    "physics_core.py": "e84ed7d886d51362809724b4f88d6bd3dfad287d8213459c147fd76ed5efcbc2"
+  },
+  "protocol": {
+    "model": "CHGNet-0.3.0",
+    "optimizer": "FIRE",
+    "relax_cell": true,
+    "ase_filter": "FrechetCellFilter",
+    "fmax": 0.1,
+    "scalar_pressure": 0,
+    "constant_volume": false,
+    "hydrostatic_strain": false,
+    "cell_mask": "all_six",
+    "fire_dt": 0.1,
+    "fire_maxstep": 0.2,
+    "stress_tolerance_GPa": 0.5,
+    "max_steps": 1000,
+    "optimizer_stop": "joint_atomic_force_and_stress_v1"
+  },
+  "geometry": {
+    "minimum_periodic_distance_A": 0.5,
+    "distance_tolerance_A": 1e-08,
+    "minimum_volume_A3": 1e-10,
+    "lattice_basis": "LLL_unimodular",
+    "contact_enumeration": "complete_reciprocal_bound",
+    "max_pair_images": 4000000,
+    "unimodular_rebuild_from_original": true,
+    "numeric_error_budget_A": 1e-09
+  },
+  "verification": {
+    "fresh_terminal_energy": true,
+    "periodic_coordinate_wrap": true,
+    "rigid_fractional_shift": [
+      0.137,
+      0.271,
+      0.419
+    ],
+    "energy_tolerance_eV_atom": 0.001
+  },
+  "packages": {
+    "chgnet": "0.4.2",
+    "ase": "3.28.0",
+    "torch": "2.4.0+cu121",
+    "pymatgen": "2025.6.14"
+  }
+}
