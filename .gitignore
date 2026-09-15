@@ -8,7 +8,7 @@ build/
 dist/
 outputs/
 checkpoints/
-private/
+private/*
 configs/local*.json
 *.log
 .env
@@ -23,3 +23,6 @@ configs/local*.json
 datasets/
 artifacts/
 *.tmp
+
+!private/*.md
+!private/technical_notes_zh.zip

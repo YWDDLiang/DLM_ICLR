@@ -102,6 +102,8 @@ B0 preserves effective batch 16 across single- and dual-process training. Checkp
 
 Defaults follow the retained C1 and one-revision C2 execution, including the fitted risk penalty. Saved Plan presets preserve source order and random seeds. The [reference profile](docs/reference.md) and [release validation](docs/validation.md) record initialization, checkpoint roles and optimization settings. Foundation and task checkpoints are supplied as local assets or produced by the training commands.
 
+Detailed Chinese notes cover each module's scientific task, training and inference, mathematical objectives, implementation and paper foundations: [read the technical notes](private/README_ZH.md) or [download the complete notes](private/technical_notes_zh.zip).
+
 ## Attribution
 
 Continuous refinement follows [CrysLLMGen](https://github.com/kdmsit/crysllmgen), **NeurIPS 2025**, and its DiffCSP components. The language backbone is [LLaDA](https://github.com/ML-GSAI/LLaDA). C1 adapts the tractable structured-output idea studied by [CoDD](https://arxiv.org/abs/2603.00045); C2 draws on remasking from [RemeDi](https://arxiv.org/abs/2509.23653) and finite-support reward weighting motivated by [VIDD](https://arxiv.org/abs/2507.00445). See [references](docs/references.md) and [third-party notices](THIRD_PARTY_NOTICES.md).
