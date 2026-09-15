@@ -1,0 +1,33 @@
+{
+  "dataset": {
+    "name": "mp20",
+    "max_atoms": 20,
+    "splits": {
+      "train": "../datasets/mp20/train.csv",
+      "val": "../datasets/mp20/val.csv",
+      "test": "../datasets/mp20/test.csv"
+    },
+    "fields": {
+      "cif": "cif",
+      "id": "material_id"
+    }
+  },
+  "output": "../outputs/mp20",
+  "models": {
+    "planner_base": "hf:meta-llama/Meta-Llama-3-8B",
+    "planner": "@run/planner/epoch2/final",
+    "dlm": "hf:GSAI-ML/LLaDA-8B-Instruct",
+    "b0": "@run/b0/final",
+    "c1": "@run/c1/best.pt",
+    "diffusion": "@run/diffusion/last.pt",
+    "c2": "@run/c2/light/checkpoint",
+    "value": "@run/c2/value/autonomous_value.pt",
+    "risk": "@run/c2/risk/model.json",
+    "chgnet": ""
+  },
+  "c2": {
+    "training": {
+      "plans": "preset:CLEAN_TRAIN_1000"
+    }
+  }
+}

@@ -1,7 +1,0 @@
-{
-  "train_sources": 1000,
-  "evaluation_sources": 1050,
-  "composition_overlap": 0,
-  "train_sha256": "80b10afcd51c3d532565410b3862cd9b14fd5cebeff24096a20247e8a2f2df29",
-  "evaluation_sha256": "1f2c54327fb880d36d0b6a2d51226465bdd3d169b75cf782651ef3cb84903b58"
-}

@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "Please cite DLM-ICLR and the upstream methods used in your experiment."
+title: "DLM-ICLR: Modular Crystal Diffusion Language Models and Refinement"
+type: software
+authors:
+  - name: "DLM-ICLR contributors"
+version: 0.2.0
+repository-code: "https://github.com/YWDDLiang/DLM_ICLR"
+license: MIT

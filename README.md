@@ -1,174 +1,109 @@
 # DLM-ICLR
 
-Crystal diffusion language models with continuous refinement and learned KEEP/EDIT.
+**Crystal generation with diffusion language models, periodic geometry and conditional refinement.**
 
-The pipeline samples an exact-composition crystal with a diffusion language model (**G**), refines its continuous geometry with CrysLLMGen (**F**, 800 steps), and compares learned edit proposals against keeping that geometry (**E**). The editor uses the Plan, structures, its own model features and a forward-call budget. Physical evaluation supplies offline training targets and is performed after output selection.
-
-**Method and existing data:** [详细框架、方法、实验与演进报告（中文）](docs/FRAMEWORK_AND_EXPERIMENTS_ZH.md)
-· [Results](docs/results.md) · [Experiment data](data/experiments/README.md).
-
-**KEEP/EDIT in depth:** [数据如何构造、各部分如何训练、推理为何选择 KEEP 或 EDIT](docs/KEEP_EDIT_ZH.md),
-including actual candidate scores, continuous-patch examples and positive/negative TRAIN records.
-
-The planned repeated self-improvement experiment was stopped by the user after
-the first completed S1. The published S0/S1 pair has 1050 requests per snapshot:
-
-| Metric | S0 confirmed | S1 confirmed | Unknown in each snapshot |
-|---|---:|---:|---:|
-| Composition valid | 923 | 924 | 0 |
-| Structure valid | 1048 | 1050 | 0 |
-| SUN | 112 | 107 | 29 |
-| MSUN | 560 | 562 | 29 |
-
-These are confirmed counts, not complete point rates for unresolved predicates.
-The pair shows no clear SUN improvement. There is no completed three-run result
-or best-of-three selection. The repository includes all 2100 selected structures
-and scores, paired gains/losses, training exposure, runtime and model identities,
-plus separately scoped component and historical evidence.
-
-Verify the saved data without running a model:
-
-```bash
-python scripts/verify_experiment_data.py
-```
+DLM-ICLR provides a modular pipeline from material composition to evaluated crystal structures. A Llama planner proposes material conditions, a crystal-adapted LLaDA model constructs geometry through a learned periodic output distribution, and CrysLLMGen refines the continuous structure. A geometry-conditioned DLM editor then proposes local changes and performs one additional conditional revision.
 
 ```mermaid
 flowchart LR
-    P[Saved or generated Plan] --> G[Crystal DLM]
-    G --> F[800-step refinement]
-    F --> E[Learned KEEP / EDIT]
-    E --> O[Output structure]
-    O --> M[Offline physical evaluation]
-    M --> R[Evaluation report]
-    M -- TRAIN sources only --> T[TRAIN feedback]
-    T --> U[Update G, E and value model]
+    P[Planner] --> C1[B0 + C1 · Crystal DLM]
+    C1 --> F[Continuous diffusion · 800 steps]
+    F --> PH[MP hull + physical evaluation]
+    PH --> C2[C2 · Conditional editing]
+    C2 --> EV[Direct · SUN · MSUN]
 ```
 
-## Install and configure
+The default workflow preserves F outputs already confirmed as stable, unique and novel. Other outputs enter C2, whose proposals are ranked with a learned relative value and a learned geometric risk score. Physical evaluation supplies the F-stage decision input and evaluates the final outputs.
 
-Use Python 3.10 or later and a CUDA installation compatible with your PyTorch build. The reference environment is recorded in [environment.md](docs/environment.md). Install matching PyTorch and PyG binary packages first, then:
+## Quick start
+
+Use Python 3.10–3.12 and install PyTorch/PyG for your CUDA version; see [installation](docs/installation.md).
 
 ```bash
-python -m pip install -e '.[models,refiner,physics]'
-dlm-iclr config --output configs/local.json
+python -m pip install -e '.[train,refine,physics,direct]'
+dlm config --config configs/mp20.json --output configs/local.json
 ```
 
-Fill in the model and evaluation asset paths in `configs/local.json`. The repository includes the trained 4.2 MB autonomous value head and the actual saved Plan presets. The large B0/editor/refiner checkpoints are external assets; see [assets.md](docs/assets.md) for their formats, provenance and availability. Evaluation additionally uses a CHGNet checkpoint, an official hull-reference cache, and the MP-20 training structures for novelty comparisons.
-
-## Generate crystals
-
-Use the real saved H1A2 Plan sequence:
+Set dataset and model locations in `configs/local.json`. Local directories and Hugging Face identifiers (`hf:owner/model`) are supported. Paths beginning with `@run/` refer to the configured output directory.
 
 ```bash
-bash scripts/run.sh infer --config configs/local.json \
-  --plan-source H1A2_1200 --output outputs/h1a2
+# Prepare all module datasets together
+bash scripts/prepare.sh --config configs/local.json
+
+# Train the complete stack, or pass one module name
+bash scripts/train.sh all --config configs/local.json
+
+# Generate material conditions
+bash scripts/sample.sh planner --config configs/local.json
+
+# Generation → refinement → editing → evaluation
+export MP_API_KEY='YOUR_MATERIALS_PROJECT_API_KEY'
+bash scripts/run.sh --config configs/local.json \
+  --plans outputs/mp20/samples/plans.jsonl
 ```
 
-Choose the first 1050 legal Plans before generation, preserving their order and seeds:
+| Module | Learns | Main artifact | Documentation |
+|---|---|---|---|
+| Planner | Seven-line material conditions with Llama 3 8B | Two-stage LoRA checkpoint | [Planner](docs/modules/planner.md) |
+| B0 | Compact crystal vocabulary with masked denoising | LoRA and trained vocabulary tables | [B0](docs/modules/b0.md) |
+| C1 | Periodic coordinate compatibility from DLM hidden states | Periodic probability head | [C1](docs/modules/c1.md) |
+| Diffusion | Continuous lattice and coordinate denoising | CrysLLMGen diffusion model | [Diffusion](docs/modules/diffusion.md) |
+| C2 | Geometric proposals, relative value and local revision | Editor, value and risk models | [C2](docs/modules/c2.md) |
+| Evaluation | Geometry, stability, novelty and uniqueness | Per-structure and aggregate metrics | [Evaluation](docs/evaluation.md) |
+
+## Change the dataset
+
+CSV, structure JSONL and CIF directories use one adapter. Set split paths and field mappings; the adapter preserves atom blocks, polymorphs and supplied train/validation/test splits.
 
 ```bash
-bash scripts/run.sh infer --config configs/local.json \
-  --plan-source H1A2_1200 --legal-only --requests 1050 \
-  --gpus 1 --output outputs/h1a2-1050 --evaluate
+dlm config --config configs/custom.json --output configs/my-crystals.json
+bash scripts/prepare.sh --config configs/my-crystals.json
+bash scripts/train.sh all --config configs/my-crystals.json
 ```
 
-`--plan-source R03_256` selects the actual R03 preset. A JSONL path supplies custom Plans. `--plan-source generate` invokes the configured H1 Llama Planner and saves its output before crystal generation. Without `--legal-only`, failed Planner entries remain in the request denominator. Failed crystal generation never triggers substitution of another Plan.
+The default vocabulary represents 1–20 atoms, atomic numbers 1–94, fractional coordinates at 0.01 resolution, lengths at 0.1 Å and angles at 1°. [Data interfaces](docs/data.md) describe source fields, prepared records and model assets.
 
-The same command runs inside a Slurm allocation:
+## Run individual stages
 
 ```bash
-sbatch --partition YOUR_PARTITION --gres=gpu:5 --cpus-per-task=20 \
-  scripts/run.sbatch infer --config configs/local.json \
-  --plan-source H1A2_1200 --legal-only --requests 1050 \
-  --gpus 5 --output outputs/h1a2-1050 --evaluate
+bash scripts/train.sh c2 --stage warmup --config configs/local.json
+bash scripts/sample.sh c1 --plans H1A2_1050 --config configs/local.json
+bash scripts/sample.sh diffusion --config configs/local.json
+bash scripts/query_hull.sh --config configs/local.json \
+  --structures outputs/mp20/samples/refined.jsonl
+bash scripts/evaluate.sh sun --config configs/local.json \
+  --structures outputs/mp20/samples/refined.jsonl \
+  --output outputs/mp20/samples/evaluation/refined
+bash scripts/sample.sh c2 --config configs/local.json
+bash scripts/evaluate.sh direct --config configs/local.json \
+  --structures outputs/mp20/samples/edited.jsonl \
+  --output outputs/mp20/samples/evaluation/direct
 ```
 
-Output includes `structures.jsonl`, the selected Plan list, individual G/F/E records, candidate choices and actual forward counts. A repeated command resumes completed inference records in the same output directory when its inputs and settings match. [Usage](docs/usage.md) explains the Python interface, data preparation and execution options.
+`dlm run` connects these stages. Use `--from-stage` and `--to-stage` for a segment. Numerical modules are also ordinary Python APIs.
 
-## Evaluate saved outputs
+## Configure compute
 
-Direct evaluation supports the full generation metric set and a fast option
-that computes only `comp_valid` and `struct_valid`:
+Independent requests run in separate workers. C2 batches model queries, F reuses fixed graph topology, and physics and structural matching share caches.
 
 ```bash
-python -m pip install -e '.[direct]'
+bash scripts/run.sh --config configs/local.json --plans H1A2_1050 \
+  --set 'runtime.devices=["cuda:0","cuda:1"]' \
+  --set runtime.refine_workers_per_device=8 \
+  --set runtime.physics_workers_per_device=8
 
-# Full Direct: validity, density/element-count Wasserstein distances, COV recall/precision
-dlm-iclr evaluate-direct --run outputs/h1a2-1050 \
-  --reference /data/mp20/test.csv --workers 8
-
-# Only composition and structure validity; no reference, fingerprints, models or GPU
-dlm-iclr evaluate-direct --run outputs/h1a2-1050 --metrics comp_struct
+torchrun --standalone --nproc_per_node=2 -m dlm_iclr train b0 \
+  --config configs/local.json
 ```
 
-For the fast option alone, `pip install -e '.[validity]'` is sufficient. Full
-Direct is the default; `--metrics full` can also select it explicitly. Both
-modes retain every requested row and use the same two basic validity checks.
+B0 preserves effective batch 16 across single- and dual-process training. Checkpoints retain best and last states; completed stages can be reused with `--resume`. [Configuration](docs/configuration.md) lists settings and outputs.
 
-SUN and MSUN use the existing physical evaluator and directed novelty/uniqueness:
+## Reproducibility
 
-```bash
-dlm-iclr evaluate-sun --config configs/local.json \
-  --run outputs/h1a2-1050 --gpus 5 --physics-workers 4 --nu-workers 4
-```
-
-`evaluate` remains an alias for `evaluate-sun`. Use `--labels` to reuse saved
-geometry-bound physical labels without running CHGNet again. Both commands also
-accept `--structures FILE.jsonl --output DIRECTORY`. [Evaluation](docs/evaluation.md)
-documents all metrics, dependencies, CPU execution, caches, input formats and
-the explicit unknown/count-bound reporting policy.
-
-## Offline training and optional self-improvement research
-
-The retained training commands reproduce the experimental update mechanism.
-Repeated self-improvement is not presented as an established quality gain;
-the completed experiment was cancelled after S1 because of runtime cost.
-
-Convert MP-20 or another CIF dataset, then exclude all evaluation compositions:
-
-```bash
-dlm-iclr prepare-data --source /data/mp20/train.csv \
-  --dataset mp20 --split train --output outputs/data/train.jsonl
-dlm-iclr prepare-train --source outputs/data/train.jsonl \
-  --exclude outputs/evaluation-plans.jsonl --output outputs/data/clean-train.jsonl
-```
-
-The adapter accepts CSV with a `cif` column, JSONL with `cif` or `structure`, and directories of CIF files. MP-20 is the evaluated dataset; support for these common formats does not imply benchmark validation on other datasets. The retained representation supports 1–20 sites and atomic numbers up to 94 (Pu).
-
-The optional command for fixed-Plan evaluation and three offline training rounds is:
-
-```bash
-bash scripts/run.sh self-improve --config configs/local.json \
-  --training-plans outputs/data/clean-train.jsonl --rounds 3 \
-  --plan-source H1A2_1200 --legal-only --requests 1050 \
-  --gpus 5 --output outputs/self-improvement
-```
-
-The command records S0 and S1–S3, trains only from the separate TRAIN sources, and completes the specified number of rounds. G uses conditional preferences, E uses real minibatch content and decision updates with consistent atom permutations, and the value model learns candidate-minus-current values. KL is a soft regularizer. [Method](docs/method.md) gives the objectives and retained defaults; [results](docs/results.md) separates completed component evidence from full-pipeline results.
-
-For the included clean set of synthetic Planner-generated TRAIN conditions, use `--training-plans CLEAN_TRAIN_1000`. Missing physical references remain explicit unknowns with count bounds; they do not remove requests from evaluation.
-
-For an individual update using previously compiled feedback:
-
-```bash
-bash scripts/train.sh E --config configs/local.json \
-  --data outputs/self-improvement/round_1/train/feedback/E.jsonl \
-  --output outputs/editor-update
-```
-
-## Code map
-
-| Location | Responsibility |
-|---|---|
-| `src/dlm_iclr` | Public APIs, data adapters, pipeline, training and evaluation |
-| `src/crystal_dlm` | Token representation, periodic geometry and model modules |
-| `src/dlm_iclr/_vendor/crysllmgen` | Required CrysLLMGen numerical components |
-| `scripts` | Thin shell and Slurm entry points using the same CLI |
-| `tests` | Source selection, numerical invariants and model integration checks |
-| `docs` | Method, environment, assets and results |
-
-[Release validation](docs/validation.md) records model-output parity, checkpoint reloads, source invariants, and a complete small training loop.
+Defaults follow the retained C1 and one-revision C2 execution, including the fitted risk penalty. Saved Plan presets preserve source order and random seeds. The [reference profile](docs/reference.md) and [release validation](docs/validation.md) record initialization, checkpoint roles and optimization settings. Foundation and task checkpoints are supplied as local assets or produced by the training commands.
 
 ## Attribution
 
-This work builds on [LLaDA](https://github.com/ML-GSAI/LLaDA), [CrysLLMGen](https://github.com/kdmsit/crysllmgen), [DiffCSP](https://github.com/jiaor17/DiffCSP), [CHGNet](https://github.com/CederGroupHub/chgnet), and [pymatgen](https://github.com/materialsproject/pymatgen). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for retained notices and source attribution. Original project code is distributed under the MIT license; external datasets and model assets retain their own terms.
+Continuous refinement follows [CrysLLMGen](https://github.com/kdmsit/crysllmgen), **NeurIPS 2025**, and its DiffCSP components. The language backbone is [LLaDA](https://github.com/ML-GSAI/LLaDA). C1 adapts the tractable structured-output idea studied by [CoDD](https://arxiv.org/abs/2603.00045); C2 draws on remasking from [RemeDi](https://arxiv.org/abs/2509.23653) and finite-support reward weighting motivated by [VIDD](https://arxiv.org/abs/2507.00445). See [references](docs/references.md) and [third-party notices](THIRD_PARTY_NOTICES.md).
+
+Original project code uses the [MIT license](LICENSE). Model and dataset terms follow their providers.

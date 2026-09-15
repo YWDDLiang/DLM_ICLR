@@ -16,3 +16,10 @@ configs/local*.json
 *.pth
 *.tar
 *.zip
+*.tar.gz
+*.pt
+*.npz
+*.npy
+datasets/
+artifacts/
+*.tmp

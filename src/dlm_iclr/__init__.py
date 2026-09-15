@@ -1,3 +1,3 @@
-"""Reusable crystal generation, refinement, editing and self-improvement."""
+"""Modular crystal diffusion language models and refinement."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

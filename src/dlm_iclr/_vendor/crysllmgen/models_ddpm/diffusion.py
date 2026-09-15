@@ -121,7 +121,7 @@ class CSPDiffusion(nn.Module):
         return loss, loss_lattice, loss_coord
 
     @torch.no_grad()
-    def sample(self, batch, step_lr=1e-5, diff_steps=1000):
+    def sample(self, batch, step_lr=1e-5, diff_steps=1000, *, reuse_fixed_geometry=False):
         batch_size = batch.num_graphs
 
         # CrysLLMGen
@@ -139,6 +139,15 @@ class CSPDiffusion(nn.Module):
 
         # time_start = self.beta_scheduler.timesteps
         time_start = diff_steps
+        static_graph = None
+        if reuse_fixed_geometry:
+            if self.decoder.edge_style != "fc":
+                raise ValueError("Fixed topology reuse requires the fc decoder")
+            edges, _ = self.decoder.gen_edges(batch.num_atoms, x_T, l_T, batch.batch)
+            static_graph = (edges, batch.batch[edges[0]])
+        decoder_options = (
+            {"static_graph": static_graph, "reuse_invariants": True} if reuse_fixed_geometry else {}
+        )
 
         traj = {
             time_start: {
@@ -182,7 +191,9 @@ class CSPDiffusion(nn.Module):
             step_size = step_lr * (sigma_x / self.sigma_scheduler.sigma_begin) ** 2
             std_x = torch.sqrt(2 * step_size)
 
-            pred_l, pred_x = self.decoder(time_emb, batch.atom_types, x_t, l_t, batch.num_atoms, batch.batch)
+            pred_l, pred_x = self.decoder(
+                time_emb, batch.atom_types, x_t, l_t, batch.num_atoms, batch.batch, **decoder_options
+            )
 
             pred_x = pred_x * torch.sqrt(sigma_norm)
 
@@ -199,7 +210,13 @@ class CSPDiffusion(nn.Module):
             std_x = torch.sqrt((adjacent_sigma_x**2 * (sigma_x**2 - adjacent_sigma_x**2)) / (sigma_x**2))
 
             pred_l, pred_x = self.decoder(
-                time_emb, batch.atom_types, x_t_minus_05, l_t_minus_05, batch.num_atoms, batch.batch
+                time_emb,
+                batch.atom_types,
+                x_t_minus_05,
+                l_t_minus_05,
+                batch.num_atoms,
+                batch.batch,
+                **decoder_options,
             )
 
             pred_x = pred_x * torch.sqrt(sigma_norm)

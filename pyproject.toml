@@ -4,28 +4,34 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dlm-iclr"
-version = "0.1.0"
-description = "Crystal diffusion language models with continuous refinement and learned KEEP/EDIT"
+version = "0.2.0"
+description = "Modular crystal generation, periodic diffusion language models and physical refinement"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["numpy>=1.24"]
+license = {text = "MIT"}
+dependencies = ["numpy>=1.26,<2"]
 
 [project.optional-dependencies]
-validity = ["pymatgen>=2024.7", "smact>=2.6", "ase>=3.23"]
-direct = ["pymatgen>=2024.7", "smact>=2.6", "ase>=3.23", "scipy>=1.10", "matminer>=0.9.3,<0.10"]
-models = ["torch>=2.4", "transformers>=4.54,<5", "peft>=0.16", "safetensors>=0.5", "accelerate>=0.33", "pymatgen>=2024.7"]
-refiner = ["torch>=2.4", "torch-geometric>=1.7.2,<3", "torch-scatter>=2.1", "einops>=0.8", "tqdm>=4.66", "pymatgen>=2024.7"]
-physics = ["chgnet>=0.4.2,<0.5", "ase>=3.23", "pymatgen>=2024.7", "smact>=2.6"]
-dev = ["pytest>=8", "ruff>=0.6"]
+data = ["pymatgen==2025.6.14", "smact==3.1.0", "transformers==4.54.0", "torch>=2.4", "ase>=3.23"]
+train = ["torch>=2.4", "transformers==4.54.0", "peft==0.16.0", "accelerate>=0.33", "safetensors>=0.5", "pymatgen==2025.6.14", "smact==3.1.0", "ase>=3.23", "tqdm>=4.66", "scikit-learn>=1.4"]
+refine = ["torch>=2.4", "torch-geometric>=1.7.2,<3", "torch-scatter>=2.1", "einops>=0.8", "tqdm>=4.66", "pymatgen==2025.6.14"]
+physics = ["chgnet==0.4.2", "ase==3.28.0", "pymatgen==2025.6.14", "smact==3.1.0", "mp-api>=0.45"]
+direct = ["pymatgen==2025.6.14", "smact==3.1.0", "ase>=3.23", "scipy>=1.10", "matminer>=0.9.3,<0.10"]
+dev = ["pytest>=8", "ruff>=0.6", "build>=1.2"]
 
 [project.scripts]
+dlm = "dlm_iclr.cli:main"
 dlm-iclr = "dlm_iclr.cli:main"
+
+[project.urls]
+Repository = "https://github.com/YWDDLiang/DLM_ICLR"
+Documentation = "https://github.com/YWDDLiang/DLM_ICLR/tree/main/docs"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-dlm_iclr = ["data/plans/*.jsonl", "data/plans/*.json", "data/training/*.jsonl", "assets/*.pt", "assets/*.json", "_vendor/crysllmgen/LICENSE"]
+dlm_iclr = ["defaults.json", "data/presets/plans/*.jsonl", "data/presets/plans/*.json", "data/presets/training/*.jsonl", "_vendor/crysllmgen/LICENSE"]
 
 [tool.ruff]
 target-version = "py310"
@@ -33,3 +39,7 @@ line-length = 110
 
 [tool.ruff.lint]
 select = ["E9", "F63", "F7", "F82"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

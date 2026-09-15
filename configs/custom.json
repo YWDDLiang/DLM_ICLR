@@ -1,0 +1,21 @@
+{
+  "output": "../outputs/my-crystals",
+  "dataset": {
+    "name": "my-crystals",
+    "splits": {
+      "train": "../datasets/my-crystals/train.csv",
+      "val": "../datasets/my-crystals/val.csv",
+      "test": "../datasets/my-crystals/test.csv"
+    },
+    "fields": {
+      "cif": "cif_text",
+      "id": "crystal_id"
+    }
+  },
+  "evaluation": {
+    "coverage_cutoffs": [
+      0.4,
+      10.0
+    ]
+  }
+}

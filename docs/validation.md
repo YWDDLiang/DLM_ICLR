@@ -1,58 +1,12 @@
 # Release validation
 
-The release was exercised with the actual model assets in the environment described in [environment.md](environment.md). Machine-readable results are in [validation.json](validation.json).
+Validation targets the moved numerical kernels and public interfaces:
 
-The extracted G implementation reproduced all token outputs for four fixed H1A2 requests. E reproduced the proposal tokens, forward counts and 8192-dimensional value features for 16 fixed inputs with eight candidate streams each. A file-access check confirmed that E did not read physical-label inputs during selection. F reproduced the 800-step output exactly for the matching-seed fixture. Eight independent F processes on one GPU preserved that fixture's output and improved aggregate throughput; the timing is a single-fixture execution benchmark.
+- Ten numerical/interface checks cover tree partition functions, marginals and gradients; risk tilting and KL budget; response masking; continuous patching; data mappings; MP subsystem caching; and all-request metrics.
+- Real MP-20 preparation was compared on 8 TRAIN, 4 VAL and 4 TEST rows using the actual tokenizers. Planner prompts/answers and B0 prompts/answers matched the existing prepared records.
+- The retained C1 checkpoint, 8192-input value model and 13-feature risk model loaded through the new modules. Eight recorded risk scores were reproduced with zero absolute difference.
+- Full Direct, including fingerprints and coverage, ran on a saved crystal/reference fixture.
+- The supplied diffusion weights ran a real-crystal forward/backward pass with finite gradients and a one-step sampling check. CHGNet ran a one-step CPU relaxation through the moved evaluator; the shortened check retained its nonconverged status.
+- Wheel packaging, the installed CLI, shell syntax and local documentation links were checked.
 
-After real G and E updates, saving and loading the compact checkpoints preserved G logits and E logits plus all four decision-head outputs bitwise. The exported G and E checkpoints were approximately 2.18 GB and 2.21 GB respectively, with their required input/output tables retained.
-
-A complete engineering run used 16 TRAIN conditions and four separate evaluation requests. It generated and physically evaluated TRAIN candidates, independently evaluated full-token G teachers, compiled feedback, updated G and E, fitted a value model with the updated E features, and completed S1 inference and evaluation. G performed three optimizer updates on 10 sources; E performed four content and decision updates on 15 sources; the value model performed eight updates on 120 rows from 15 sources, visiting every row twice. All three models had nonzero parameter changes. One TRAIN condition lacked a Yb reference and did not provide a reliable stability target.
-
-This integration run intentionally used one actor epoch and two value epochs. Both four-request snapshots had SUN 0 and MSUN 3. It establishes that the complete workflow runs; it is not evidence of scientific improvement or a substitute for the formal experiments.
-
-All 20 unit tests passed without skips in the reference environment. They include exact Plan selection and seed preservation, TRAIN exclusions, continuous KEEP and local-coordinate preservation, consistent atom permutations, missing reference coverage, unknown metric bounds and portable value-model loading. CIF-directory, CIF-CSV and structure-JSONL imports were also exercised with preserved source splits and explicit out-of-representation failures.
-
-## Standalone evaluation addition
-
-All 28 tests pass without skips after adding the Direct and SUN/MSUN command
-interfaces. The additional CPU validation used Python 3.12 on Windows with
-UTF-8 enabled, PyTorch 2.4.0 CPU, and the NumPy/SciPy/pymatgen/SMACT/matminer/ASE
-versions recorded in [direct_upstream_parity.json](validation/direct_upstream_parity.json).
-
-The eight new tests cover a validity-only command with full-evaluator/model
-imports blocked, consistency of basic validity between modes, all-request
-coverage precision, cached fingerprints, undefined empty-set Wasserstein
-distances, the upstream independent-nearest-neighbor coverage definition,
-spawned CPU fingerprint workers, preserved legacy failure rows, and SUN/MSUN
-label reuse with wrong-geometry/order rejection and explicit missing-reference
-bounds. The SUN reuse test also blocks PyTorch and CHGNet imports.
-
-An independent synthetic fixture containing six generated structures and four
-references compared all seven Direct metrics against unchanged `Crystal`,
-`GenEval`, `StandardScaler`, `filter_fps`, and `compute_cov` definitions extracted
-from the retained CrysLLMGen source. Every metric matched exactly at upstream
-reporting precision; the fast mode matched both basic validity metrics. The
-fixture contains four compositions, a duplicate, and an atom-overlap case.
-Its values and source hashes are in the linked JSON record. This validates
-metric implementation and command behavior; it is separate from the formal
-three-run experiment and the previously completed GPU relaxation validation.
-
-## Publication of existing experiments
-
-The data audit in `scripts/verify_experiment_data.py` checks 54 published files,
-2100 generated-structure/score bindings, 1050 paired requests, counts and missing
-label bounds, runtime budgets, source exposure, and two actual KEEP/EDIT choices.
-It verifies continuous KEEP and preservation of unmodified coordinate fields in
-the saved EDIT example. The E exposure audit distinguishes 445 content-supervised
-sources from 972 decision-supervised sources, with eight actual visits each.
-
-The historical projection contains 57 result rows with 15 source capsules, plus
-10 separately labelled earlier development receipts. Source hashes and published
-hashes are recorded where infrastructure paths or serialization changed.
-Documentation links and decoded public metadata were checked for missing local
-targets and private infrastructure paths. Data files use exact-byte Git handling
-so platform line-ending conversion does not invalidate their manifest hashes.
-
-This audit replays saved data and decisions; it does not rerun G/F/E experiments
-or CHGNet relaxation. The original three-by-three experiment remains cancelled
-after its completed S0/S1 pair. The new audit is also part of GitHub CI.
+Run portable checks with `python -m pytest -q`. The reference 1050 experiment supplies artifact provenance and default settings; a new full training or generation run produces its own outputs and measurements.

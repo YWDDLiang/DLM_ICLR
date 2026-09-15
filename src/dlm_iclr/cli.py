@@ -1,296 +1,142 @@
-"""Command-line entry points; heavy model imports occur only in model commands."""
+"""Command-line entry to the same Python module APIs used in training and inference."""
 
-from __future__ import annotations
 import argparse
 import json
 import os
 from pathlib import Path
-from .config import Config, load_config
-from .io import read_rows, write_rows, write_json
+from .runtime.config import load, run_root, asset, backend_config, path
+from .runtime.io import read_rows, write_json
 
 
 def parser():
-    command = argparse.ArgumentParser(
-        prog="dlm-iclr", description="Crystal generation, refinement and autonomous KEEP/EDIT"
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--config", type=Path)
+    common.add_argument("--set", dest="overrides", action="append", default=[], metavar="SECTION.KEY=VALUE")
+    main = argparse.ArgumentParser(
+        prog="dlm", description="Crystal generation, refinement and physical evaluation"
     )
-    commands = command.add_subparsers(dest="command", required=True)
-    config = commands.add_parser(
-        "config", help="Write an editable configuration with the retained default hyperparameters"
+    commands = main.add_subparsers(dest="command", required=True)
+    p = commands.add_parser("config", parents=[common], help="Write a portable configuration")
+    p.add_argument("--output", type=Path, default=Path("configs/local.json"))
+    commands.add_parser("prepare", parents=[common], help="Prepare all module datasets from crystal sources")
+    p = commands.add_parser("train", parents=[common], help="Train a module or the full stack")
+    p.add_argument("module", choices=["planner", "b0", "c1", "diffusion", "c2", "all"])
+    p.add_argument("--device", default=None)
+    p.add_argument("--resume", action="store_true")
+    p.add_argument(
+        "--stage", choices=["warmup", "collect", "label", "compile", "editor", "light", "value", "risk"]
     )
-    config.add_argument("--output", type=Path, required=True)
-    plans = commands.add_parser("plans", help="Export a real Plan preset or sample fresh Plans")
-    plans.add_argument("source", help="H1A2_1200, R03_256, a JSONL path, or generate")
-    plans.add_argument("--output", type=Path, required=True)
-    plans.add_argument("--config", type=Path)
-    plans.add_argument("--requests", type=int)
-    plans.add_argument("--seed", type=int, default=17)
-    plans.add_argument("--legal-only", action="store_true")
-    plans.add_argument("--device", default="cuda:0")
-    plans.add_argument("--usage-role", choices=("train", "evaluation"), default="evaluation")
-    dataset = commands.add_parser(
-        "prepare-data", help="Convert MP-20 or another CIF dataset to the common representation"
+    p = commands.add_parser("sample", parents=[common], help="Sample one stage")
+    p.add_argument("module", choices=["planner", "c1", "diffusion", "c2"])
+    p.add_argument("--plans")
+    p.add_argument("--output", type=Path)
+    p.add_argument("--device", default=None)
+    p = commands.add_parser(
+        "run", parents=[common], help="Plan -> raw -> refinement -> physics -> editing -> metrics"
     )
-    dataset.add_argument("--source", type=Path, required=True)
-    dataset.add_argument("--output", type=Path, required=True)
-    dataset.add_argument("--dataset", default="mp20")
-    dataset.add_argument("--split", choices=("train", "val", "test", "unspecified"), default="train")
-    train_data = commands.add_parser(
-        "prepare-train", help="Deduplicate training compositions and exclude evaluation sources"
+    p.add_argument("--plans", required=True)
+    p.add_argument("--output", type=Path)
+    p.add_argument(
+        "--from-stage", default="c1", choices=["c1", "diffusion", "hull", "physics", "c2", "evaluate"]
     )
-    train_data.add_argument("--source", required=True)
-    train_data.add_argument("--output", type=Path, required=True)
-    train_data.add_argument("--exclude", action="append", default=[])
-    train_data.add_argument("--limit", type=int)
-    for name in ("infer", "self-improve"):
-        run = commands.add_parser(
-            name,
-            help="Run G -> F -> E"
-            if name == "infer"
-            else "Run fixed-Plan evaluation and offline training rounds",
-        )
-        run.add_argument("--config", type=Path, required=True)
-        run.add_argument("--output", type=Path, required=True)
-        run.add_argument("--plan-source")
-        run.add_argument("--requests", type=int)
-        run.add_argument("--legal-only", action=argparse.BooleanOptionalAction, default=None)
-        run.add_argument("--gpus", type=int, default=1)
-        run.add_argument("--refiner-workers", type=int, default=1)
-        run.add_argument("--physics-workers", type=int, default=4)
-        run.add_argument("--nu-workers", type=int, default=4)
-        if name == "infer":
-            run.add_argument(
-                "--evaluate", action="store_true", help="Evaluate after all output choices are complete"
-            )
-        else:
-            run.add_argument("--rounds", type=int)
-            run.add_argument("--training-plans")
-            run.add_argument("--training-seed", type=int)
-    direct = commands.add_parser("evaluate-direct", help="Full Direct metrics or fast comp/struct validity")
-    direct_input = direct.add_mutually_exclusive_group(required=True)
-    direct_input.add_argument("--run", type=Path, help="Inference directory containing structures.jsonl")
-    direct_input.add_argument(
-        "--structures", type=Path, help="Saved generation JSONL, including failed requests"
+    p.add_argument(
+        "--to-stage", default="evaluate", choices=["c1", "diffusion", "hull", "physics", "c2", "evaluate"]
     )
-    direct.add_argument("--output", type=Path)
-    direct.add_argument("--metrics", choices=("full", "comp_struct"), default="full")
-    direct.add_argument("--reference", type=Path, help="Held-out CIF CSV or structure JSONL for full Direct")
-    direct.add_argument("--dataset", choices=("mp20", "carbon", "perovskite"), default="mp20")
-    direct.add_argument("--workers", type=int, default=1, help="CPU fingerprint workers (full mode only)")
-    direct.add_argument("--cache", type=Path)
-    evaluation = commands.add_parser(
-        "evaluate",
-        aliases=["evaluate-sun"],
-        help="SUN and MSUN on saved selected structures",
-    )
-    evaluation.add_argument("--config", type=Path, required=True)
-    evaluation_input = evaluation.add_mutually_exclusive_group(required=True)
-    evaluation_input.add_argument("--run", type=Path, help="Inference directory containing structures.jsonl")
-    evaluation_input.add_argument(
-        "--structures", type=Path, help="Saved generation JSONL, including failed requests"
-    )
-    evaluation.add_argument("--output", type=Path)
-    evaluation.add_argument(
-        "--labels", type=Path, help="Reuse matching physics/labels.jsonl without relaxation"
-    )
-    evaluation.add_argument("--cache", type=Path)
-    evaluation.add_argument("--gpus", type=int, default=1, help="Number of GPUs; 0 uses CPU")
-    evaluation.add_argument("--physics-workers", type=int, default=4)
-    evaluation.add_argument("--nu-workers", type=int, default=4)
-    training = commands.add_parser(
-        "train", help="Train an actor or autonomous value model from compiled TRAIN feedback"
-    )
-    training.add_argument("branch", choices=("G", "E", "value"))
-    training.add_argument("--config", type=Path, required=True)
-    training.add_argument("--data", type=Path, required=True)
-    training.add_argument("--output", type=Path, required=True)
-    training.add_argument("--checkpoint")
-    training.add_argument("--device", default="cuda:0")
-    worker = commands.add_parser("worker", help="Run one inference stage on a device")
-    worker.add_argument("stage", choices=("G", "F", "E"))
-    worker.add_argument("--config", type=Path, required=True)
-    worker.add_argument("--plans", type=Path, required=True)
-    worker.add_argument("--output", type=Path, required=True)
-    worker.add_argument("--rank", type=int, default=0)
-    worker.add_argument("--world", type=int, default=1)
-    worker.add_argument("--device", default="cuda:0")
-    return command
+    p = commands.add_parser("hull", parents=[common], help="Query Materials Project competitor energies")
+    p.add_argument("--structures", type=Path, required=True)
+    p.add_argument("--output", type=Path)
+    p.add_argument("--api-key-file", type=Path)
+    p = commands.add_parser("evaluate", parents=[common], help="Evaluate saved crystal records")
+    p.add_argument("metrics", choices=["direct", "sun"])
+    p.add_argument("--structures", type=Path, required=True)
+    p.add_argument("--output", type=Path, required=True)
+    p.add_argument("--labels", type=Path)
+    p.add_argument("--full", action="store_true")
+    p.add_argument("--reference", type=Path)
+    return main
 
 
 def main(argv=None):
-    command = parser()
-    args = command.parse_args(argv)
+    args = parser().parse_args(argv)
+    config = load(args.config, args.overrides)
+    if hasattr(args, "device"):
+        args.device = args.device or config["runtime"]["devices"][0]
     if args.command == "config":
-        write_json(args.output, Config().to_dict())
-    elif args.command == "plans":
-        if args.source == "generate":
-            if not args.config:
-                command.error("plans generate requires --config")
-            from .execution import setup_device
-            from .planner import generate_plans
+        config.pop("_config_dir", None)
+        write_json(args.output, config)
+        result = {"config": str(args.output)}
+    elif args.command == "prepare":
+        from .data.adapters import prepare
 
-            generate_plans(
-                load_config(args.config).assets,
-                args.output,
-                requests=args.requests or 1200,
-                seed=args.seed,
-                device=setup_device(args.device),
-                usage_role=args.usage_role,
-            )
-        else:
-            from .plans import load_plans
-
-            rows, report = load_plans(
-                args.source, requests=args.requests, legal_only=args.legal_only, seed=args.seed
-            )
-            write_rows(args.output, rows)
-            write_json(args.output.with_suffix(".selection.json"), report)
-            print(json.dumps(report), flush=True)
-    elif args.command == "prepare-data":
-        from .datasets import convert_dataset
-
-        print(
-            json.dumps(convert_dataset(args.source, args.output, dataset=args.dataset, split=args.split)),
-            flush=True,
-        )
-    elif args.command == "prepare-train":
-        from .plans import prepare_training, PRESETS
-
-        report = prepare_training(
-            args.source, args.output, exclusions=[*PRESETS, *args.exclude], limit=args.limit
-        )
-        print(json.dumps({key: value for key, value in report.items() if key != "omitted"}), flush=True)
-    elif args.command in ("evaluate-direct", "evaluate", "evaluate-sun"):
-        if args.structures and args.output is None:
-            command.error("--structures requires --output")
-        source = args.structures or args.run / "structures.jsonl"
-        if args.command == "evaluate-direct":
-            from .direct import evaluate_direct
-            from .evaluation_inputs import load_records
-
-            if args.metrics == "full" and args.reference is None:
-                command.error("Full Direct requires --reference; use --metrics comp_struct for validity only")
-            if args.workers < 1:
-                command.error("--workers must be positive")
-            output = args.output or args.run / "evaluation/direct" / args.metrics
-            _, report = evaluate_direct(
-                load_records(source),
-                output,
-                metrics=args.metrics,
-                reference=args.reference,
-                dataset=args.dataset,
-                workers=args.workers,
-                cache=args.cache,
-            )
-            from .io import file_hash
-
-            report["input_sha256"] = file_hash(source)
-            write_json(output / "summary.json", report)
-        else:
-            from .evaluation import evaluate_sun
-
-            if args.gpus < 0 or args.physics_workers < 1 or not 1 <= args.nu_workers <= 64:
-                command.error(
-                    "--gpus must be nonnegative, --physics-workers positive, and --nu-workers 1..64"
-                )
-            output = args.output or args.run / "evaluation"
-            _, report = evaluate_sun(
-                load_config(args.config),
-                source,
-                output,
-                labels=args.labels,
-                devices=[f"cuda:{i}" for i in range(args.gpus)] or ["cpu"],
-                workers_per_device=args.physics_workers,
-                nu_workers=args.nu_workers,
-                cache=args.cache or (args.run.parent / "cache" if args.run else None),
-            )
-        print(json.dumps(report["metrics"]), flush=True)
-    elif args.command == "worker":
-        from .execution import inference_worker
-
-        inference_worker(
-            args.stage,
-            args.config,
-            args.plans,
-            args.output,
-            rank=args.rank,
-            world=args.world,
-            device=args.device,
-        )
+        result = prepare(config)
     elif args.command == "train":
-        from .execution import setup_device
-
-        world = int(os.environ.get("WORLD_SIZE", "1"))
-        device = setup_device(f"cuda:{os.environ['LOCAL_RANK']}" if world > 1 else args.device)
-        import torch.distributed as dist
-
-        if world > 1:
-            if args.branch == "value":
-                command.error("Value readout training uses a single device")
-            dist.init_process_group("nccl" if device.type == "cuda" else "gloo")
-        try:
-            if args.branch == "value":
-                from .value_training import train_value
-
-                train_value(
-                    load_config(args.config),
-                    args.data,
-                    args.output,
-                    editor_checkpoint=args.checkpoint,
-                    device=device,
-                )
-            else:
-                from .training import train_actor
-
-                train_actor(
-                    args.branch,
-                    load_config(args.config),
-                    args.data,
-                    args.output,
-                    checkpoint=args.checkpoint,
-                    device=device,
-                )
-        finally:
-            if dist.is_initialized():
-                dist.destroy_process_group()
-    else:
-        from .execution import setup_device
-        from .pipeline import run_inference, evaluate_output, self_improve
-
-        config = load_config(args.config)
-        if args.gpus < 1:
-            command.error("--gpus must be positive")
-        devices = [f"cuda:{i}" for i in range(args.gpus)]
-        setup_device(devices[0])
-        for name in ("plan_source", "requests", "legal_only"):
-            value = getattr(args, name)
-            if value is not None:
-                setattr(config.inference, name, value)
-        if args.command == "self-improve":
-            for name, destination in (
-                ("rounds", "rounds"),
-                ("training_plans", "plans"),
-                ("training_seed", "seed"),
-            ):
-                value = getattr(args, name)
-                if value is not None:
-                    setattr(config.training, destination, value)
-            self_improve(
-                config,
-                args.output,
-                devices=devices,
-                refiner_workers=args.refiner_workers,
-                workers_per_device=args.physics_workers,
-                nu_workers=args.nu_workers,
+        if int(os.environ.get("WORLD_SIZE", "1")) > 1 and args.module != "b0":
+            raise ValueError(
+                "torchrun is supported by B0; use independent workers for sampling and evaluation"
             )
-        else:
-            run_inference(config, args.output, devices=devices, refiner_workers=args.refiner_workers)
-            if args.evaluate:
-                _, report = evaluate_output(
-                    config,
-                    args.output,
-                    devices=devices,
-                    workers_per_device=args.physics_workers,
-                    nu_workers=args.nu_workers,
-                    cache=args.output.parent / "cache",
+        import importlib
+
+        modules = ["planner", "b0", "c1", "diffusion", "c2"] if args.module == "all" else [args.module]
+        result = {}
+        for module in modules:
+            implementation = importlib.import_module(
+                f"dlm_iclr.{module}." + ("workflow" if module in ("planner", "c2") else "trainer")
+            )
+            kwargs = {"resume": args.resume}
+            kwargs["device"] = args.device
+            if module == "c2":
+                kwargs["only"] = args.stage
+            result[module] = implementation.train(config, **kwargs)
+    elif args.command == "sample":
+        if args.module == "planner":
+            from .planner.sampling import generate_plans
+
+            output = args.output or run_root(config) / "samples/plans.jsonl"
+            result = {
+                "plans": str(
+                    generate_plans(
+                        backend_config(config).assets,
+                        output,
+                        device=args.device,
+                        **config["planner"]["sampling"],
+                    )
                 )
-                print(json.dumps(report["counts"]), flush=True)
+            }
+        else:
+            from .runtime.pipeline import sample
+
+            result = sample(config, args.module, plans=args.plans, output=args.output)
+    elif args.command == "run":
+        from .runtime.pipeline import run
+
+        result = run(config, args.plans, output=args.output, start=args.from_stage, end=args.to_stage)
+    elif args.command == "hull":
+        from .evaluation.hull import query
+
+        key = args.api_key_file.read_text().strip() if args.api_key_file else None
+        result = query(
+            read_rows(args.structures),
+            args.output or run_root(config) / "hull",
+            api_key=key,
+            batch_size=config["evaluation"]["hull_batch_size"],
+        )
+    elif args.metrics == "direct":
+        from .evaluation.direct import evaluate_direct
+
+        _, result = evaluate_direct(
+            read_rows(args.structures),
+            args.output,
+            metrics="full" if args.full else config["evaluation"]["direct"],
+            reference=args.reference or run_root(config) / "data/structures/test.jsonl",
+            dataset=config["dataset"]["name"],
+            workers=config["runtime"]["matching_workers"],
+            composition=config["evaluation"]["composition"],
+            coverage_cutoffs=config["evaluation"]["coverage_cutoffs"],
+        )
+    else:
+        from .evaluation.workflow import evaluate
+
+        labels = read_rows(args.labels) if args.labels else None
+        _, result = evaluate(config, read_rows(args.structures), args.output, labels=labels)
+    print(json.dumps(result, ensure_ascii=False, default=str, indent=2))
+    return 0

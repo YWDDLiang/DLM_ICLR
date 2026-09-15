@@ -60,20 +60,32 @@ class CSPLayer(nn.Module):
         if self.ln:
             self.layer_norm = nn.LayerNorm(hidden_dim)
 
-    def edge_model(self, node_features, frac_coords, lattices, edge_index, edge2graph, frac_diff=None):
+    def edge_model(
+        self,
+        node_features,
+        frac_coords,
+        lattices,
+        edge_index,
+        edge2graph,
+        frac_diff=None,
+        invariant_features=None,
+    ):
 
         hi, hj = node_features[edge_index[0]], node_features[edge_index[1]]
-        if frac_diff is None:
-            xi, xj = frac_coords[edge_index[0]], frac_coords[edge_index[1]]
-            frac_diff = (xj - xi) % 1.0
-        if self.dis_emb is not None:
-            frac_diff = self.dis_emb(frac_diff)
-        if self.ip:
-            lattice_ips = lattices @ lattices.transpose(-1, -2)
+        if invariant_features is not None:
+            frac_diff, lattice_ips_flatten_edges = invariant_features
         else:
-            lattice_ips = lattices
-        lattice_ips_flatten = lattice_ips.view(-1, 9)
-        lattice_ips_flatten_edges = lattice_ips_flatten[edge2graph]
+            if frac_diff is None:
+                xi, xj = frac_coords[edge_index[0]], frac_coords[edge_index[1]]
+                frac_diff = (xj - xi) % 1.0
+            if self.dis_emb is not None:
+                frac_diff = self.dis_emb(frac_diff)
+            if self.ip:
+                lattice_ips = lattices @ lattices.transpose(-1, -2)
+            else:
+                lattice_ips = lattices
+            lattice_ips_flatten = lattice_ips.view(-1, 9)
+            lattice_ips_flatten_edges = lattice_ips_flatten[edge2graph]
         edges_input = torch.cat([hi, hj, lattice_ips_flatten_edges, frac_diff], dim=1)
         edge_features = self.edge_mlp(edges_input.float())
         return edge_features
@@ -85,13 +97,22 @@ class CSPLayer(nn.Module):
         out = self.node_mlp(agg)
         return out
 
-    def forward(self, node_features, frac_coords, lattices, edge_index, edge2graph, frac_diff=None):
+    def forward(
+        self,
+        node_features,
+        frac_coords,
+        lattices,
+        edge_index,
+        edge2graph,
+        frac_diff=None,
+        invariant_features=None,
+    ):
 
         node_input = node_features
         if self.ln:
             node_features = self.layer_norm(node_input)
         edge_features = self.edge_model(
-            node_features, frac_coords, lattices, edge_index, edge2graph, frac_diff
+            node_features, frac_coords, lattices, edge_index, edge2graph, frac_diff, invariant_features
         )
         node_output = self.node_model(node_features, edge_features, edge_index)
         return node_input + node_output
@@ -253,10 +274,35 @@ class CSPNet(nn.Module):
 
             return edge_index_new, -edge_vector_new
 
-    def forward(self, t, atom_types, frac_coords, lattices, num_atoms, node2graph):
+    def forward(
+        self,
+        t,
+        atom_types,
+        frac_coords,
+        lattices,
+        num_atoms,
+        node2graph,
+        *,
+        static_graph=None,
+        reuse_invariants=False,
+    ):
 
-        edges, frac_diff = self.gen_edges(num_atoms, frac_coords, lattices, node2graph)
-        edge2graph = node2graph[edges[0]]
+        if static_graph is None:
+            edges, frac_diff = self.gen_edges(num_atoms, frac_coords, lattices, node2graph)
+            edge2graph = node2graph[edges[0]]
+        else:
+            if self.edge_style != "fc":
+                raise ValueError("Static topology reuse requires fully connected graphs")
+            edges, edge2graph = static_graph
+            frac_diff = (frac_coords[edges[1]] - frac_coords[edges[0]]) % 1.0
+        invariants = None
+        if reuse_invariants:
+            layers = [self._modules["csp_layer_%d" % i] for i in range(self.num_layers)]
+            if any(layer.dis_emb is not self.dis_emb or layer.ip != layers[0].ip for layer in layers):
+                raise ValueError("Per-layer geometric transforms cannot share invariant features")
+            displacement = self.dis_emb(frac_diff) if self.dis_emb is not None else frac_diff
+            gram = lattices @ lattices.transpose(-1, -2) if layers[0].ip else lattices
+            invariants = (displacement, gram.view(-1, 9)[edge2graph])
 
         if self.smooth:
             # print("Here in smooth")
@@ -278,7 +324,13 @@ class CSPNet(nn.Module):
 
         for i in range(0, self.num_layers):
             node_features = self._modules["csp_layer_%d" % i](
-                node_features, frac_coords, lattices, edges, edge2graph, frac_diff=frac_diff
+                node_features,
+                frac_coords,
+                lattices,
+                edges,
+                edge2graph,
+                frac_diff=frac_diff,
+                invariant_features=invariants,
             )
 
         if self.ln:

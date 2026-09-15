@@ -1,0 +1,175 @@
+{
+  "output": "../outputs/mp20",
+  "dataset": {
+    "name": "mp20",
+    "max_atoms": 20,
+    "splits": {
+      "train": "../datasets/mp20/train.csv",
+      "val": "../datasets/mp20/val.csv",
+      "test": "../datasets/mp20/test.csv"
+    },
+    "fields": {
+      "cif": "cif",
+      "id": "material_id"
+    }
+  },
+  "models": {
+    "planner_base": "hf:meta-llama/Meta-Llama-3-8B",
+    "planner": "@run/planner/epoch2/final",
+    "dlm": "hf:GSAI-ML/LLaDA-8B-Instruct",
+    "b0": "@run/b0/final",
+    "c1": "@run/c1/best.pt",
+    "diffusion": "@run/diffusion/last.pt",
+    "c2": "@run/c2/light/checkpoint",
+    "value": "@run/c2/value/autonomous_value.pt",
+    "risk": "@run/c2/risk/model.json",
+    "chgnet": ""
+  },
+  "runtime": {
+    "devices": [
+      "cuda:0"
+    ],
+    "generation_workers_per_device": 2,
+    "refine_workers_per_device": 4,
+    "physics_workers_per_device": 8,
+    "matching_workers": 4,
+    "threads": 1
+  },
+  "planner": {
+    "training": {
+      "stages": 2,
+      "epochs": 1,
+      "batch_size": 1,
+      "grad_accum": 8,
+      "max_length": 768,
+      "lr": 2e-05,
+      "weight_decay": 0.0,
+      "warmup_steps": 100,
+      "seed": 17,
+      "lora_r": 16,
+      "lora_alpha": 32,
+      "lora_dropout": 0.05,
+      "logging_steps": 20,
+      "eval_steps": 500,
+      "eval_max_batches": 50,
+      "save_steps": 500
+    },
+    "sampling": {
+      "requests": 1050,
+      "batch_size": 1,
+      "seed": 17,
+      "temperature": 0.9,
+      "top_p": 0.95,
+      "top_k": 50,
+      "max_new_tokens": 96
+    }
+  },
+  "b0": {
+    "epochs": 2,
+    "batch_size": 1,
+    "effective_batch_size": 16,
+    "lr": 5e-05,
+    "weight_decay": 0.0,
+    "warmup_steps": 100,
+    "min_lr_ratio": 0.2,
+    "max_length": "auto",
+    "seed": 17,
+    "data_seed": 20260515,
+    "lora_r": 8,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "ff_proj",
+      "up_proj"
+    ],
+    "save_steps": 500,
+    "eval_max_batches": 50
+  },
+  "c1": {
+    "temperature": 0.7,
+    "training": {
+      "epochs": 1,
+      "seed": 17,
+      "micro_batch_size": 4,
+      "effective_batch_size": 16,
+      "learning_rate": 0.0001,
+      "width": 64,
+      "harmonics": 8,
+      "potential_bound": 4.0,
+      "validation_limit": 64,
+      "save_every": 100,
+      "max_length": 1024
+    }
+  },
+  "diffusion": {
+    "steps": 800,
+    "reuse_fixed_geometry": true,
+    "training": {
+      "epochs": 500,
+      "batch_size": 512,
+      "validation_batch_size": 32,
+      "timesteps": 1000,
+      "learning_rate": 0.001,
+      "seed": 1234,
+      "clip_value": 1.0,
+      "scheduler_factor": 0.6,
+      "scheduler_patience": 30
+    }
+  },
+  "c2": {
+    "temperature": 0.7,
+    "protect_sun": true,
+    "candidates": 8,
+    "max_calls": 80,
+    "batch_size": 64,
+    "revision": {
+      "repair_enabled": true,
+      "risk_strength": 2.0,
+      "kl_budget": 0.1,
+      "selection_penalty": 0.5,
+      "minimum_risk_reduction": 0.18866579450426538,
+      "max_repair_fields": 3,
+      "query_batch_size": 64
+    },
+    "training": {
+      "seed": 20260911,
+      "epochs": 8,
+      "batch_size": 16,
+      "content_lr": 2e-06,
+      "heads_lr": 0.0001,
+      "reference_kl_weight": 1.0,
+      "permute_atoms": true,
+      "light_epochs": 1,
+      "light_content_lr": 1e-06,
+      "value_epochs": 64,
+      "value_sources_per_batch": 32,
+      "value_head_lr": 0.001,
+      "value_hidden_lr": 1e-05,
+      "teacher_mix": 0.5,
+      "warmup_epochs": 1,
+      "warmup_lr": 1e-05,
+      "warmup_batch_size": 16,
+      "warmup_seed": 17,
+      "risk_seed": 20260915,
+      "plans": "@run/data/plans/train.jsonl",
+      "sources": 1000,
+      "light_beta": 0.1,
+      "light_fraction": 0.25,
+      "warmup_micro_batch_size": 4
+    }
+  },
+  "evaluation": {
+    "direct": "comp_struct",
+    "composition": "smact3_mixed",
+    "stable_threshold": 0.0,
+    "metastable_threshold": 0.1,
+    "relaxation_steps": 1000,
+    "fmax": 0.1,
+    "stress_tolerance_GPa": 0.5,
+    "hull_batch_size": 32,
+    "coverage_cutoffs": null
+  }
+}
