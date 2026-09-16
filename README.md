@@ -100,6 +100,8 @@ B0 preserves effective batch 16 across single- and dual-process training. Checkp
 
 ## Reproducibility
 
+The [SUN / MSUN / VUN result table](docs/results/C2_UNIFIED/RESULT_ZH.md) compares F800 and two C2 variants on the same 1,005 requests with jointly known labels from the historical 1,050-request panel. It includes Stable / MetaStable, validity, uniqueness, novelty, case studies and downloadable per-request records. These are physical-label-informed ablations; the report specifies the selection rules and denominator.
+
 Defaults follow the retained C1 and one-revision C2 execution, including the fitted risk penalty. Saved Plan presets preserve source order and random seeds. The [reference profile](docs/reference.md) and [release validation](docs/validation.md) record initialization, checkpoint roles and optimization settings. Foundation and task checkpoints are supplied as local assets or produced by the training commands.
 
 Detailed Chinese notes cover each module's scientific task, training and inference, mathematical objectives, implementation and paper foundations: [read the technical notes](private/README_ZH.md) or [download the complete notes](private/technical_notes_zh.zip).
