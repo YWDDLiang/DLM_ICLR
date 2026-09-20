@@ -8,6 +8,10 @@ Defaults follow the upstream MP-20 recipe: 1000 noise steps, 500 training epochs
 
 At inference, C1 provides initial coordinates and lattice parameters. The model performs 800 predictor/corrector refinement steps and returns a continuous crystal. Fixed graph topology and lattice-independent work are reused across steps. Each request retains its own random stream.
 
+In the registered C2 feedback route, this continuous model is frozen and provides candidate lattices and coordinates for physical supervision. C2 does not edit the returned F structure. Quantized teacher candidates are decoded and rechecked before they can supervise the discrete DLM.
+
+The reporting-data experiment compares F800 and F400 from the same saved raw drafts for both model versions, using `ordered_csr_v1`. In the vendored implementation `time_start = diff_steps`; a change from 800 to 400 therefore changes the diffusion starting index as well as the number of predictor/corrector steps. This is a budget/schedule comparison, not a claim of halving the same trajectory without loss. See [evaluation details](../registered-feedback.md#f400-and-f800-budget-comparison).
+
 ```bash
 bash scripts/train.sh diffusion --config configs/local.json
 bash scripts/sample.sh diffusion --config configs/local.json

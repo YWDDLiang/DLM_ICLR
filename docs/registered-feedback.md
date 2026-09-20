@@ -2,6 +2,12 @@
 
 The objective is to transfer improvements found by continuous refinement and physical tools into the discrete draft generator. The evaluated path keeps the original Plan/prompt, C1 sampler, physical thresholds, and the continuous refiner. It updates draft LoRA parameters using physically checked targets. There is no differentiation through F or CHGNet, no post-F C2 edit, and no learned online verifier claim in this result.
 
+## What C2 contributes, and how it cooperates with C1
+
+C1 handles periodic dependencies while constructing the draft. C2 supplies the experience from which a better constructor is learned: continuous lattice/coordinate candidates, exact-token verification, representation registration and corrections aligned with actual student prefixes. The active C2 component is a physical feedback and supervision mechanism; it should not be described as an independently successful learned online value model.
+
+Updating DLM LoRA changes its lattice/coordinate predictions and the hidden states consumed by C1. The fixed C1 head then uses these updated inputs to rebuild its periodic axis distribution during the next generation. This provides an offline-learning path from C2 feedback to online coordinate choices. C1 parameters are not readapted in the evaluated 75/25 recipe. See [the C2 module explanation](modules/c2.md) and [中文说明](C2_FEEDBACK_ZH.md).
+
 ## Why register a teacher representation?
 
 A periodic translation or a permutation of same-element sites can change many tokens without changing the crystal. In the initial study, literal token accuracy improved while physically aligned free-generation coordinates became worse. The correction registers a complete teacher near one retained, pre-learning draft of the same Plan. It permits only integer-bin global translations and same-element permutations; the teacher lattice and relative periodic geometry remain unchanged.
@@ -54,13 +60,36 @@ The runtime example uses two visible GPUs, three C1 workers per GPU, a maximum F
 
 ## Evaluation and interpretation
 
-`python -m dlm_iclr.feedback evaluate` evaluates a Plan file fixed before outcomes. The same recipe must be supplied for both comparison arms. `--raw-only` omits F; otherwise F800 follows. Development and seen-TRAIN reporting use `--reference-split val`; only a frozen final protocol should use `--reference-split test`. Novelty uses the full configured TRAIN reference.
+`python -m dlm_iclr.feedback evaluate` evaluates a Plan file fixed before outcomes. The same recipe must be supplied for both comparison arms. `--raw-only` omits F; otherwise the recipe's `F_steps` determines refinement, with 800 in the reference recipe. Development and seen-TRAIN reporting use `--reference-split val`; only a frozen final protocol should use `--reference-split test`. Novelty uses the full configured TRAIN reference.
 
 The report separates:
 
 1. Native CHGNet single-point energy, forces, stress and a stability proxy requiring raw hull ≤0, maximum force ≤0.1 eV/Å and maximum stress ≤0.5 GPa.
 2. Conventional raw SUN/MSUN, whose stability labels follow the retained CHGNet relaxation protocol and whose novelty/uniqueness geometry is the saved output before relaxation.
-3. F800 output and its physical/Direct evaluation.
+3. Each separately configured F output and its physical/Direct evaluation.
+
+### F400 and F800 budget comparison
+
+The current reporting-data evaluation adds F400 to raw and F800 for both the starting and learned model. It keeps Plans, original prompts, body temperature 0.2, model checkpoints, F seeds, batching and `ordered_csr_v1` fixed across the applicable pairs. Each model generates raw only once; both refinement settings reuse those saved drafts. The comparisons include learned versus starting model at F400, F400 versus F800 within each model, and learned F400 versus starting-model F800.
+
+For a shared-raw Python evaluation, pass separate copies of the settings to the existing APIs:
+
+```python
+from copy import deepcopy
+from dlm_iclr.draft_loop.evaluation import refine_drafts, evaluate_endpoint
+
+# config, assets, plans, saved_drafts, settings, budget and output are bound
+# to one fixed model/Plan panel before outcomes are observed.
+for steps in (800, 400):
+    current = deepcopy(settings)
+    current['teacher_steps'] = steps
+    refined = refine_drafts(config, assets, plans, saved_drafts,
+                            output / f'F{steps}' / 'generated', current, budget)
+    evaluate_endpoint(config, [row['record'] for row in refined],
+                      output / f'F{steps}' / 'evaluation', current, budget)
+```
+
+The vendored sampler uses `time_start = diff_steps`. Thus F400 begins at index 400 while F800 begins at index 800; F400 is not simply a truncation of the same F800 trajectory. Keep separate execution identities and output folders, report actual elapsed refinement time separately from physical evaluation, and record cache reuse. A matching seed does not make two different schedules the same trajectory. No shorter-step quality or noninferiority claim has yet been established for this expansion.
 
 Unknowns and failures stay in the request denominator. A group of 16 Plans sampled four times has 16 source groups, not 64 independent conditions. Four separately scored 16-item panels and one jointly scored 64-item panel have different uniqueness calculations. Do not mix their SUN numerators.
 

@@ -18,7 +18,11 @@ flowchart LR
 
 The current validated recipe preserves the original prompt, registers physically equivalent teacher coordinates to the draft representation, rechecks exact tokens, and mixes complete-teacher fitting with verified corrections at actual visible prefixes. Deployment uses the frozen model and sampling configuration without teacher retrieval or a physical oracle. See [the feedback method and artifact contract](docs/registered-feedback.md).
 
+**How C1 and C2 cooperate:** C1 converts the DLM's coordinate scores into a lattice-conditioned periodic joint distribution during construction. C2 uses continuous candidates and physical checks during data preparation to choose complete geometry targets and useful corrections at the generator's recorded prefixes. Learning changes the DLM's logits and hidden states; the next draft is sampled through C1 using those updated predictions. The evaluated feedback recipe keeps C1 parameters fixed. Thus C2 affects future construction through learned generator parameters; it is not an extra physical-oracle call at inference. See [C2's role and its interface with C1](docs/modules/c2.md) and [中文方法说明](docs/C2_FEEDBACK_ZH.md).
+
 **Evidence scope:** the current result is a controlled study on 16 selected, seen TRAIN conditions with four fresh sampling streams. At the same body temperature 0.2, the unrelaxed CHGNet stability proxy increased from 7/64 to 35/64. It is not a claim about unseen MP-20 performance, DFT validation, learned online verifier gains, or shorter refinement. [Results and tradeoffs](docs/results/registered-feedback-train.md) include conventional SUN/MSUN, unknowns, and the F800 comparison.
+
+The authorized expansion uses the existing H1A2 1,050 and R03 256 reporting requests as training data. Its planned paired evaluation compares **raw, F800 and F400** for both the starting and updated model, reusing each model's same raw drafts. F400 is an additional budget/schedule comparison, not an established improvement: the implementation sets `time_start = diff_steps`, so changing 800 to 400 changes both the starting diffusion time and the number of steps. These seen-data results will be kept separate from independent development and final tests.
 
 ## Quick start
 
@@ -35,8 +39,11 @@ Set dataset and model locations in `configs/local.json`. Local directories and H
 # Prepare all module datasets together
 bash scripts/prepare.sh --config configs/local.json
 
-# Train the complete stack, or pass one module name
-bash scripts/train.sh all --config configs/local.json
+# Train the base modules used by registered feedback
+bash scripts/train.sh planner --config configs/local.json
+bash scripts/train.sh b0 --config configs/local.json
+bash scripts/train.sh c1 --config configs/local.json
+bash scripts/train.sh diffusion --config configs/local.json
 
 # Learn from reviewed, exact-token physical supervision artifacts
 python -m dlm_iclr.feedback train \
@@ -74,7 +81,8 @@ CSV, structure JSONL and CIF directories use one adapter. Set split paths and fi
 ```bash
 dlm config --config configs/custom.json --output configs/my-crystals.json
 bash scripts/prepare.sh --config configs/my-crystals.json
-bash scripts/train.sh all --config configs/my-crystals.json
+# Pass planner, b0, c1 or diffusion; then use the feedback train entry above
+bash scripts/train.sh c1 --config configs/my-crystals.json
 ```
 
 The default vocabulary represents 1–20 atoms, atomic numbers 1–94, fractional coordinates at 0.01 resolution, lengths at 0.1 Å and angles at 1°. [Data interfaces](docs/data.md) describe source fields, prepared records and model assets.
@@ -102,7 +110,7 @@ bash scripts/evaluate.sh direct --config configs/local.json \
 
 ## Configure compute
 
-Independent requests run in separate workers. C2 batches model queries, F reuses fixed graph topology, and physics and structural matching share caches.
+Independent requests run in separate workers. Feedback preparation reuses exact-structure physical caches, F can reuse fixed graph topology, and structural matching shares reference caches. The following `run.sh` example is the retained legacy interface; the active feedback entry uses the `runtime` fields in its feedback recipe.
 
 ```bash
 bash scripts/run.sh --config configs/local.json --plans H1A2_1050 \
@@ -120,7 +128,7 @@ B0 preserves effective batch 16 across single- and dual-process training. Checkp
 
 The [SUN / MSUN / VUN result table](docs/results/C2_UNIFIED/RESULT_ZH.md) compares F800 and two C2 variants on the same 1,005 requests with jointly known labels from the historical 1,050-request panel. It includes Stable / MetaStable, validity, uniqueness, novelty, case studies and downloadable per-request records. These are physical-label-informed ablations; the report specifies the selection rules and denominator.
 
-Defaults follow the retained C1 and one-revision C2 execution, including the fitted risk penalty. Saved Plan presets preserve source order and random seeds. The [reference profile](docs/reference.md) and [release validation](docs/validation.md) record initialization, checkpoint roles and optimization settings. Foundation and task checkpoints are supplied as local assets or produced by the training commands.
+The historical `dlm run` defaults retain the earlier C1 and one-revision C2 editor, including its fitted risk penalty. The registered-feedback entry instead follows its explicit [feedback recipe](configs/registered_feedback.json). Saved Plan presets preserve source order and random seeds. The [reference profile](docs/reference.md) and [release validation](docs/validation.md) record initialization, checkpoint roles and optimization settings. Foundation and task checkpoints are supplied as local assets or produced by the training commands.
 
 Detailed Chinese notes cover each module's scientific task, training and inference, mathematical objectives, implementation and paper foundations: [read the technical notes](private/README_ZH.md) or [download the complete notes](private/technical_notes_zh.zip).
 
