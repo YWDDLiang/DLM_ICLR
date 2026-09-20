@@ -1,5 +1,7 @@
 # Reference training and inference profile
 
+This is the retained profile underlying the [physical-feedback story](PHYSICAL_FEEDBACK_MASTER_STORY_ZH.md). Runtime decision rules and result attribution are explained in [implementation and reproduction](keep-edit-implementation.md). The documentation update changes none of the settings below.
+
 The profile follows the retained 1050-Plan execution. A module can be trained from the configured data or supplied as an existing compatible checkpoint.
 
 | Module | Initialization | Optimization | Selected artifact |

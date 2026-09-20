@@ -8,6 +8,8 @@ Defaults follow the upstream MP-20 recipe: 1000 noise steps, 500 training epochs
 
 At inference, C1 provides initial coordinates and lattice parameters. The model performs 800 predictor/corrector refinement steps and returns a continuous crystal. Fixed graph topology and lattice-independent work are reused across steps. Each request retains its own random stream.
 
+The frozen refiner also supplies the continuous structural references used by C2 feedback training. Physical evaluation of those references and executed conditional proposals produces supervision for the DLM and relative verifier. The denoising model provides geometry; the physical pipeline determines the measured consequences. [Physical-feedback story](../PHYSICAL_FEEDBACK_MASTER_STORY_ZH.md).
+
 ```bash
 bash scripts/train.sh diffusion --config configs/local.json
 bash scripts/sample.sh diffusion --config configs/local.json

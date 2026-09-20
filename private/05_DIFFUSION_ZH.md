@@ -1,5 +1,7 @@
 # 连续扩散精修：沿用 CrysLLMGen
 
+> F 将 C1 draft 转为连续参照；参照及条件候选的物理后果进一步成为 DLM 的训练监督。完整故事见[物理反馈 Master Story](../docs/PHYSICAL_FEEDBACK_MASTER_STORY_ZH.md)。本页保留原连续模型与训练配方。
+
 ## What / Why / How
 
 What：在固定组成下改善DLM提供的连续晶体几何。Why：离散网格有量化误差，token模型也不直接等同于连续几何模型。How：复用CrysLLMGen的连续晶格/分数坐标联合扩散网络，从DLM结构启动其反向精修。
