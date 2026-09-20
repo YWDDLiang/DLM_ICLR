@@ -8,6 +8,8 @@ C1 handles periodic dependencies while constructing the draft. C2 supplies the e
 
 Updating DLM LoRA changes its lattice/coordinate predictions and the hidden states consumed by C1. The fixed C1 head then uses these updated inputs to rebuild its periodic axis distribution during the next generation. This provides an offline-learning path from C2 feedback to online coordinate choices. C1 parameters are not readapted in the evaluated 75/25 recipe. See [the C2 module explanation](modules/c2.md) and [中文说明](C2_FEEDBACK_ZH.md).
 
+The [complete method and mathematical account](C1_C2_METHOD_ZH.md) covers C1's conditional tree law, its confidence-projected commits, equivalent complete teachers, prefix-constrained completions, the native utility, and the actual learning objective. The [C1 module](modules/c1.md) also gives its probability and training equations in English.
+
 ## Why register a teacher representation?
 
 A periodic translation or a permutation of same-element sites can change many tokens without changing the crystal. In the initial study, literal token accuracy improved while physically aligned free-generation coordinates became worse. The correction registers a complete teacher near one retained, pre-learning draft of the same Plan. It permits only integer-bin global translations and same-element permutations; the teacher lattice and relative periodic geometry remain unchanged.
@@ -30,7 +32,7 @@ The preparation APIs are ordinary Python functions:
 
 Use the same original prompt, atom count and element slots for every teacher, draft and prefix of a Plan. Keep the actual student lattice and every observed coordinate fixed when constructing a prefix completion. A registered complete teacher is not automatically compatible with a different student prefix; the resulting completion must be checked again. Rejected proposals, failed measurements and unknown results remain in the preparation record.
 
-The evaluated material contains one complete registered teacher per source and positive corrections at actual commit positions. The core prefix weight is `gain / (1 + gain)` for positive, known `raw_utility` gain, with source/axis-balanced sampling. The label concerns the complete physically checked completion, not the isolated causal effect of a single action. Other relative improvements can be retained for subsequent work; reaching SUN/MSUN is not an admission requirement for supervision. Unknown outcomes are not negative examples.
+The evaluated material contains one complete registered teacher per source and positive corrections at actual commit positions. The core prefix weight is `gain / (1 + gain)` for positive, known `raw_utility` gain, with source/axis-balanced sampling. Gain compares the complete proposed structure to the original completed raw that produced the recorded prefix. The label concerns that complete physically checked completion, not the isolated causal effect of a single action. Other relative improvements can be retained for subsequent work; reaching SUN/MSUN is not an admission requirement for supervision. Unknown outcomes are not negative examples.
 
 The `train` command consumes three artifacts:
 
@@ -44,7 +46,7 @@ Source material for a reporting panel used in training must be explicitly labele
 
 ## Frozen recipe
 
-`configs/registered_feedback.json` records the evaluated setup:
+`configs/registered_feedback.json` records the small seen-TRAIN setup:
 
 - LoRA only, 512 updates, learning rate `1e-5`, microbatch 4, effective batch 8.
 - 75% complete registered teachers and 25% verified actual-prefix corrections.
@@ -54,9 +56,31 @@ Source material for a reporting panel used in training must be explicitly labele
 - Baseline and learned-model comparisons use the same body temperature, Plan order, body seeds, F seeds and physical protocol.
 - F800 uses `ordered_csr_v1`. The tested repeatability claim is limited to the tested hardware and fixed batching.
 
+The expanded reporting-data profile separately fixes 6,656 updates for 1,244 complete teachers and 3,747 prefix views, retaining the same 75/25 mixture, LR, batch sizes and frozen C1. Its completed training consumed 39,936 teacher and 13,312 prefix views, covering all 4,976 teacher source-phase groups at least eight times. This is a study-specific profile, not a change to the 512-update reference JSON. The [completed expanded raw comparison](results/reporting-1306-raw.md) does not reproduce the small-panel native gain; F800/F400 remain pending. Improved fitting is not a physical result.
+
 The exported `assets.json` includes `inference_protocol`. Both draft sampling and F refinement apply it. Moving only a checkpoint and accidentally retaining an old temperature is prevented by this binding. A changed model/protocol or an unversioned draft cache cannot silently reuse existing output files.
 
-The runtime example uses two visible GPUs, three C1 workers per GPU, a maximum F batch of 1024, 24 physics workers per GPU, and 32 Direct workers. Device strings are relative to `CUDA_VISIBLE_DEVICES`; use an appropriate runtime profile for the available hardware. Keep the shared budget ledger and its original start time across every stage.
+The runtime example uses two visible GPUs, three C1 workers per GPU, a maximum F batch of 1024, 24 physics workers per GPU, and 32 Direct workers. C1 currently uses independent request workers, not a true cross-request construction batch. Device strings are relative to `CUDA_VISIBLE_DEVICES`; use an appropriate runtime profile for the available hardware. Keep the shared budget ledger and its original start time across every stage.
+
+## Mathematical learning contract
+
+For a view $v$ with original prompt, input token body, supervised positions $A_v$ and verified targets $y^+$, `score_views` uses
+
+$$
+\ell(v;\theta)=-\frac1{|A_v|}\sum_{j\in A_v}
+\log\widetilde p_\theta(y_j^+\mid v),\qquad
+\mathcal L_{\rm C2}=
+0.75\,\mathbb E_{\mathcal D_T}\ell+
+0.25\,\mathbb E_{\mathcal D_P^w}\ell.
+$$
+
+$\widetilde p$ normalizes DLM logits over the field's typed vocabulary at training temperature 0.7, merging periodic aliases before temperature. It omits C1 edges, dynamic geometry masks and confidence projection, so this is a reconstruction surrogate, not exact C1 trajectory likelihood.
+
+Complete-teacher views cover lattice/X/Y/Z phases. Earlier phases retain consistent teacher values; selected fields and all later phases are masked, alternating full-phase and partial-phase supervision. Actual-prefix views preserve the recorded student input and supervise only its original commit positions.
+
+Prefix views cycle over sources and axes, then use $\Pr(v\mid\mathrm{source},a)\propto w_v$ within a pool. The gain weight affects **sampling**; it is not multiplied into the loss again. Per-view token means and the fixed teacher/feedback/teacher/teacher microbatch cycle implement the stated mixture over the full cycle. AdamW updates LoRA only, with weight decay 0 and gradient clipping at norm 1.
+
+Checkpoint selection uses $0.75\,\mathrm{NLL}_{\rm teacher}+0.25\,\mathrm{NLL}_{\rm fixed\ prefix}$. Teacher probes cover all four phases; prefix probes choose one fixed view per source-axis group. Neither selection nor the fitting-progress gate establishes free-generation gains.
 
 ## Evaluation and interpretation
 

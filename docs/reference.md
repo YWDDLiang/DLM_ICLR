@@ -1,5 +1,7 @@
 # Reference training and inference profile
 
+This page retains the historical 1050-Plan module/editor profile. For the current registered C2 feedback route, use the [feedback recipe and learning contract](registered-feedback.md) and [complete C1/C2 method](C1_C2_METHOD_ZH.md). In that route DLM LoRA learns from complete teachers and actual-prefix supervision with C1 fixed; the legacy editor/value/risk settings below are not its active training objective.
+
 The profile follows the retained 1050-Plan execution. A module can be trained from the configured data or supplied as an existing compatible checkpoint.
 
 | Module | Initialization | Optimization | Selected artifact |

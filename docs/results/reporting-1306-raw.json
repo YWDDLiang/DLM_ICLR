@@ -1,0 +1,1741 @@
+{
+  "schema": "reporting_1306_raw_documentation_snapshot_v1",
+  "date": "2026-09-20",
+  "source_artifact_sha256": "a1eed85c1d75c2138fcc344e87d433b2527040237564ea8d19d9c8e6cc760355",
+  "endpoint": "raw",
+  "scope": "seen reporting TRAIN; model25 before vs expanded student; same T0.2; F800/F400 pending",
+  "paired": {
+    "requests": 1306,
+    "prompt_groups": 1298,
+    "counts": {
+      "SUN": {
+        "passed_before_after": [
+          33,
+          34
+        ],
+        "unknown_before_after": [
+          152,
+          146
+        ],
+        "gains": 15,
+        "losses": 15,
+        "denominator": 1306,
+        "known_pairs": 1053,
+        "source_groups": 1046,
+        "source_macro_delta": 0.0,
+        "request_mean_delta": 0.0,
+        "bootstrap95": [
+          -0.010516252390057362,
+          0.010516252390057362
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      },
+      "MSUN": {
+        "passed_before_after": [
+          178,
+          159
+        ],
+        "unknown_before_after": [
+          152,
+          146
+        ],
+        "gains": 68,
+        "losses": 88,
+        "denominator": 1306,
+        "known_pairs": 1053,
+        "source_groups": 1046,
+        "source_macro_delta": -0.019120458891013385,
+        "request_mean_delta": -0.01899335232668566,
+        "bootstrap95": [
+          -0.043021032504780114,
+          0.0038240917782026767
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      },
+      "Stable": {
+        "passed_before_after": [
+          44,
+          45
+        ],
+        "unknown_before_after": [
+          153,
+          146
+        ],
+        "gains": 16,
+        "losses": 16,
+        "denominator": 1306,
+        "known_pairs": 1053,
+        "source_groups": 1046,
+        "source_macro_delta": 0.0,
+        "request_mean_delta": 0.0,
+        "bootstrap95": [
+          -0.010516252390057362,
+          0.010516252390057362
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      },
+      "MetaStable": {
+        "passed_before_after": [
+          202,
+          180
+        ],
+        "unknown_before_after": [
+          153,
+          146
+        ],
+        "gains": 67,
+        "losses": 90,
+        "denominator": 1306,
+        "known_pairs": 1053,
+        "source_groups": 1046,
+        "source_macro_delta": -0.02198852772466539,
+        "request_mean_delta": -0.02184235517568851,
+        "bootstrap95": [
+          -0.045889101338432124,
+          0.0019120458891013384
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      },
+      "native_Stable": {
+        "passed_before_after": [
+          1,
+          1
+        ],
+        "unknown_before_after": [
+          39,
+          39
+        ],
+        "gains": 1,
+        "losses": 1,
+        "denominator": 1306,
+        "known_pairs": 1267,
+        "source_groups": 1259,
+        "source_macro_delta": 0.0,
+        "request_mean_delta": 0.0,
+        "bootstrap95": [
+          -0.0023828435266084196,
+          0.0023828435266084196
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      },
+      "native_MetaStable": {
+        "passed_before_after": [
+          1,
+          2
+        ],
+        "unknown_before_after": [
+          39,
+          39
+        ],
+        "gains": 2,
+        "losses": 1,
+        "denominator": 1306,
+        "known_pairs": 1267,
+        "source_groups": 1259,
+        "source_macro_delta": 0.0007942811755361397,
+        "request_mean_delta": 0.0007892659826361484,
+        "bootstrap95": [
+          -0.0015885623510722795,
+          0.003177124702144559
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      },
+      "native_SUN": {
+        "passed_before_after": [
+          1,
+          1
+        ],
+        "unknown_before_after": [
+          39,
+          39
+        ],
+        "gains": 1,
+        "losses": 1,
+        "denominator": 1306,
+        "known_pairs": 1267,
+        "source_groups": 1259,
+        "source_macro_delta": 0.0,
+        "request_mean_delta": 0.0,
+        "bootstrap95": [
+          -0.0023828435266084196,
+          0.0023828435266084196
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      },
+      "native_MSUN": {
+        "passed_before_after": [
+          1,
+          2
+        ],
+        "unknown_before_after": [
+          39,
+          39
+        ],
+        "gains": 2,
+        "losses": 1,
+        "denominator": 1306,
+        "known_pairs": 1267,
+        "source_groups": 1259,
+        "source_macro_delta": 0.0007942811755361397,
+        "request_mean_delta": 0.0007892659826361484,
+        "bootstrap95": [
+          -0.0015885623510722795,
+          0.003177124702144559
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      }
+    },
+    "continuous": {
+      "raw_energy": {
+        "unknown_before_after": [
+          3,
+          2
+        ],
+        "means": [
+          1.9168139423486004,
+          3.14772146058046
+        ],
+        "medians": [
+          2.265199661254883,
+          3.7929303646087646
+        ],
+        "improvement_direction": "negative",
+        "known_pairs": 1303,
+        "source_groups": 1296,
+        "source_macro_delta": 1.2228239464263122,
+        "request_mean_delta": 1.22679393898041,
+        "bootstrap95": [
+          1.0115868416695315,
+          1.42444631571847
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      },
+      "raw_hull": {
+        "unknown_before_after": [
+          42,
+          41
+        ],
+        "means": [
+          7.932283560352502,
+          9.199106396674933
+        ],
+        "medians": [
+          8.710630137134846,
+          10.200747185371826
+        ],
+        "improvement_direction": "negative",
+        "known_pairs": 1264,
+        "source_groups": 1257,
+        "source_macro_delta": 1.2602256811509174,
+        "request_mean_delta": 1.2641110357038583,
+        "bootstrap95": [
+          1.055170764589746,
+          1.471452736861666
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      },
+      "force_rms": {
+        "unknown_before_after": [
+          3,
+          2
+        ],
+        "means": [
+          37.3885345362253,
+          40.73155211959798
+        ],
+        "medians": [
+          27.18097027116674,
+          30.16448106145642
+        ],
+        "improvement_direction": "negative",
+        "known_pairs": 1303,
+        "source_groups": 1296,
+        "source_macro_delta": 3.3666801788738185,
+        "request_mean_delta": 3.3203983818013305,
+        "bootstrap95": [
+          0.6243889101204342,
+          6.119746522444439
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      },
+      "force_max": {
+        "unknown_before_after": [
+          3,
+          2
+        ],
+        "means": [
+          81.61661721933734,
+          80.22345175656709
+        ],
+        "medians": [
+          52.73322610120323,
+          57.46778476137706
+        ],
+        "improvement_direction": "negative",
+        "known_pairs": 1303,
+        "source_groups": 1296,
+        "source_macro_delta": -1.4024892647693605,
+        "request_mean_delta": -1.4459263385540269,
+        "bootstrap95": [
+          -7.4463319563225285,
+          4.510003768350771
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      },
+      "stress_max": {
+        "unknown_before_after": [
+          3,
+          2
+        ],
+        "means": [
+          90.46018233234298,
+          95.84687691130475
+        ],
+        "medians": [
+          70.12681579589844,
+          77.78543472290039
+        ],
+        "improvement_direction": "negative",
+        "known_pairs": 1303,
+        "source_groups": 1296,
+        "source_macro_delta": 5.483413503528285,
+        "request_mean_delta": 5.364072211264008,
+        "bootstrap95": [
+          -0.28824873546132657,
+          11.093337961158106
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      },
+      "terminal_hull": {
+        "unknown_before_after": [
+          666,
+          733
+        ],
+        "means": [
+          1.4403590813092233,
+          1.6209345968862827
+        ],
+        "medians": [
+          0.18456120747125238,
+          0.2205786632132951
+        ],
+        "improvement_direction": "negative",
+        "known_pairs": 397,
+        "source_groups": 394,
+        "source_macro_delta": -0.09129157843928652,
+        "request_mean_delta": -0.10148772409640872,
+        "bootstrap95": [
+          -0.49203858232210734,
+          0.2664966174226424
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      },
+      "raw_utility": {
+        "unknown_before_after": [
+          39,
+          39
+        ],
+        "means": [
+          -4.778180443476648,
+          -4.9202384440866025
+        ],
+        "medians": [
+          -5.126701190306993,
+          -5.223549638327748
+        ],
+        "improvement_direction": "positive",
+        "known_pairs": 1267,
+        "source_groups": 1259,
+        "source_macro_delta": -0.14329111620142726,
+        "request_mean_delta": -0.1420580006099551,
+        "bootstrap95": [
+          -0.1952625161849074,
+          -0.09084989104993017
+        ],
+        "interval_scope": "resampled_seen_prompt_groups; SUN labels conditional on fixed full-panel Unique assignments"
+      }
+    }
+  },
+  "panels": {
+    "before": {
+      "combined_1306": {
+        "requests": 1306,
+        "SUN_MSUN": {
+          "Stable": {
+            "passed": 44,
+            "pending": 153,
+            "requests": 1306,
+            "count_bounds": [
+              44,
+              197
+            ],
+            "percent_bounds": [
+              3.3690658499234303,
+              15.084226646248085
+            ]
+          },
+          "MetaStable": {
+            "passed": 202,
+            "pending": 153,
+            "requests": 1306,
+            "count_bounds": [
+              202,
+              355
+            ],
+            "percent_bounds": [
+              15.46707503828484,
+              27.182235834609493
+            ]
+          },
+          "SUN": {
+            "passed": 33,
+            "pending": 152,
+            "requests": 1306,
+            "count_bounds": [
+              33,
+              185
+            ],
+            "percent_bounds": [
+              2.5267993874425727,
+              14.165390505359877
+            ]
+          },
+          "MSUN": {
+            "passed": 178,
+            "pending": 152,
+            "requests": 1306,
+            "count_bounds": [
+              178,
+              330
+            ],
+            "percent_bounds": [
+              13.629402756508423,
+              25.267993874425727
+            ]
+          },
+          "V": {
+            "passed": 1182,
+            "pending": 0,
+            "requests": 1306,
+            "count_bounds": [
+              1182,
+              1182
+            ],
+            "percent_bounds": [
+              90.50535987748852,
+              90.50535987748852
+            ]
+          },
+          "U": {
+            "passed": 1301,
+            "pending": 2,
+            "requests": 1306,
+            "count_bounds": [
+              1301,
+              1303
+            ],
+            "percent_bounds": [
+              99.61715160796325,
+              99.77029096477794
+            ]
+          },
+          "N": {
+            "passed": 1281,
+            "pending": 3,
+            "requests": 1306,
+            "count_bounds": [
+              1281,
+              1284
+            ],
+            "percent_bounds": [
+              98.08575803981623,
+              98.31546707503828
+            ]
+          },
+          "VUN": {
+            "passed": 1159,
+            "pending": 0,
+            "requests": 1306,
+            "count_bounds": [
+              1159,
+              1159
+            ],
+            "percent_bounds": [
+              88.74425727411945,
+              88.74425727411945
+            ]
+          },
+          "comp_valid": {
+            "passed": 1183,
+            "pending": 0,
+            "requests": 1306,
+            "count_bounds": [
+              1183,
+              1183
+            ],
+            "percent_bounds": [
+              90.58192955589587,
+              90.58192955589587
+            ]
+          },
+          "struct_valid": {
+            "passed": 1302,
+            "pending": 0,
+            "requests": 1306,
+            "count_bounds": [
+              1302,
+              1302
+            ],
+            "percent_bounds": [
+              99.6937212863706,
+              99.6937212863706
+            ]
+          }
+        },
+        "Direct": {
+          "comp_valid": 90.5819,
+          "struct_valid": 99.6937,
+          "valid": 90.5054,
+          "wdist_density": 0.7501,
+          "wdist_num_elems": 0.0797,
+          "cov_recall": 64.5186,
+          "cov_precision": 99.1577
+        },
+        "raw": {
+          "raw_energy": {
+            "known": 1303,
+            "mean": 1.9168139423486004,
+            "median": 2.265199661254883
+          },
+          "force_rms": {
+            "known": 1303,
+            "mean": 37.3885345362253,
+            "median": 27.18097027116674
+          },
+          "force_max": {
+            "known": 1303,
+            "mean": 81.61661721933734,
+            "median": 52.73322610120323
+          },
+          "stress_max": {
+            "known": 1303,
+            "mean": 90.46018233234298,
+            "median": 70.12681579589844
+          },
+          "raw_hull": {
+            "known": 1264,
+            "mean": 7.932283560352502,
+            "median": 8.710630137134846
+          },
+          "actual_steps": {
+            "known": 667,
+            "mean": 282.2953523238381,
+            "median": 90.0
+          },
+          "utility": {
+            "known": 1267,
+            "mean": -4.778180443476648
+          }
+        },
+        "instantaneous_raw_proxy": {
+          "Stable": {
+            "passed": 1,
+            "unknown": 39,
+            "requests": 1306
+          },
+          "MetaStable": {
+            "passed": 1,
+            "unknown": 39,
+            "requests": 1306
+          },
+          "SUN": {
+            "passed": 1,
+            "unknown": 39,
+            "requests": 1306
+          },
+          "MSUN": {
+            "passed": 1,
+            "unknown": 39,
+            "requests": 1306
+          }
+        }
+      },
+      "H1A2_1050": {
+        "requests": 1050,
+        "SUN_MSUN": {
+          "Stable": {
+            "passed": 37,
+            "pending": 124,
+            "requests": 1050,
+            "count_bounds": [
+              37,
+              161
+            ],
+            "percent_bounds": [
+              3.5238095238095237,
+              15.333333333333334
+            ]
+          },
+          "MetaStable": {
+            "passed": 162,
+            "pending": 124,
+            "requests": 1050,
+            "count_bounds": [
+              162,
+              286
+            ],
+            "percent_bounds": [
+              15.428571428571429,
+              27.238095238095237
+            ]
+          },
+          "SUN": {
+            "passed": 28,
+            "pending": 124,
+            "requests": 1050,
+            "count_bounds": [
+              28,
+              152
+            ],
+            "percent_bounds": [
+              2.6666666666666665,
+              14.476190476190476
+            ]
+          },
+          "MSUN": {
+            "passed": 141,
+            "pending": 124,
+            "requests": 1050,
+            "count_bounds": [
+              141,
+              265
+            ],
+            "percent_bounds": [
+              13.428571428571429,
+              25.238095238095237
+            ]
+          },
+          "V": {
+            "passed": 955,
+            "pending": 0,
+            "requests": 1050,
+            "count_bounds": [
+              955,
+              955
+            ],
+            "percent_bounds": [
+              90.95238095238095,
+              90.95238095238095
+            ]
+          },
+          "U": {
+            "passed": 1048,
+            "pending": 0,
+            "requests": 1050,
+            "count_bounds": [
+              1048,
+              1048
+            ],
+            "percent_bounds": [
+              99.80952380952381,
+              99.80952380952381
+            ]
+          },
+          "N": {
+            "passed": 1030,
+            "pending": 1,
+            "requests": 1050,
+            "count_bounds": [
+              1030,
+              1031
+            ],
+            "percent_bounds": [
+              98.0952380952381,
+              98.19047619047619
+            ]
+          },
+          "VUN": {
+            "passed": 936,
+            "pending": 0,
+            "requests": 1050,
+            "count_bounds": [
+              936,
+              936
+            ],
+            "percent_bounds": [
+              89.14285714285714,
+              89.14285714285714
+            ]
+          },
+          "comp_valid": {
+            "passed": 955,
+            "pending": 0,
+            "requests": 1050,
+            "count_bounds": [
+              955,
+              955
+            ],
+            "percent_bounds": [
+              90.95238095238095,
+              90.95238095238095
+            ]
+          },
+          "struct_valid": {
+            "passed": 1049,
+            "pending": 0,
+            "requests": 1050,
+            "count_bounds": [
+              1049,
+              1049
+            ],
+            "percent_bounds": [
+              99.9047619047619,
+              99.9047619047619
+            ]
+          }
+        },
+        "Direct": {
+          "comp_valid": 90.9524,
+          "struct_valid": 99.9048,
+          "valid": 90.9524,
+          "wdist_density": 0.8339,
+          "wdist_num_elems": 0.0768,
+          "cov_recall": 61.0036,
+          "cov_precision": 99.5238
+        },
+        "raw": {
+          "raw_energy": {
+            "known": 1050,
+            "mean": 1.8837911487760999,
+            "median": 2.2749061584472656
+          },
+          "force_rms": {
+            "known": 1050,
+            "mean": 37.20133471146769,
+            "median": 26.496852228154115
+          },
+          "force_max": {
+            "known": 1050,
+            "mean": 81.2765525947555,
+            "median": 51.2303100411062
+          },
+          "stress_max": {
+            "known": 1050,
+            "mean": 90.69724515443757,
+            "median": 69.66330337524414
+          },
+          "raw_hull": {
+            "known": 1020,
+            "mean": 7.89633786377766,
+            "median": 8.680336068332966
+          },
+          "actual_steps": {
+            "known": 539,
+            "mean": 286.5640074211503,
+            "median": 92.0
+          },
+          "utility": {
+            "known": 1020,
+            "mean": -4.731754320119294
+          }
+        },
+        "instantaneous_raw_proxy": {
+          "Stable": {
+            "passed": 1,
+            "unknown": 30,
+            "requests": 1050
+          },
+          "MetaStable": {
+            "passed": 1,
+            "unknown": 30,
+            "requests": 1050
+          },
+          "SUN": {
+            "passed": 1,
+            "unknown": 30,
+            "requests": 1050
+          },
+          "MSUN": {
+            "passed": 1,
+            "unknown": 30,
+            "requests": 1050
+          }
+        }
+      },
+      "R03_256": {
+        "requests": 256,
+        "SUN_MSUN": {
+          "Stable": {
+            "passed": 7,
+            "pending": 29,
+            "requests": 256,
+            "count_bounds": [
+              7,
+              36
+            ],
+            "percent_bounds": [
+              2.734375,
+              14.0625
+            ]
+          },
+          "MetaStable": {
+            "passed": 40,
+            "pending": 29,
+            "requests": 256,
+            "count_bounds": [
+              40,
+              69
+            ],
+            "percent_bounds": [
+              15.625,
+              26.953125
+            ]
+          },
+          "SUN": {
+            "passed": 5,
+            "pending": 29,
+            "requests": 256,
+            "count_bounds": [
+              5,
+              34
+            ],
+            "percent_bounds": [
+              1.953125,
+              13.28125
+            ]
+          },
+          "MSUN": {
+            "passed": 37,
+            "pending": 29,
+            "requests": 256,
+            "count_bounds": [
+              37,
+              66
+            ],
+            "percent_bounds": [
+              14.453125,
+              25.78125
+            ]
+          },
+          "V": {
+            "passed": 227,
+            "pending": 0,
+            "requests": 256,
+            "count_bounds": [
+              227,
+              227
+            ],
+            "percent_bounds": [
+              88.671875,
+              88.671875
+            ]
+          },
+          "U": {
+            "passed": 254,
+            "pending": 2,
+            "requests": 256,
+            "count_bounds": [
+              254,
+              256
+            ],
+            "percent_bounds": [
+              99.21875,
+              100.0
+            ]
+          },
+          "N": {
+            "passed": 251,
+            "pending": 2,
+            "requests": 256,
+            "count_bounds": [
+              251,
+              253
+            ],
+            "percent_bounds": [
+              98.046875,
+              98.828125
+            ]
+          },
+          "VUN": {
+            "passed": 224,
+            "pending": 0,
+            "requests": 256,
+            "count_bounds": [
+              224,
+              224
+            ],
+            "percent_bounds": [
+              87.5,
+              87.5
+            ]
+          },
+          "comp_valid": {
+            "passed": 228,
+            "pending": 0,
+            "requests": 256,
+            "count_bounds": [
+              228,
+              228
+            ],
+            "percent_bounds": [
+              89.0625,
+              89.0625
+            ]
+          },
+          "struct_valid": {
+            "passed": 253,
+            "pending": 0,
+            "requests": 256,
+            "count_bounds": [
+              253,
+              253
+            ],
+            "percent_bounds": [
+              98.828125,
+              98.828125
+            ]
+          }
+        },
+        "Direct": {
+          "comp_valid": 89.0625,
+          "struct_valid": 98.8281,
+          "valid": 88.6719,
+          "wdist_density": 0.4657,
+          "wdist_num_elems": 0.0938,
+          "cov_recall": 34.2323,
+          "cov_precision": 97.6562
+        },
+        "raw": {
+          "raw_energy": {
+            "known": 253,
+            "mean": 2.053865061918266,
+            "median": 2.2164812088012695
+          },
+          "force_rms": {
+            "known": 253,
+            "mean": 38.16545080498223,
+            "median": 30.45948856728822
+          },
+          "force_max": {
+            "known": 253,
+            "mean": 83.02795261779946,
+            "median": 56.14747145612079
+          },
+          "stress_max": {
+            "known": 253,
+            "mean": 89.47632477029039,
+            "median": 71.45339965820312
+          },
+          "raw_hull": {
+            "known": 244,
+            "mean": 8.08254835750962,
+            "median": 8.974615769133708
+          },
+          "actual_steps": {
+            "known": 128,
+            "mean": 264.3203125,
+            "median": 85.0
+          },
+          "utility": {
+            "known": 247,
+            "mean": -4.969899657341023
+          }
+        },
+        "instantaneous_raw_proxy": {
+          "Stable": {
+            "passed": 0,
+            "unknown": 9,
+            "requests": 256
+          },
+          "MetaStable": {
+            "passed": 0,
+            "unknown": 9,
+            "requests": 256
+          },
+          "SUN": {
+            "passed": 0,
+            "unknown": 9,
+            "requests": 256
+          },
+          "MSUN": {
+            "passed": 0,
+            "unknown": 9,
+            "requests": 256
+          }
+        }
+      }
+    },
+    "student": {
+      "combined_1306": {
+        "requests": 1306,
+        "SUN_MSUN": {
+          "Stable": {
+            "passed": 45,
+            "pending": 146,
+            "requests": 1306,
+            "count_bounds": [
+              45,
+              191
+            ],
+            "percent_bounds": [
+              3.445635528330781,
+              14.624808575803982
+            ]
+          },
+          "MetaStable": {
+            "passed": 180,
+            "pending": 146,
+            "requests": 1306,
+            "count_bounds": [
+              180,
+              326
+            ],
+            "percent_bounds": [
+              13.782542113323125,
+              24.961715160796324
+            ]
+          },
+          "SUN": {
+            "passed": 34,
+            "pending": 146,
+            "requests": 1306,
+            "count_bounds": [
+              34,
+              180
+            ],
+            "percent_bounds": [
+              2.6033690658499236,
+              13.782542113323125
+            ]
+          },
+          "MSUN": {
+            "passed": 159,
+            "pending": 146,
+            "requests": 1306,
+            "count_bounds": [
+              159,
+              305
+            ],
+            "percent_bounds": [
+              12.17457886676876,
+              23.35375191424196
+            ]
+          },
+          "V": {
+            "passed": 1183,
+            "pending": 0,
+            "requests": 1306,
+            "count_bounds": [
+              1183,
+              1183
+            ],
+            "percent_bounds": [
+              90.58192955589587,
+              90.58192955589587
+            ]
+          },
+          "U": {
+            "passed": 1302,
+            "pending": 2,
+            "requests": 1306,
+            "count_bounds": [
+              1302,
+              1304
+            ],
+            "percent_bounds": [
+              99.6937212863706,
+              99.8468606431853
+            ]
+          },
+          "N": {
+            "passed": 1284,
+            "pending": 3,
+            "requests": 1306,
+            "count_bounds": [
+              1284,
+              1287
+            ],
+            "percent_bounds": [
+              98.31546707503828,
+              98.54517611026034
+            ]
+          },
+          "VUN": {
+            "passed": 1164,
+            "pending": 0,
+            "requests": 1306,
+            "count_bounds": [
+              1164,
+              1164
+            ],
+            "percent_bounds": [
+              89.1271056661562,
+              89.1271056661562
+            ]
+          },
+          "comp_valid": {
+            "passed": 1183,
+            "pending": 0,
+            "requests": 1306,
+            "count_bounds": [
+              1183,
+              1183
+            ],
+            "percent_bounds": [
+              90.58192955589587,
+              90.58192955589587
+            ]
+          },
+          "struct_valid": {
+            "passed": 1304,
+            "pending": 0,
+            "requests": 1306,
+            "count_bounds": [
+              1304,
+              1304
+            ],
+            "percent_bounds": [
+              99.8468606431853,
+              99.8468606431853
+            ]
+          }
+        },
+        "Direct": {
+          "comp_valid": 90.5819,
+          "struct_valid": 99.8469,
+          "valid": 90.5819,
+          "wdist_density": 0.6266,
+          "wdist_num_elems": 0.0797,
+          "cov_recall": 51.9509,
+          "cov_precision": 99.3109
+        },
+        "raw": {
+          "raw_energy": {
+            "known": 1304,
+            "mean": 3.14772146058046,
+            "median": 3.7929303646087646
+          },
+          "force_rms": {
+            "known": 1304,
+            "mean": 40.73155211959798,
+            "median": 30.16448106145642
+          },
+          "force_max": {
+            "known": 1304,
+            "mean": 80.22345175656709,
+            "median": 57.46778476137706
+          },
+          "stress_max": {
+            "known": 1304,
+            "mean": 95.84687691130475,
+            "median": 77.78543472290039
+          },
+          "raw_hull": {
+            "known": 1265,
+            "mean": 9.199106396674933,
+            "median": 10.200747185371826
+          },
+          "actual_steps": {
+            "known": 598,
+            "mean": 298.18394648829434,
+            "median": 95.0
+          },
+          "utility": {
+            "known": 1267,
+            "mean": -4.9202384440866025
+          }
+        },
+        "instantaneous_raw_proxy": {
+          "Stable": {
+            "passed": 1,
+            "unknown": 39,
+            "requests": 1306
+          },
+          "MetaStable": {
+            "passed": 2,
+            "unknown": 39,
+            "requests": 1306
+          },
+          "SUN": {
+            "passed": 1,
+            "unknown": 39,
+            "requests": 1306
+          },
+          "MSUN": {
+            "passed": 2,
+            "unknown": 39,
+            "requests": 1306
+          }
+        }
+      },
+      "H1A2_1050": {
+        "requests": 1050,
+        "SUN_MSUN": {
+          "Stable": {
+            "passed": 38,
+            "pending": 111,
+            "requests": 1050,
+            "count_bounds": [
+              38,
+              149
+            ],
+            "percent_bounds": [
+              3.619047619047619,
+              14.19047619047619
+            ]
+          },
+          "MetaStable": {
+            "passed": 150,
+            "pending": 111,
+            "requests": 1050,
+            "count_bounds": [
+              150,
+              261
+            ],
+            "percent_bounds": [
+              14.285714285714286,
+              24.857142857142858
+            ]
+          },
+          "SUN": {
+            "passed": 29,
+            "pending": 111,
+            "requests": 1050,
+            "count_bounds": [
+              29,
+              140
+            ],
+            "percent_bounds": [
+              2.761904761904762,
+              13.333333333333334
+            ]
+          },
+          "MSUN": {
+            "passed": 132,
+            "pending": 111,
+            "requests": 1050,
+            "count_bounds": [
+              132,
+              243
+            ],
+            "percent_bounds": [
+              12.571428571428571,
+              23.142857142857142
+            ]
+          },
+          "V": {
+            "passed": 955,
+            "pending": 0,
+            "requests": 1050,
+            "count_bounds": [
+              955,
+              955
+            ],
+            "percent_bounds": [
+              90.95238095238095,
+              90.95238095238095
+            ]
+          },
+          "U": {
+            "passed": 1048,
+            "pending": 0,
+            "requests": 1050,
+            "count_bounds": [
+              1048,
+              1048
+            ],
+            "percent_bounds": [
+              99.80952380952381,
+              99.80952380952381
+            ]
+          },
+          "N": {
+            "passed": 1033,
+            "pending": 1,
+            "requests": 1050,
+            "count_bounds": [
+              1033,
+              1034
+            ],
+            "percent_bounds": [
+              98.38095238095238,
+              98.47619047619048
+            ]
+          },
+          "VUN": {
+            "passed": 939,
+            "pending": 0,
+            "requests": 1050,
+            "count_bounds": [
+              939,
+              939
+            ],
+            "percent_bounds": [
+              89.42857142857143,
+              89.42857142857143
+            ]
+          },
+          "comp_valid": {
+            "passed": 955,
+            "pending": 0,
+            "requests": 1050,
+            "count_bounds": [
+              955,
+              955
+            ],
+            "percent_bounds": [
+              90.95238095238095,
+              90.95238095238095
+            ]
+          },
+          "struct_valid": {
+            "passed": 1050,
+            "pending": 0,
+            "requests": 1050,
+            "count_bounds": [
+              1050,
+              1050
+            ],
+            "percent_bounds": [
+              100.0,
+              100.0
+            ]
+          }
+        },
+        "Direct": {
+          "comp_valid": 90.9524,
+          "struct_valid": 100.0,
+          "valid": 90.9524,
+          "wdist_density": 0.6782,
+          "wdist_num_elems": 0.0768,
+          "cov_recall": 51.1993,
+          "cov_precision": 99.5238
+        },
+        "raw": {
+          "raw_energy": {
+            "known": 1050,
+            "mean": 3.088231323900677,
+            "median": 3.7639577388763428
+          },
+          "force_rms": {
+            "known": 1050,
+            "mean": 40.850449796325165,
+            "median": 30.265057356453173
+          },
+          "force_max": {
+            "known": 1050,
+            "mean": 80.47413254947729,
+            "median": 57.72562969144566
+          },
+          "stress_max": {
+            "known": 1050,
+            "mean": 96.04351430494161,
+            "median": 78.24744033813477
+          },
+          "raw_hull": {
+            "known": 1020,
+            "mean": 9.125474696800284,
+            "median": 10.179122212141522
+          },
+          "actual_steps": {
+            "known": 478,
+            "mean": 289.0188284518828,
+            "median": 90.5
+          },
+          "utility": {
+            "known": 1020,
+            "mean": -4.89040902003488
+          }
+        },
+        "instantaneous_raw_proxy": {
+          "Stable": {
+            "passed": 1,
+            "unknown": 30,
+            "requests": 1050
+          },
+          "MetaStable": {
+            "passed": 2,
+            "unknown": 30,
+            "requests": 1050
+          },
+          "SUN": {
+            "passed": 1,
+            "unknown": 30,
+            "requests": 1050
+          },
+          "MSUN": {
+            "passed": 2,
+            "unknown": 30,
+            "requests": 1050
+          }
+        }
+      },
+      "R03_256": {
+        "requests": 256,
+        "SUN_MSUN": {
+          "Stable": {
+            "passed": 7,
+            "pending": 35,
+            "requests": 256,
+            "count_bounds": [
+              7,
+              42
+            ],
+            "percent_bounds": [
+              2.734375,
+              16.40625
+            ]
+          },
+          "MetaStable": {
+            "passed": 30,
+            "pending": 35,
+            "requests": 256,
+            "count_bounds": [
+              30,
+              65
+            ],
+            "percent_bounds": [
+              11.71875,
+              25.390625
+            ]
+          },
+          "SUN": {
+            "passed": 5,
+            "pending": 35,
+            "requests": 256,
+            "count_bounds": [
+              5,
+              40
+            ],
+            "percent_bounds": [
+              1.953125,
+              15.625
+            ]
+          },
+          "MSUN": {
+            "passed": 27,
+            "pending": 35,
+            "requests": 256,
+            "count_bounds": [
+              27,
+              62
+            ],
+            "percent_bounds": [
+              10.546875,
+              24.21875
+            ]
+          },
+          "V": {
+            "passed": 228,
+            "pending": 0,
+            "requests": 256,
+            "count_bounds": [
+              228,
+              228
+            ],
+            "percent_bounds": [
+              89.0625,
+              89.0625
+            ]
+          },
+          "U": {
+            "passed": 254,
+            "pending": 2,
+            "requests": 256,
+            "count_bounds": [
+              254,
+              256
+            ],
+            "percent_bounds": [
+              99.21875,
+              100.0
+            ]
+          },
+          "N": {
+            "passed": 251,
+            "pending": 2,
+            "requests": 256,
+            "count_bounds": [
+              251,
+              253
+            ],
+            "percent_bounds": [
+              98.046875,
+              98.828125
+            ]
+          },
+          "VUN": {
+            "passed": 225,
+            "pending": 0,
+            "requests": 256,
+            "count_bounds": [
+              225,
+              225
+            ],
+            "percent_bounds": [
+              87.890625,
+              87.890625
+            ]
+          },
+          "comp_valid": {
+            "passed": 228,
+            "pending": 0,
+            "requests": 256,
+            "count_bounds": [
+              228,
+              228
+            ],
+            "percent_bounds": [
+              89.0625,
+              89.0625
+            ]
+          },
+          "struct_valid": {
+            "passed": 254,
+            "pending": 0,
+            "requests": 256,
+            "count_bounds": [
+              254,
+              254
+            ],
+            "percent_bounds": [
+              99.21875,
+              99.21875
+            ]
+          }
+        },
+        "Direct": {
+          "comp_valid": 89.0625,
+          "struct_valid": 99.2188,
+          "valid": 89.0625,
+          "wdist_density": 0.4618,
+          "wdist_num_elems": 0.0936,
+          "cov_recall": 23.9969,
+          "cov_precision": 98.4375
+        },
+        "raw": {
+          "raw_energy": {
+            "known": 254,
+            "mean": 3.3936452539417687,
+            "median": 3.890831470489502
+          },
+          "force_rms": {
+            "known": 254,
+            "mean": 40.24004597564702,
+            "median": 30.11990952717479
+          },
+          "force_max": {
+            "known": 254,
+            "mean": 79.18717288823761,
+            "median": 56.01315021820222
+          },
+          "stress_max": {
+            "known": 254,
+            "mean": 95.03400579587681,
+            "median": 75.75606536865234
+          },
+          "raw_hull": {
+            "known": 245,
+            "mean": 9.505654698193887,
+            "median": 10.244848020503454
+          },
+          "actual_steps": {
+            "known": 120,
+            "mean": 334.69166666666666,
+            "median": 104.5
+          },
+          "utility": {
+            "known": 247,
+            "mean": -5.043420681061328
+          }
+        },
+        "instantaneous_raw_proxy": {
+          "Stable": {
+            "passed": 0,
+            "unknown": 9,
+            "requests": 256
+          },
+          "MetaStable": {
+            "passed": 0,
+            "unknown": 9,
+            "requests": 256
+          },
+          "SUN": {
+            "passed": 0,
+            "unknown": 9,
+            "requests": 256
+          },
+          "MSUN": {
+            "passed": 0,
+            "unknown": 9,
+            "requests": 256
+          }
+        }
+      }
+    }
+  },
+  "read_only_geometry_diagnostic": {
+    "artifact_sha256": "af8314305acaa3f3bfb6a3eb119c610c5b11c68cf602f4188b2cfb0b8556cc16",
+    "identity_checks": {
+      "record_measurement_bindings": 2612,
+      "T02_events": 87397,
+      "prompt_composition_no_oracle": 2608
+    },
+    "successful_exact_keys": {
+      "before": 1302,
+      "student": 1304
+    },
+    "measurement_statuses": {
+      "before": {
+        "verified": 538,
+        "invalid_terminal": 636,
+        "not_converged": 129,
+        "invalid_raw": 1,
+        "generation_failure": 2
+      },
+      "student": {
+        "verified": 473,
+        "invalid_terminal": 706,
+        "not_converged": 125,
+        "generation_failure": 2
+      }
+    },
+    "all_requests": {
+      "requests": 1306,
+      "before": {
+        "rows": 1306,
+        "raw_energy": {
+          "known": 1303,
+          "mean": 1.9168139423486004,
+          "median": 2.265199661254883
+        },
+        "raw_hull": {
+          "known": 1264,
+          "mean": 7.932283560352502,
+          "median": 8.710630137134846
+        },
+        "force_rms": {
+          "known": 1303,
+          "mean": 37.3885345362253,
+          "median": 27.18097027116674
+        },
+        "force_max": {
+          "known": 1303,
+          "mean": 81.61661721933734,
+          "median": 52.73322610120323
+        },
+        "stress_max": {
+          "known": 1303,
+          "mean": 90.46018233234298,
+          "median": 70.12681579589844
+        },
+        "raw_utility": {
+          "known": 1267,
+          "mean": -4.778180443476648,
+          "median": -5.126701190306993
+        },
+        "volume_per_atom": {
+          "known": 1304,
+          "mean": 17.086230977834898,
+          "median": 14.70870493215667
+        },
+        "shortest_distinct_site_A": {
+          "known": 1303,
+          "mean": 1.0817931682847612,
+          "median": 0.782703647621499
+        },
+        "distinct_sites_below_1A": 765
+      },
+      "student": {
+        "rows": 1306,
+        "raw_energy": {
+          "known": 1304,
+          "mean": 3.14772146058046,
+          "median": 3.7929303646087646
+        },
+        "raw_hull": {
+          "known": 1265,
+          "mean": 9.199106396674933,
+          "median": 10.200747185371826
+        },
+        "force_rms": {
+          "known": 1304,
+          "mean": 40.73155211959798,
+          "median": 30.16448106145642
+        },
+        "force_max": {
+          "known": 1304,
+          "mean": 80.22345175656709,
+          "median": 57.46778476137706
+        },
+        "stress_max": {
+          "known": 1304,
+          "mean": 95.84687691130475,
+          "median": 77.78543472290039
+        },
+        "raw_utility": {
+          "known": 1267,
+          "mean": -4.9202384440866025,
+          "median": -5.223549638327748
+        },
+        "volume_per_atom": {
+          "known": 1304,
+          "mean": 16.89895604817819,
+          "median": 15.259735231772588
+        },
+        "shortest_distinct_site_A": {
+          "known": 1303,
+          "mean": 1.0197224214079803,
+          "median": 0.7599999999999998
+        },
+        "distinct_sites_below_1A": 861
+      },
+      "teacher": {
+        "rows": 1251,
+        "raw_energy": {
+          "known": 1251,
+          "mean": -5.931103605136787,
+          "median": -6.045218467712402
+        },
+        "raw_hull": {
+          "known": 1251,
+          "mean": 0.12037324915777624,
+          "median": 0.08582979910705557
+        },
+        "force_rms": {
+          "known": 1251,
+          "mean": 0.336912682784178,
+          "median": 0.21691406359813645
+        },
+        "force_max": {
+          "known": 1251,
+          "mean": 0.6666442293227127,
+          "median": 0.3829938846591253
+        },
+        "stress_max": {
+          "known": 1251,
+          "mean": 1.562611676043839,
+          "median": 1.2035068273544312
+        },
+        "raw_utility": {
+          "known": 1251,
+          "mean": -1.0123862509830144,
+          "median": -0.9756291283175162
+        },
+        "volume_per_atom": {
+          "known": 1251,
+          "mean": 19.296699142972763,
+          "median": 17.592201313499572
+        },
+        "shortest_distinct_site_A": {
+          "known": 1250,
+          "mean": 2.2400838142498105,
+          "median": 2.2485620972947324
+        },
+        "distinct_sites_below_1A": 18
+      }
+    },
+    "scope": "descriptive geometry; repeated prompts retain request weighting; 1A is not an acceptance threshold",
+    "new_DLM_F_physics_calls": 0
+  }
+}
