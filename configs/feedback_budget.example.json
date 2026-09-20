@@ -1,0 +1,8 @@
+{
+  "max_wall_seconds": 172800,
+  "max_planner_draws": 4096,
+  "max_drafts": 4096,
+  "max_teacher_calls": 4096,
+  "max_physics_records": 16000,
+  "max_teacher_fit_updates": 4096
+}

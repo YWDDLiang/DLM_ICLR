@@ -1,6 +1,7 @@
 """Retained crystal DLM implementation; see docs/method.md for the public workflow."""
 
 from __future__ import annotations
+from dlm_iclr.runtime.capacity import MAX_ATOMS, MIN_ATOMS, DATASET_LABEL, ATOM_RANGE_TEXT
 from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
@@ -24,14 +25,14 @@ EDITOR_SCHEMA = "expert_crystal_editor_v1"
 class ExpertEditConfig:
     hidden_size: int
     width: int = 128
-    max_sites: int = 20
+    max_sites: int = MAX_ATOMS
     schema: str = EDITOR_SCHEMA
 
     def __post_init__(self):
         if (
             self.hidden_size < 1
             or self.width < 1
-            or not 1 <= self.max_sites <= 20
+            or not 1 <= self.max_sites <= MAX_ATOMS
             or self.schema != EDITOR_SCHEMA
         ):
             raise ValueError("invalid expert editor configuration")
@@ -310,7 +311,7 @@ def materialize_edit_batch(examples, tokenizer, device, *, max_length=1024):
     targets = torch.full_like(ids, -100)
     attention = torch.zeros_like(ids)
     active = torch.zeros_like(ids, dtype=torch.bool)
-    site_targets = torch.full((batch, 20), -1.0, device=device)
+    site_targets = torch.full((batch, MAX_ATOMS), -1.0, device=device)
     quality_targets = torch.zeros(batch, 4, device=device)
     quality_mask = torch.zeros(batch, 4, dtype=torch.bool, device=device)
     for i, row in enumerate(examples):

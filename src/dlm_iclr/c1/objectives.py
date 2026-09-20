@@ -35,7 +35,7 @@ class AxisTrainingSchema:
         self.element_map = {
             self.vocab[f"<E_{s}>"]: z for s, z in SYMBOL_TO_Z.items() if z <= 94 and f"<E_{s}>" in self.vocab
         }
-        self.lengths = {f: {self.vocab[f"<{f}_{i:03d}>"]: i for i in range(501)} for f in ("LA", "LB", "LC")}
+        self.lengths = {f: {self.vocab[f"<{f}_{i:03d}>"]: i for i in range(FixedSlotConfig().length_max_bin + 1)} for f in ("LA", "LB", "LC")}
         self.angles = {
             f: {self.vocab[f"<{f}_{i:03d}>"]: i for i in range(1, 180)} for f in ("AA", "AB", "AG")
         }

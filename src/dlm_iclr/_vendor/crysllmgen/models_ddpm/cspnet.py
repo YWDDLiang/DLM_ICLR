@@ -245,9 +245,16 @@ class CSPNet(nn.Module):
     def gen_edges(self, num_atoms, frac_coords, lattices, node2graph):
 
         if self.edge_style == "fc":
-            lis = [torch.ones(n, n, device=num_atoms.device) for n in num_atoms]
-            fc_graph = torch.block_diag(*lis)
-            fc_edges, _ = dense_to_sparse(fc_graph)
+            # Enumerate only within-crystal pairs, in the same row-major order
+            # as block_diag + dense_to_sparse; avoid a total_atoms squared matrix.
+            sizes = num_atoms.long()
+            edge_counts = sizes.square()
+            graph_ids = torch.repeat_interleave(torch.arange(len(sizes), device=sizes.device), edge_counts)
+            starts = torch.cumsum(sizes, 0) - sizes
+            edge_starts = torch.cumsum(edge_counts, 0) - edge_counts
+            local = torch.arange(graph_ids.numel(), device=sizes.device) - edge_starts[graph_ids]
+            fc_edges = torch.stack((starts[graph_ids] + local // sizes[graph_ids],
+                                    starts[graph_ids] + local % sizes[graph_ids]))
             return fc_edges, (frac_coords[fc_edges[1]] - frac_coords[fc_edges[0]]) % 1.0
         elif self.edge_style == "knn":
             lattice_nodes = lattices[node2graph]

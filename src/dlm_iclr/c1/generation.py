@@ -134,9 +134,13 @@ def make_record(plan, *, stage, structure=None, body=None, reason=None):
 
 
 class Constructor:
-    def __init__(self, model, tokenizer, policy, *, axis_head=None, axis_parents=None, axis_neutral=False):
+    def __init__(self, model, tokenizer, policy, *, axis_head=None, axis_parents=None, axis_neutral=False, joint_controller=None,
+                 record_construction_states=False, axis_confidence_policy='legacy_unary'):
         self.model, self.tokenizer, self.policy = model, tokenizer, policy
         self.axis_head, self.axis_parents, self.axis_neutral = axis_head, axis_parents, axis_neutral
+        self.joint_controller = joint_controller
+        self.record_construction_states = record_construction_states
+        self.axis_confidence_policy=axis_confidence_policy
         self.constraints = build_dynamic_lightweight_constraints(
             tokenizer, duplicate_coordinate_mask=True, lattice_volume_mask=True, min_lattice_rad=1e-4
         )
@@ -162,7 +166,13 @@ class Constructor:
                 self.constraints,
                 parents=self.axis_parents,
                 neutral=self.axis_neutral,
+                controller=self.joint_controller,
+                confidence_policy=self.axis_confidence_policy,
             )
+            if self.record_construction_states:
+                from dlm_iclr.c1.trace import RecordingCandidateSampler
+
+                axis_sampler = RecordingCandidateSampler(axis_sampler)
         calls = [0]
 
         def count_forward(_model, _inputs):

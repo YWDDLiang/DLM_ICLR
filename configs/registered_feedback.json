@@ -1,0 +1,31 @@
+{
+  "schema": "registered_feedback_recipe_v1",
+  "seed": 2026092025,
+  "training": {
+    "updates": 512,
+    "effective_batch_size": 8,
+    "micro_batch_size": 4,
+    "learning_rate": 0.00001,
+    "temperature": 0.7,
+    "max_length": 1024,
+    "save_every": 32,
+    "evaluate_every": 64,
+    "microbatch_mixture": ["teacher", "feedback", "teacher", "teacher"],
+    "fit_selection_teacher_weight": 0.75,
+    "C1_frozen": true,
+    "DPO": false
+  },
+  "inference_protocol": {
+    "body_temperature": 0.2,
+    "F_reduction_protocol": "ordered_csr_v1"
+  },
+  "F_steps": 800,
+  "runtime": {
+    "devices": ["cuda:0", "cuda:1"],
+    "generation_workers_per_device": 3,
+    "physics_workers_per_device": 24,
+    "teacher_batch_size": 1024,
+    "record_construction_states": true
+  },
+  "direct_workers": 32
+}

@@ -1,6 +1,7 @@
 """Retained crystal DLM implementation; see docs/method.md for the public workflow."""
 
 from __future__ import annotations
+from dlm_iclr.runtime.capacity import MAX_ATOMS, MIN_ATOMS, DATASET_LABEL, ATOM_RANGE_TEXT
 from contextlib import contextmanager
 import hashlib
 import inspect
@@ -71,7 +72,7 @@ def _checked_groups(groups: Sequence[Sequence[int]]) -> tuple[tuple[int, ...], .
     if (
         length < 11
         or (length - 7) % 4
-        or not 1 <= (length - 7) // 4 <= 20
+        or not 1 <= (length - 7) // 4 <= MAX_ATOMS
         or sorted(flattened) != list(range(length))
         or any(not group for group in normalized)
     ):
@@ -119,7 +120,7 @@ class ConstructionGeometryMonitor:
         self.groups = _checked_groups(generation_position_groups)
         required = {
             "representation": "dynamic_v1",
-            "max_atoms": 20,
+            "max_atoms": MAX_ATOMS,
             "coord_period": 100,
             "duplicate_coordinate_mask": True,
             "lattice_volume_mask": True,

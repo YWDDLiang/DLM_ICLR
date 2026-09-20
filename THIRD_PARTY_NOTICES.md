@@ -6,6 +6,8 @@ The vendored refinement components in `src/dlm_iclr/_vendor/crysllmgen` are deri
 
 The CSP diffusion/network and geometric utilities build on [DiffCSP](https://github.com/jiaor17/DiffCSP), copyright 2023 Rui Jiao, under the MIT license. Its notice is retained in [licenses/DiffCSP.txt](licenses/DiffCSP.txt).
 
+The vendored refinement files include optional fixed-batch noise plumbing and ordered mean reduction for the recorded execution protocol. These are local execution changes; the upstream checkpoint remains an external, frozen asset. The selected reduction and batching must be reported with comparisons.
+
 The language backbone and masked-diffusion sampling formulation build on [LLaDA](https://github.com/ML-GSAI/LLaDA). The upstream README identifies LLaDA-8B-Base and LLaDA-8B-Instruct as MIT-licensed. These foundation-model weights are loaded as external assets, not copied into this repository. Please cite *Large Language Diffusion Models* (Nie et al., 2025), [arXiv:2502.09992](https://arxiv.org/abs/2502.09992), when using that model family.
 
 Physical evaluation uses [CHGNet](https://github.com/CederGroupHub/chgnet), [ASE](https://gitlab.com/ase/ase), and [pymatgen](https://github.com/materialsproject/pymatgen). Composition validity uses [SMACT](https://github.com/WMD-group/SMACT). These packages are dependencies and their source code is not vendored here. Materials Project reference entries and MP-20 structures remain external data assets; cite their original sources when reporting derived results.

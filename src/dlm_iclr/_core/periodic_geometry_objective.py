@@ -6,7 +6,7 @@ from typing import Any
 
 
 _FAMILY_PATTERNS = {
-    "length": re.compile(r"^<L([ABC])_(\d{3})>$"),
+    "length": re.compile(r"^<L([ABC])_(\d{3,})>$"),
     "angle": re.compile(r"^<A([ABG])_(\d{3})>$"),
     "coord": re.compile(r"^<([XYZ])_(\d{3})>$"),
 }

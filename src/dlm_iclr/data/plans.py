@@ -1,6 +1,7 @@
 """Plan presets, source identities, and composition-disjoint dataset preparation."""
 
 from __future__ import annotations
+from dlm_iclr.runtime.capacity import MAX_ATOMS, MIN_ATOMS, DATASET_LABEL, ATOM_RANGE_TEXT
 from collections import Counter
 from functools import reduce
 import math
@@ -29,8 +30,8 @@ def validate_plan(row):
     if not isinstance(plan, dict):
         return "missing_plan_state"
     n, elements, counts = plan.get("N"), plan.get("elements"), plan.get("counts")
-    if type(n) is not int or not 1 <= n <= 20:
-        return "atom_count_outside_1_to_20"
+    if type(n) is not int or not MIN_ATOMS <= n <= MAX_ATOMS:
+        return f"atom_count_outside_{MIN_ATOMS}_to_{MAX_ATOMS}"
     if not isinstance(elements, list) or not isinstance(counts, list) or len(elements) != len(counts):
         return "invalid_element_counts"
     if not elements or len(set(elements)) != len(elements):

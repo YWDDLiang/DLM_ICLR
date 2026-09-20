@@ -14,8 +14,21 @@ from dlm_iclr._core.h1_llm_planner import (
     disable_peft_bnb_autodetect,
 )
 from dlm_iclr.runtime.io import fingerprint, write_rows, write_json
+from dlm_iclr.runtime.capacity import MAX_ATOMS
 
 STYLE = "h1_rich_plan_v1"
+
+
+def _call_in_fresh_process(function, *args, **kwargs):
+    """Keep a preceding physical evaluator's global torch flags out of Planner.
+
+    The spawned process uses the same default execution context as the first
+    Planner stage. The caller's strict CHGNet settings are never disabled.
+    """
+    from concurrent.futures import ProcessPoolExecutor
+    import multiprocessing
+    with ProcessPoolExecutor(max_workers=1, mp_context=multiprocessing.get_context('spawn')) as pool:
+        return pool.submit(function, *args, **kwargs).result()
 
 
 class PlanEnd(StoppingCriteria):
@@ -42,7 +55,17 @@ def generate_plans(
     top_p=0.95,
     top_k=50,
     max_new_tokens=96,
+    resample_over_capacity=True,
 ):
+    if torch.are_deterministic_algorithms_enabled():
+        # CHGNet single-point evaluation enables this global flag in its parent
+        # process. CUDA top-p cumsum cannot run under that flag. Preserve the
+        # original Planner implementation/seed and isolate the stage instead
+        # of changing top-p or relaxing physical evaluation determinism.
+        return _call_in_fresh_process(generate_plans, assets, output,
+            requests=requests, seed=seed, device=device, usage_role=usage_role,
+            batch_size=batch_size, temperature=temperature, top_p=top_p, top_k=top_k,
+            max_new_tokens=max_new_tokens, resample_over_capacity=resample_over_capacity)
     if not assets.planner_base or not assets.planner:
         raise ValueError("Fresh Plans require assets.planner_base and assets.planner")
     tokenizer = AutoTokenizer.from_pretrained(assets.planner, trust_remote_code=True)
@@ -61,9 +84,7 @@ def generate_plans(
 
     model = PeftModel.from_pretrained(model, assets.planner).to(device).eval()
     torch.manual_seed(seed)
-    rows = []
-    for start in range(0, requests, batch_size):
-        width = min(batch_size, requests - start)
+    def draw(width):
         prompt = format_planner_prompt(tokenizer, prompt_style=STYLE)
         encoded = tokenizer([prompt] * width, padding=True, add_special_tokens=False, return_tensors="pt").to(
             device
@@ -80,17 +101,19 @@ def generate_plans(
                 eos_token_id=tokenizer.eos_token_id,
                 stopping_criteria=StoppingCriteriaList([PlanEnd(tokenizer, encoded["input_ids"].shape[1])]),
             )
-        generated_text = tokenizer.batch_decode(
+        return tokenizer.batch_decode(
             generated[:, encoded["input_ids"].shape[1] :],
             skip_special_tokens=True,
             clean_up_tokenization_spaces=False,
         )
-        for offset, raw in enumerate(generated_text):
-            index = start + offset
-            rows.append(_plan_row(raw, index, seed, usage_role))
-        if (start + width) % 20 == 0:
-            print({"planner_completed": start + width, "requests": requests}, flush=True)
+    rows, rejected, attempted = _collect_plan_rows(
+        draw, requests=requests, batch_size=batch_size, seed=seed,
+        usage_role=usage_role, max_atoms=MAX_ATOMS,
+        resample_over_capacity=resample_over_capacity,
+    )
     write_rows(output, rows)
+    rejected_path = Path(output).with_suffix(".rejected.jsonl")
+    write_rows(rejected_path, rejected)
     write_json(
         Path(output).with_suffix(".generation.json"),
         {
@@ -102,9 +125,45 @@ def generate_plans(
             "top_p": top_p,
             "top_k": top_k,
             "valid_plans": sum(row["body_eligible"] for row in rows),
+            "resample_over_capacity": resample_over_capacity,
+            "max_atoms": MAX_ATOMS,
+            "attempted": attempted,
+            "rejected_over_capacity": len(rejected),
+            "rejected_records": str(rejected_path),
         },
     )
     return Path(output)
+
+
+def _collect_plan_rows(draw, *, requests, batch_size, seed, usage_role,
+                       max_atoms, resample_over_capacity):
+    """Reject only over-capacity compositions; keep other failures observable."""
+    from pymatgen.core import Composition
+
+    rows, rejected, attempted = [], [], 0
+    while len(rows) < requests:
+        width = min(batch_size, requests - len(rows))
+        for raw in draw(width):
+            row = _plan_row(raw, len(rows), seed, usage_role)
+            row['sampling_attempt'] = attempted
+            attempted += 1
+            formula = re.search(r'(?im)^\s*formula\s*:\s*([^\n]+)', row['raw_plan_text'])
+            atom_count = None
+            if formula:
+                try:
+                    atom_count = float(Composition(formula.group(1).strip()).num_atoms)
+                except (ValueError, KeyError, TypeError):
+                    pass
+            if resample_over_capacity and atom_count is not None and atom_count > max_atoms:
+                row.update(rejection_reason='atom_count_exceeds_capacity',
+                           atom_count=atom_count, max_atoms=max_atoms)
+                row['source_id'] = f'planner:{seed}:rejected:{attempted - 1}'
+                rejected.append(row)
+            else:
+                rows.append(row)
+        print({'planner_completed': len(rows), 'requests': requests,
+               'attempted': attempted, 'rejected_over_capacity': len(rejected)}, flush=True)
+    return rows, rejected, attempted
 
 
 def _plan_row(raw, index, seed, usage_role):

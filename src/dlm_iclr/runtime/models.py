@@ -3,6 +3,9 @@
 from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import hashlib
+import os
+import time
 import torch
 from transformers import AutoConfig, AutoModel, AutoModelForCausalLM, AutoTokenizer
 from dlm_iclr._core.dynamic_crystal import Z_TO_SYMBOL
@@ -16,6 +19,28 @@ def model_class_for(config):
 
 
 def load_model_and_tokenizer(
+    base_model_path: str, checkpoint_path: Optional[str], device: torch.device, *, mean_resizing=True
+):
+    """Optionally serialize GPU loading without changing model or request seeds."""
+    device = torch.device(device)
+    lock_root = os.environ.get('DLM_MODEL_LOAD_LOCK_DIR')
+    if lock_root and device.type == 'cuda':
+        from filelock import FileLock
+        visible = os.environ.get('CUDA_VISIBLE_DEVICES', '').split(',')
+        index = device.index if device.index is not None else 0
+        physical = visible[index] if len(visible) > index and visible[index] else str(device)
+        key = hashlib.sha256(physical.encode()).hexdigest()[:16]
+        folder = Path(lock_root); folder.mkdir(parents=True, exist_ok=True)
+        with FileLock(str(folder/f'gpu_{key}.lock'), timeout=600):
+            result = _load_model_and_tokenizer(base_model_path, checkpoint_path, device, mean_resizing=mean_resizing)
+            # Let the existing reservation monitor account for this worker
+            # before the next model on the same device begins a loading burst.
+            time.sleep(float(os.environ.get('DLM_MODEL_LOAD_SETTLE_SECONDS', '2')))
+            return result
+    return _load_model_and_tokenizer(base_model_path, checkpoint_path, device, mean_resizing=mean_resizing)
+
+
+def _load_model_and_tokenizer(
     base_model_path: str, checkpoint_path: Optional[str], device: torch.device, *, mean_resizing=True
 ):
     tokenizer_source = (
@@ -40,7 +65,10 @@ def load_model_and_tokenizer(
         )
         model.resize_token_embeddings(len(tokenizer), mean_resizing=mean_resizing)
         ensure_llada_vocab_size(model, len(tokenizer))
-        model = PeftModel.from_pretrained(model, checkpoint_path)
+        # Optional resource-only staging: the full model is moved below as
+        # before, avoiding simultaneous temporary adapter copies on the GPU.
+        loading = {'torch_device': 'cpu'} if os.environ.get('DLM_MODEL_LOAD_CPU_ADAPTER') == '1' else {}
+        model = PeftModel.from_pretrained(model, checkpoint_path, **loading)
     elif checkpoint_path:
         ensure_create_bidirectional_mask()
         model_config = AutoConfig.from_pretrained(checkpoint_path, trust_remote_code=True)

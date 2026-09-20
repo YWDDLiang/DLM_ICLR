@@ -9,7 +9,7 @@ description = "Modular crystal generation, periodic diffusion language models an
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
-dependencies = ["numpy>=1.26,<2"]
+dependencies = ["numpy>=1.26,<2", "filelock>=3.12"]
 
 [project.optional-dependencies]
 data = ["pymatgen==2025.6.14", "smact==3.1.0", "transformers==4.54.0", "torch>=2.4", "ase>=3.23"]

@@ -4,12 +4,15 @@ from collections import deque
 import math
 import multiprocessing as mp
 from multiprocessing.connection import wait
+import os
 import time
 
 
 def isolated_results(
     tasks, *, worker_target, worker_arguments, task_timeout=180.0, startup_timeout=120.0, admitted=None
 ):
+    startup_timeout = float(os.environ.get("DLM_WORKER_STARTUP_TIMEOUT", startup_timeout))
+    startup_log = os.environ.get("DLM_WORKER_STARTUP_LOG") == "1"
     if (
         not worker_arguments
         or not math.isfinite(task_timeout)
@@ -67,6 +70,9 @@ def isolated_results(
                         message = slot["connection"].recv()
                         if message.get("ready"):
                             slot["ready"] = True
+                            if startup_log:
+                                print({"scientific_worker_ready": slot["process"].pid,
+                                       "startup_seconds": time.monotonic() - slot["started"]}, flush=True)
                         elif "result" in message and slot["active"] is not None:
                             completed, has_result = message["result"], True
                             restart = (

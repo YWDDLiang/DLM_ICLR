@@ -1,6 +1,7 @@
 """H1 LLM formula-planner helpers."""
 
 from __future__ import annotations
+from dlm_iclr.runtime.capacity import MAX_ATOMS, MIN_ATOMS, DATASET_LABEL, ATOM_RANGE_TEXT
 
 import re
 from typing import Any, Dict, Mapping
@@ -27,7 +28,7 @@ H1_PLANNER_PROMPT_STYLES = (
     H1_PLANNER_PROMPT_STYLE_RICH_PLAN,
 )
 H1_PLANNER_SYSTEM_PROMPT = (
-    "You are a materials composition planner for de novo MP-20 bulk crystal generation. "
+    f"You are a materials composition planner for de novo {DATASET_LABEL} bulk crystal generation. "
     "Generate only a composition formula plan. Do not generate lattice, coordinates, CIF, "
     "explanations, candidates, rankings, or database lookups."
 )
@@ -115,7 +116,7 @@ def build_planner_user_prompt(*, sample_idx: int | None = None, prompt_style: st
         return (
             f"{CRYSLLMGEN_TEXT_PROMPT.rstrip()}\n\n"
             "Return exactly seven lines in this format:\n"
-            "formula: <flat integer-count formula with 1 to 20 atoms>\n"
+            f"formula: <flat integer-count formula with {ATOM_RANGE_TEXT} atoms>\n"
             "anion: <oxide|sulfide|chalcogenide|halide|nitride|phosphide_or_phosphate|other>\n"
             "charge: <neutral_plausible|single_element|all_metal|charge_fail|pauling_fail|oxidation_missing|validator_unavailable>\n"
             "lattice: <triclinic|monoclinic|orthorhombic|tetragonal|trigonal|hexagonal|cubic>\n"
@@ -124,7 +125,7 @@ def build_planner_user_prompt(*, sample_idx: int | None = None, prompt_style: st
             "end: plan\n\n"
             "Rules:\n"
             "- Use valid element symbols only.\n"
-            "- Use a chemically plausible MP-20-like bulk composition.\n"
+            f"- Use a chemically plausible {DATASET_LABEL}-like bulk composition.\n"
             "- Do not include N, elements, counts, coordinates, lattice lengths, angles, CIF, candidates, or explanations.\n"
             "- Do not include any extra text before or after the seven lines."
             f"{sample_line}"
@@ -137,11 +138,11 @@ def build_planner_user_prompt(*, sample_idx: int | None = None, prompt_style: st
     return (
         f"{CRYSLLMGEN_TEXT_PROMPT.rstrip()}\n\n"
         "Return exactly two lines in this format:\n"
-        "formula: <flat integer-count formula with 1 to 20 atoms>\n"
+        f"formula: <flat integer-count formula with {ATOM_RANGE_TEXT} atoms>\n"
         "end: plan\n\n"
         "Rules:\n"
         "- Use valid element symbols only.\n"
-        "- Use a chemically plausible MP-20-like bulk composition.\n"
+        f"- Use a chemically plausible {DATASET_LABEL}-like bulk composition.\n"
         "- Do not include N, elements, counts, family, arity, size, lattice, or coordinates.\n"
         "- Do not include any extra text before or after the two lines."
         f"{prefill_hint}"
@@ -215,7 +216,7 @@ def clean_generated_plan_text(
 
 
 def canonical_plan_record(
-    raw_plan_text: str, *, sample_idx: int | None = None, max_atoms: int = 20
+    raw_plan_text: str, *, sample_idx: int | None = None, max_atoms: int = MAX_ATOMS
 ) -> Dict[str, Any]:
     return canonical_plan_record_for_style(
         raw_plan_text,
@@ -229,7 +230,7 @@ def canonical_plan_record_for_style(
     raw_plan_text: str,
     *,
     sample_idx: int | None = None,
-    max_atoms: int = 20,
+    max_atoms: int = MAX_ATOMS,
     prompt_style: str | None = None,
 ) -> Dict[str, Any]:
     style = normalize_prompt_style(prompt_style)

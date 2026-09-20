@@ -1,6 +1,7 @@
 """Retained crystal DLM implementation; see docs/method.md for the public workflow."""
 
 from __future__ import annotations
+from dlm_iclr.runtime.capacity import MAX_ATOMS, MIN_ATOMS, DATASET_LABEL, ATOM_RANGE_TEXT
 from dataclasses import dataclass
 import math
 import torch
@@ -13,7 +14,7 @@ class PeriodicStateConfig:
 
     hidden_size: int
     width: int = 128
-    max_sites: int = 20
+    max_sites: int = MAX_ATOMS
     radial_basis_count: int = 16
     radial_cutoff_A: float = 6.0
     image_radius: int = 2

@@ -58,12 +58,17 @@ def neutral_head(head):
 
 
 class AxisCandidateSampler:
-    def __init__(self, head, tokenizer, plan, constraints, *, parents=None, neutral=False):
+    def __init__(self, head, tokenizer, plan, constraints, *, parents=None, neutral=False, controller=None,
+                 confidence_policy='legacy_unary'):
         if head.q != 100:
             raise ValueError("Live crystal axis constructor requires Q=100")
         if type(neutral) is not bool:
             raise ValueError("neutral must be explicit boolean")
         self.head, self.plan, self.constraints = head, deepcopy(plan), constraints
+        self.controller = controller
+        if confidence_policy not in ('legacy_unary','joint_marginal'):
+            raise ValueError('Unknown axis confidence policy')
+        self.confidence_policy=confidence_policy
         self.n = int(plan["plan_state"]["N"])
         self.parents = registered_parents(self.n, parents)
         self.enabled = not (neutral or neutral_head(head))
@@ -164,6 +169,15 @@ class AxisCandidateSampler:
         # Only the current schedule group participates in the legacy top-k.
         # Other sampled axes/sites remain hypothetical and are only logged.
         active = [int(p) for p in group_positions if int(body[p]) == mask_id]
+        if self.controller is not None:
+            sample = self.controller.select(
+                self, law, sample, logits, hidden, body, active, axis, arguments
+            )
+        joint_confidence=None
+        if self.confidence_policy=='joint_marginal':
+            from .feedback import sampled_value_log_confidence
+            joint_confidence=sampled_value_log_confidence(law,sample)
+            confidence=confidence.float()
         for p in positions.tolist():
             if int(body[p]) != mask_id:
                 continue
@@ -171,7 +185,8 @@ class AxisCandidateSampler:
             token = self.axis_tokens[axis][int(sample[site])]
             candidates[0, offset + p] = token
             if p in active:
-                confidence[0, offset + p] = torch.softmax(logits[0, offset + p], -1)[token]
+                confidence[0, offset + p] = (joint_confidence[site].float() if joint_confidence is not None
+                    else torch.softmax(logits[0, offset + p], -1)[token])
         event = {
             "attempt_index": len(self.attempts) - 1,
             "semantic_group": group,
@@ -192,7 +207,8 @@ class AxisCandidateSampler:
             "alias_policy": "000_100_logaddexp_to_000_before_temperature",
             "hidden_dtype": str(hidden.dtype),
             "logits_dtype": str(logits.dtype),
-            "confidence_source": "legacy_untempered_unary_at_joint_candidate_not_calibrated_joint_confidence",
+            "confidence_source": ("joint_log_marginal_under_current_masked_periodic_law" if joint_confidence is not None
+                                  else "legacy_untempered_unary_at_joint_candidate_not_calibrated_joint_confidence"),
             "joint_sample_is_auxiliary_not_projected_transition_log_probability": True,
             "new_geometry_veto": False,
             "extra_DLM_calls": 0,
@@ -211,6 +227,8 @@ class AxisCandidateSampler:
         self.pending["committed_positions"] = positions
         self.pending["committed_tokens"] = [int(candidates[0, p]) for p in selected]
         self.pending["candidate_body_before_projection"] = candidates[0, prompt_length:].tolist()
+        if self.controller is not None:
+            self.controller.record_commit(self.pending)
         self.pending = None
 
     def report(self):
@@ -220,7 +238,9 @@ class AxisCandidateSampler:
             "neutral_reason": self.neutral_reason,
             "head_config": self.head.config(),
             "parents": list(self.parents),
-            "same_legacy_commit_rule": True,
+            "same_legacy_commit_rule": self.confidence_policy=='legacy_unary',
+            "confidence_policy": self.confidence_policy,
+            "same_commit_counts_and_schedule": True,
             "DLM_reforward_each_commit": True,
             "extra_DLM_calls": 0,
             "neutral_is_same_asset_sampler_not_historical_S0_identity": True,

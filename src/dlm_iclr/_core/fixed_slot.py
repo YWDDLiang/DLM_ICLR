@@ -14,6 +14,7 @@ feasibility checks reuse the same schema with a larger max_atoms value.
 """
 
 from __future__ import annotations
+from dlm_iclr.runtime.capacity import MAX_ATOMS, MIN_ATOMS, DATASET_LABEL, ATOM_RANGE_TEXT, LENGTH_MAX_BIN
 
 from dataclasses import dataclass, field
 import json
@@ -21,7 +22,7 @@ import math
 import re
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
-ANSWER_TOKEN_COUNT = 1 + 6 + 20 * 5
+ANSWER_TOKEN_COUNT = 1 + 6 + MAX_ATOMS * 5
 MASK_TOKEN_ID = 126336
 
 CANONICAL_PROMPT = (
@@ -153,10 +154,10 @@ Z_TO_SYMBOL = {z: symbol for symbol, z in SYMBOL_TO_Z.items()}
 class FixedSlotConfig:
     """Configuration for MP-20 fixed-slot tokenization."""
 
-    max_atoms: int = 20
+    max_atoms: int = MAX_ATOMS
     length_step: float = 0.1
     length_min_bin: int = 0
-    length_max_bin: int = 500
+    length_max_bin: int = LENGTH_MAX_BIN
     angle_min_bin: int = 1
     angle_max_bin: int = 179
     coord_min_bin: int = 0
@@ -203,11 +204,11 @@ class FixedSlotError(ValueError):
 
 
 SCHEMA_TOKEN_RE = re.compile(
-    r"<(?:N_\d{3}|L[ABC]_\d{3}|A[ABG]_\d{3}|S\d{2}|"
+    r"<(?:N_\d{3}|L[ABC]_\d{3,}|A[ABG]_\d{3}|S\d{2}|"
     r"E_[A-Z][a-z]?|[XYZ]_\d{3}|EMPTY|[XYZ]_PAD)>"
 )
 COUNT_RE = re.compile(r"^<N_(\d{3})>$")
-LENGTH_RE = re.compile(r"^<L([ABC])_(\d{3})>$")
+LENGTH_RE = re.compile(r"^<L([ABC])_(\d{3,})>$")
 ANGLE_RE = re.compile(r"^<A([ABG])_(\d{3})>$")
 SLOT_RE = re.compile(r"^<S(\d{2})>$")
 ELEMENT_RE = re.compile(r"^<E_([A-Z][a-z]?)>$")

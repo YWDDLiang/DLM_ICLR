@@ -8,11 +8,80 @@ import importlib.metadata
 import math
 from pathlib import Path
 from dlm_iclr.evaluation.inputs import normalize_records, reconstruct
-from dlm_iclr.runtime.io import file_hash, read_rows, write_json, write_rows
+from dlm_iclr.runtime.io import file_hash, fingerprint, read_json, read_rows, write_json, write_rows
 
 BASIC_METRICS = ("comp_valid", "struct_valid")
 FULL_METRICS = (*BASIC_METRICS, "valid", "wdist_density", "wdist_num_elems", "cov_recall", "cov_precision")
 COVERAGE_CUTOFFS = {"mp20": (0.4, 10.0), "carbon": (0.2, 4.0), "perovskite": (0.2, 4.0)}
+
+
+def _persist_cache(path, value):
+    try:
+        write_json(path, value)
+    except PermissionError:
+        # Windows may deny replacement while a peer reads the same immutable entry.
+        if read_json(path) != value:
+            raise
+        import os
+
+        path.with_name(f".{path.name}.{os.getpid()}.tmp").unlink(missing_ok=True)
+
+
+def _basic_shard(payload):
+    records, output, cache, composition = payload
+    return evaluate_direct(
+        records, output, metrics="comp_struct", workers=1, cache=cache, composition=composition
+    )
+
+
+def _parallel_basic(records, output, workers, cache, composition):
+    from concurrent.futures import ProcessPoolExecutor
+    import multiprocessing as mp
+    import tempfile
+
+    records = normalize_records(records)
+    workers = min(workers, len(records))
+    width = math.ceil(len(records) / workers)
+    with tempfile.TemporaryDirectory(prefix="dlm_direct_") as temporary:
+        tasks = [
+            (
+                records[i : i + width],
+                str(Path(temporary) / str(i)),
+                str(cache) if cache else None,
+                composition,
+            )
+            for i in range(0, len(records), width)
+        ]
+        with ProcessPoolExecutor(max_workers=workers, mp_context=mp.get_context("spawn")) as pool:
+            results = list(pool.map(_basic_shard, tasks))
+    rows = [row for values, _ in results for row in values]
+    for row, original in zip(rows, records, strict=True):
+        row["ordinal"] = original["ordinal"]
+    report = results[0][1]
+    known = {name: sum(row[name] is True for row in rows) for name in BASIC_METRICS}
+    unknown = {name: sum(row[name] is None for row in rows) for name in BASIC_METRICS}
+    counts = {name: None if unknown[name] else known[name] for name in BASIC_METRICS}
+    percent = {
+        name: None if counts[name] is None else 100 * counts[name] / len(rows) for name in BASIC_METRICS
+    }
+    cache_report = {"path": report["validity_cache"]["path"]}
+    for key in ("structure_hits", "structure_misses", "composition_hits", "composition_misses"):
+        cache_report[key] = sum(result["validity_cache"][key] for _, result in results)
+    report.update(
+        reconstructed=sum(row["reconstructed"] for row in rows),
+        workers=workers,
+        counts={"requests": len(rows), **counts},
+        known_counts=known,
+        unknown_counts=unknown,
+        count_bounds={name: [known[name], known[name] + unknown[name]] for name in BASIC_METRICS},
+        percent=percent,
+        metrics={name: None if value is None else round(value, 4) for name, value in percent.items()},
+        complete=all(value is not None for value in percent.values()),
+        validity_cache=cache_report,
+    )
+    write_rows(Path(output) / "scores.jsonl", rows)
+    write_json(Path(output) / "summary.json", report)
+    return rows, report
 
 
 @lru_cache(maxsize=8192)
@@ -28,7 +97,8 @@ def _composition_valid(elements, amounts, composition="smact3_mixed"):
     return bool(smact_validity(elements, amounts))
 
 
-def _reference_structures(path):
+@lru_cache(maxsize=2)
+def _reference_structures_cached(path, modified_ns, size):
     from pymatgen.core import Structure
 
     path = Path(path)
@@ -50,6 +120,12 @@ def _reference_structures(path):
     return structures
 
 
+def _reference_structures(path):
+    path = Path(path).resolve()
+    stat = path.stat()
+    return _reference_structures_cached(str(path), stat.st_mtime_ns, stat.st_size)
+
+
 def evaluate_direct(
     records,
     output,
@@ -61,6 +137,7 @@ def evaluate_direct(
     cache=None,
     composition="smact3_mixed",
     coverage_cutoffs=None,
+    save_aggregation=False,
 ):
     """Full frozen generation metrics, or only comp_valid/struct_valid on CPU.
 
@@ -76,7 +153,41 @@ def evaluate_direct(
         raise ValueError("Full Direct evaluation requires an existing --reference CSV or JSONL")
     if metrics == "full" and dataset not in COVERAGE_CUTOFFS and coverage_cutoffs is None:
         raise ValueError(f"Unknown Direct coverage cutoff preset: {dataset}")
+    if metrics == "comp_struct" and workers > 1 and len(records) > 1:
+        return _parallel_basic(records, output, workers, cache, composition)
     from dlm_iclr._vendor.crysllmgen.validity import structure_validity
+
+    implementation = file_hash(Path(__file__).parents[1] / "_vendor/crysllmgen/validity.py")
+    packages = {name: importlib.metadata.version(name) for name in ("pymatgen", "smact", "numpy")}
+    validity_cache = None
+    cache_counts = {
+        "structure_hits": 0,
+        "structure_misses": 0,
+        "composition_hits": 0,
+        "composition_misses": 0,
+    }
+    if cache is not None:
+        definition = {
+            "version": 1,
+            "composition": composition,
+            "implementation": implementation,
+            "composition_implementation": file_hash(Path(__file__).with_name("composition.py")),
+            "packages": packages,
+        }
+        validity_cache = Path(cache) / "validity" / fingerprint(definition)[:24]
+
+    def composition_result(elements, amounts):
+        target = None
+        if validity_cache is not None:
+            target = validity_cache / "composition" / (fingerprint([elements, amounts]) + ".json")
+            if target.exists():
+                cache_counts["composition_hits"] += 1
+                return read_json(target)["comp_valid"]
+        value = bool(_composition_valid(elements, amounts, composition))
+        cache_counts["composition_misses"] += 1
+        if target is not None:
+            _persist_cache(target, {"comp_valid": value})
+        return value
 
     records = normalize_records(records)
     rows, structures = [], []
@@ -97,6 +208,23 @@ def evaluate_direct(
             row["parser_error"] = f"{type(error).__name__}: {error}"
         if structure is not None:
             row["reconstructed"] = True
+            target = None
+            if validity_cache is not None:
+                key = fingerprint(
+                    {
+                        "lattice": structure.lattice.matrix.tolist(),
+                        "fractional_coordinates": structure.frac_coords.tolist(),
+                        "atomic_numbers": [int(z) for z in structure.atomic_numbers],
+                    }
+                )
+                target = validity_cache / "structure" / key[:2] / (key + ".json")
+                if target.exists():
+                    row.update(read_json(target))
+                    cache_counts["structure_hits"] += 1
+                    rows.append(row)
+                    structures.append(structure)
+                    continue
+            cache_counts["structure_misses"] += 1
             counts = Counter(int(value) for value in structure.atomic_numbers)
             elements = tuple(sorted(counts))
             amounts = tuple(counts[element] for element in elements)
@@ -104,9 +232,7 @@ def evaluate_direct(
             for name, operation in (
                 (
                     "comp_valid",
-                    lambda: _composition_valid(
-                        elements, tuple(value // divisor for value in amounts), composition
-                    ),
+                    lambda: composition_result(elements, tuple(value // divisor for value in amounts)),
                 ),
                 ("struct_valid", lambda: bool(structure_validity(structure))),
             ):
@@ -115,6 +241,8 @@ def evaluate_direct(
                 except Exception as error:
                     row[name] = None
                     row["metric_errors"][name] = f"{type(error).__name__}: {error}"
+            if target is not None and not row["metric_errors"]:
+                _persist_cache(target, {name: row[name] for name in BASIC_METRICS})
         rows.append(row)
         structures.append(structure)
     output = Path(output)
@@ -126,10 +254,12 @@ def evaluate_direct(
         "omitted_metrics": list(FULL_METRICS[2:] if metrics == "comp_struct" else ()),
         "denominator": "all_requested_structures_in_input_order",
         "geometry": "saved_output_before_physical_relaxation",
-        "packages": {name: importlib.metadata.version(name) for name in ("pymatgen", "smact", "numpy")},
-        "validity_implementation_sha256": file_hash(
-            Path(__file__).parents[1] / "_vendor/crysllmgen/validity.py"
-        ),
+        "packages": packages,
+        "validity_implementation_sha256": implementation,
+        "validity_cache": {
+            "path": str(validity_cache) if validity_cache is not None else None,
+            **cache_counts,
+        },
         "reconstructed": sum(row["reconstructed"] for row in rows),
     }
     extra = {}
@@ -183,9 +313,26 @@ def evaluate_direct(
                 ),
             )
         struc_cutoff, comp_cutoff = coverage_cutoffs or COVERAGE_CUTOFFS[dataset]
-        cov = coverage(
-            generated, ground_truth, struc_cutoff=struc_cutoff, comp_cutoff=comp_cutoff, requested=len(rows)
+        cov, distances = coverage(
+            generated, ground_truth, struc_cutoff=struc_cutoff, comp_cutoff=comp_cutoff,
+            requested=len(rows), return_distances=True,
         )
+        if save_aggregation:
+            import numpy as np
+            import os
+
+            output.mkdir(parents=True, exist_ok=True)
+            destination = output / "aggregation.npz"
+            temporary = destination.with_name(f".{destination.name}.{os.getpid()}.tmp")
+            with temporary.open("wb") as stream:
+                np.savez_compressed(
+                    stream, **distances,
+                    density=np.asarray([float(s.density) for s in selected]),
+                    num_elems=np.asarray([len(set(s.species)) for s in selected]),
+                    reference_density=np.asarray([float(s.density) for s in reference_structures]),
+                    reference_num_elems=np.asarray([len(set(s.species)) for s in reference_structures]),
+                )
+            temporary.replace(destination)
         extra.update({name: round(100 * value, 4) for name, value in cov.items()})
         report.update(
             reference_sha256=file_hash(reference),

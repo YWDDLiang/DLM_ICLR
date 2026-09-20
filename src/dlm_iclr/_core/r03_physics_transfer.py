@@ -1,6 +1,7 @@
 """Retained crystal DLM implementation; see docs/method.md for the public workflow."""
 
 from __future__ import annotations
+from dlm_iclr.runtime.capacity import MAX_ATOMS, MIN_ATOMS, DATASET_LABEL, ATOM_RANGE_TEXT
 from typing import Any, Mapping, Sequence
 import torch
 from dlm_iclr._core.fixed_slot import FixedSlotConfig, MASK_TOKEN_ID
@@ -15,7 +16,7 @@ from dlm_iclr._core.periodic_geometry_ops import minimum_image_distances
 
 REPAIR_SUPPORT_PROTOCOL = {
     "representation": "dynamic_v1",
-    "max_atoms": 20,
+    "max_atoms": MAX_ATOMS,
     "coord_period": 100,
     "canonicalize_periodic_alias": True,
     "duplicate_coordinate_mask": True,
@@ -59,7 +60,7 @@ def build_repair_constraints(tokenizer: Any) -> dict[str, Any]:
     angles = {axis: ids(axis, config.angle_min_bin, config.angle_max_bin) for axis in ("AA", "AB", "AG")}
     return {
         **REPAIR_SUPPORT_PROTOCOL,
-        "count_token_to_n": ids("N", 1, 20),
+        "count_token_to_n": ids("N", 1, MAX_ATOMS),
         "coord_token_to_bin": coords,
         "coord_bin_to_token_id": {a: {v: k for k, v in m.items()} for a, m in coords.items()},
         "coordinate_alias_token_ids": {

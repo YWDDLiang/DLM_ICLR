@@ -121,7 +121,8 @@ class CSPDiffusion(nn.Module):
         return loss, loss_lattice, loss_coord
 
     @torch.no_grad()
-    def sample(self, batch, step_lr=1e-5, diff_steps=1000, *, reuse_fixed_geometry=False):
+    def sample(self, batch, step_lr=1e-5, diff_steps=1000, *, reuse_fixed_geometry=False,
+               save_trajectory=True, noise_bank=None):
         batch_size = batch.num_graphs
 
         # CrysLLMGen
@@ -186,7 +187,8 @@ class CSPDiffusion(nn.Module):
             # Origin code : https://github.com/yang-song/score_sde/blob/main/sampling.py
 
             # Corrector
-            rand_x = torch.randn_like(x_T) if t > 1 else torch.zeros_like(x_T)
+            rand_x = (noise_bank["corrector_coordinates"][time_start - t] if noise_bank is not None
+                      else torch.randn_like(x_T)) if t > 1 else torch.zeros_like(x_T)
 
             step_size = step_lr * (sigma_x / self.sigma_scheduler.sigma_begin) ** 2
             std_x = torch.sqrt(2 * step_size)
@@ -202,8 +204,10 @@ class CSPDiffusion(nn.Module):
             l_t_minus_05 = l_t if not self.keep_lattice else l_t
 
             # Predictor
-            rand_l = torch.randn_like(l_T) if t > 1 else torch.zeros_like(l_T)
-            rand_x = torch.randn_like(x_T) if t > 1 else torch.zeros_like(x_T)
+            rand_l = (noise_bank["predictor_lattice"][time_start - t] if noise_bank is not None
+                      else torch.randn_like(l_T)) if t > 1 else torch.zeros_like(l_T)
+            rand_x = (noise_bank["predictor_coordinates"][time_start - t] if noise_bank is not None
+                      else torch.randn_like(x_T)) if t > 1 else torch.zeros_like(x_T)
 
             adjacent_sigma_x = self.sigma_scheduler.sigmas[t - 1]
             step_size = sigma_x**2 - adjacent_sigma_x**2
@@ -233,7 +237,11 @@ class CSPDiffusion(nn.Module):
                 "frac_coords": x_t_minus_1 % 1.0,
                 "lattices": l_t_minus_1,
             }
+            if not save_trajectory:
+                del traj[t]
 
+        if not save_trajectory:
+            return traj[0], None
         traj_stack = {
             "num_atoms": batch.num_atoms,
             "atom_types": batch.atom_types,

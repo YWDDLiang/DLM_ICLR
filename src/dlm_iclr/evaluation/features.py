@@ -94,15 +94,14 @@ def compute_features(structures, *, cache, workers=1):
     )
 
 
-def coverage(predicted, reference, *, struc_cutoff, comp_cutoff, requested, block_size=256):
+def coverage(predicted, reference, *, struc_cutoff, comp_cutoff, requested, block_size=256,
+             return_distances=False):
     """Upstream independent structural/composition minima, in distance blocks."""
     from scipy.spatial.distance import cdist
 
     if requested < 1 or not reference or block_size < 1:
         raise ValueError("Coverage requires a positive denominator, reference set and block size")
     valid = [row for row in predicted if row["error"] is None]
-    if not valid:
-        return {"cov_recall": 0.0, "cov_precision": 0.0}
     pred_s = np.asarray([row["struct_fp"] for row in valid])
     pred_c = np.asarray([row["comp_fp"] for row in valid])
     ref_s = np.asarray([row["struct_fp"] for row in reference])
@@ -119,9 +118,15 @@ def coverage(predicted, reference, *, struc_cutoff, comp_cutoff, requested, bloc
             recall_c[right] = np.minimum(recall_c[right], distances_c.min(axis=0))
             precision_s[left] = np.minimum(precision_s[left], distances_s.min(axis=1))
             precision_c[left] = np.minimum(precision_c[left], distances_c.min(axis=1))
-    return {
+    metrics = {
         "cov_recall": float(np.mean((recall_s <= struc_cutoff) & (recall_c <= comp_cutoff))),
         "cov_precision": float(
             np.sum((precision_s <= struc_cutoff) & (precision_c <= comp_cutoff)) / requested
         ),
     }
+    if return_distances:
+        return metrics, {
+            "recall_structure": recall_s, "recall_composition": recall_c,
+            "precision_structure": precision_s, "precision_composition": precision_c,
+        }
+    return metrics

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from dlm_iclr.runtime.capacity import MAX_ATOMS, MIN_ATOMS, DATASET_LABEL, ATOM_RANGE_TEXT
 from collections import Counter
 import re
 from typing import Any, Dict, Mapping, Sequence
@@ -355,7 +356,7 @@ def has_plan_tail_after_end_marker(text: str) -> bool:
 
 
 def parse_composition_plan(
-    text: str, *, max_atoms: int = 20, plan_style: str | None = None
+    text: str, *, max_atoms: int = MAX_ATOMS, plan_style: str | None = None
 ) -> Dict[str, Any]:
     """Parse a text plan into a minimal plan_state dict.
 

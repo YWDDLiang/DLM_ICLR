@@ -32,6 +32,10 @@ def load(path=None, overrides=()):
         for parent in parents:
             target = target.setdefault(parent, {})
         target[leaf] = value
+    os.environ["DLM_LENGTH_MAX_BIN"] = str(config["dataset"].get("length_max_bin", 500))
+    os.environ["DLM_MAX_ATOMS"] = str(config["dataset"]["max_atoms"])
+    os.environ["DLM_MIN_ATOMS"] = str(config["dataset"].get("min_atoms", 1))
+    os.environ["DLM_DATASET_LABEL"] = config["dataset"].get("label", {"mp20":"MP-20"}.get(config["dataset"]["name"], config["dataset"]["name"]))
     config["_config_dir"] = str(Path(path).resolve().parent if path else Path.cwd())
     return config
 
@@ -56,6 +60,11 @@ def asset(config, name):
     return str(path(config, value)) if value else ""
 
 
+def reference_path(config, split):
+    value = config["evaluation"].get("reference_" + split, "@run/data/structures/" + split + ".jsonl")
+    return str(run_root(config) / value[5:]) if value.startswith("@run/") else str(path(config, value))
+
+
 def backend_config(config, stage="c2"):
     from .base_config import Assets, Config, Inference, Training
 
@@ -70,7 +79,7 @@ def backend_config(config, stage="c2"):
         planner=asset(config, "planner"),
         chgnet=asset(config, "chgnet"),
         hull_cache=str(run_root(config) / "hull"),
-        novelty_reference=str(run_root(config) / "data/structures/train.jsonl"),
+        novelty_reference=reference_path(config, "train"),
     )
     cfg.inference = Inference(
         temperature=config["c1" if stage == "c1" else "c2"]["temperature"],
