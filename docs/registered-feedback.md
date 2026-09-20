@@ -15,7 +15,7 @@ The preparation APIs are ordinary Python functions:
 | Task | API |
 |---|---|
 | Generate original drafts and save traces | `draft_loop.backend.sample_drafts` |
-| Generate continuous candidates and exact-token physical supervision | `draft_loop.backend.collect_teachers` and `measure` |
+| Generate continuous candidates and exact-token physical supervision | `draft_loop.backend.collect_teacher_candidates` and `measure` |
 | Register an equivalent complete teacher | `draft_loop.teacher_registration.align_teacher_to_anchor` |
 | Extract actual recorded coordinate commits | `draft_loop.state_replay.coordinate_replay_views` |
 | Propose a completion without changing visible fields | `draft_loop.prefix_teacher.propose_completion` |
