@@ -95,7 +95,7 @@ def main(argv=None):
             tokenizer=AutoTokenizer.from_pretrained(assets['draft'],trust_remote_code=True)
             inverse={int(v):k for k,v in tokenizer.get_vocab().items()}
             for teacher in teachers:
-                record={'body':''.join(inverse[x] for x in teacher['body_token_ids'])}
+                record={'success':True,'body':''.join(inverse[x] for x in teacher['body_token_ids'])}
                 if record_key(record)!=teacher['exact_record_key']:raise ValueError('Teacher token/physics identity differs')
             del tokenizer
             frozen={'assets':assets,'material':material,'recipe':profile,'ledger':str(budget.path)}

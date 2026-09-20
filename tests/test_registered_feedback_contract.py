@@ -63,6 +63,53 @@ def test_profile_materializes_runtime_and_shared_limits():
     assert settings['budget']==limits
 
 
+def test_train_entry_checks_real_token_key_before_calling_trainer(tmp_path,monkeypatch):
+    """Exercise entry wiring with the real physical key, without loading weights."""
+    import dlm_iclr.feedback as entry
+    import dlm_iclr.runtime.config as config_module
+    import dlm_iclr.draft_loop.teacher_fit as fitting
+    from dlm_iclr.draft_loop.common import write_rows
+    from dlm_iclr.evaluation.physics import record_key
+    from transformers import AutoTokenizer
+    teachers,feedback,review=material()
+    tokens=list(range(1,12));vocabulary={f'<t{i}>':i for i in tokens}
+    real_key=record_key({'success':True,'body':''.join(vocabulary)})
+    teachers[0].update(body_token_ids=tokens,exact_record_key=real_key)
+    teachers[0]['measurement']['record_key']=real_key
+    feedback[0]['proposal_record_key']=real_key
+    feedback[0]['measurement']['record_key']=real_key
+    review.update(teachers_digest=digest(teachers),feedback_digest=digest(feedback))
+    class Tokenizer:
+        def get_vocab(self):return vocabulary
+    monkeypatch.setattr(AutoTokenizer,'from_pretrained',lambda *a,**k:Tokenizer())
+    monkeypatch.setattr(config_module,'load',lambda p:{})
+    monkeypatch.setattr(entry,'model_identity',lambda *args:'fixed-model-binding')
+    calls=[]
+    def train(base,adapter,rows,output,recipe,**kwargs):
+        calls.append(rows)
+        return {'selected_checkpoint':str(output/'best'),'best_step':1}
+    monkeypatch.setattr(fitting,'train_existing_teachers',train)
+    values={'config':{},'assets':{'base':'base','draft':'draft','head':'head','binding':'fixed-model-binding'},
+        'recipe':{'schema':'registered_feedback_recipe_v1','training':{},'seed':1,
+            'inference_protocol':{'body_temperature':.2,'F_reduction_protocol':'ordered_csr_v1'}},
+        'budget-limits':{},'material-review':review}
+    for name,value in values.items():write_json(tmp_path/f'{name}.json',value)
+    write_rows(tmp_path/'teachers.jsonl',teachers);write_rows(tmp_path/'prefix-feedback.jsonl',feedback)
+    argv=['train']
+    for name in values:argv.extend(['--'+name,str(tmp_path/f'{name}.json')])
+    for name in ['teachers','prefix-feedback']:argv.extend(['--'+name,str(tmp_path/f'{name}.jsonl')])
+    argv.extend(['--budget-ledger',str(tmp_path/'ledger.json'),'--output',str(tmp_path/'trained')])
+    entry.main(argv)
+    assert calls==[teachers]
+    assert (tmp_path/'trained/assets.json').exists()
+    teachers[0]['body_token_ids'][0]=2
+    review.update(teachers_digest=digest(teachers))
+    write_json(tmp_path/'material-review.json',review);write_rows(tmp_path/'teachers.jsonl',teachers)
+    argv[-1]=str(tmp_path/'mismatched')
+    with pytest.raises(ValueError,match='token/physics identity differs'):entry.main(argv)
+    assert len(calls)==1
+
+
 def test_changed_temperature_or_unversioned_cache_cannot_reuse_drafts(tmp_path):
     from dlm_iclr.draft_loop.backend import sample_drafts
     config={'c1':{'temperature':.7},'diffusion':{}}
