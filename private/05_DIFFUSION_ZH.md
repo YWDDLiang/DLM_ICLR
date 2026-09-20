@@ -1,6 +1,6 @@
 # 连续扩散精修：沿用 CrysLLMGen
 
-> 当前连续 F 在 C2 中的教师角色，以及 F400/F800 从同一 raw 出发的对照，见 [完整方法与教师说明](../docs/C1_C2_METHOD_ZH.md)。本页保留原连续扩散模块推导与训练配方。
+> F 将周期 draft 转为连续参照，参照及条件候选的物理后果再进入 DLM 的学习；完整主线见[物理反馈 Master Story](../docs/PHYSICAL_FEEDBACK_MASTER_STORY_ZH.md)。另一条注册 draft-feedback 配方与 F400/F800 对照见[独立方法说明](../docs/C1_C2_METHOD_ZH.md)。本页保留原扩散推导与训练配方。
 
 ## What / Why / How
 

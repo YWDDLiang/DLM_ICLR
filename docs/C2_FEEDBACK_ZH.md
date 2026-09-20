@@ -1,10 +1,10 @@
-# C2 的作用，以及它如何与 DLM、C1 协作
+# 注册 draft-feedback 配方：DLM 与固定 C1 的协作
 
-本文是简明入口。完整的 C1 分布、Fourier 周期势、真实提交概率边界、两类教师的注册公式与实际损失，见 **[当前 C1/C2：方法、数学与教师反馈的完整故事](C1_C2_METHOD_ZH.md)**。对应研究分支为 `codex/verified-feedback-train-20260920`。
+本文是 `python -m dlm_iclr.feedback` 独立配方的简明入口，完整定义见[注册教师与前缀反馈方法](C1_C2_METHOD_ZH.md)。原 KEEP/EDIT 的故事、数学与教师机制见[物理反馈 Master Story](PHYSICAL_FEEDBACK_MASTER_STORY_ZH.md)。对应研究分支为 `codex/verified-feedback-train-20260920`；两条参数更新路径及其结果分别保留。
 
 当前方法的主线是：**Planner 条件 → DLM+C1 构造 raw → 冻结连续 diffusion 与物理工具提出、核验更好的结构 → C2 整理几何教师与真实前缀监督 → 学习回 DLM → 继续通过 C1 构造 draft。**
 
-目标是把外部精修经验转化为生成器本身的能力，使 raw 质量提高，或使后续精修得到更好的结果、在更少步数下达到相应质量。当前已经得到限定的已见 TRAIN 证据；扩大数据的效果仍需真实生成评价。
+该配方目标是把外部精修经验转化为首次生成器的能力。它已得到限定的小规模已见 TRAIN 证据；扩大的 raw 对照没有复现该原生收益，结果见[完整 raw 报告](results/reporting-1306-raw.md)。这不改变原 KEEP/EDIT 主实验的模型或证据。
 
 ## 三个模块分别负责什么
 

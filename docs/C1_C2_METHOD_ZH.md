@@ -1,6 +1,6 @@
-# 当前 C1 / C2：方法、数学与教师反馈的完整故事
+# 注册教师与真实前缀反馈：独立研究配方的方法与数学
 
-本文对应研究分支 `codex/verified-feedback-train-20260920` 的注册物理反馈方法，按当前实现说明“生成时怎样构造、教师怎样产生、参数怎样学习、结果怎样验证”。[README](../README.md) 是简要入口，[运行与材料契约](registered-feedback.md) 给出公开接口。历史 post-F 编辑器见 [C2 历史部分](modules/c2.md#historical-c2-editor-retained-for-reproduction)，不计入这里的反馈学习配方。
+本文保留研究分支 `codex/verified-feedback-train-20260920` 中 `python -m dlm_iclr.feedback` 的注册教师/前缀学习配方及其证据。原 KEEP/EDIT 方法的迁移主线见[物理反馈 Master Story](PHYSICAL_FEEDBACK_MASTER_STORY_ZH.md)和[C2 条件重构](modules/c2.md)。两者的参数路径不同；这里的原始材料、损失、训练记录与结果继续按本页定义保留。[运行与材料契约](registered-feedback.md)给出公开接口。
 
 **核心故事：C1 把 DLM 的位置预测组织成周期相容的坐标联合候选；C2 把连续精修与物理核验得到的改善，转成同条件的完整几何教师和真实前缀监督；DLM 学习后，再通过固定的 C1 生成新的 raw。** 目标是提高生成器自身的物理质量，并检验这种改善能否传递到后续精修质量或精修成本。
 

@@ -1,12 +1,14 @@
 # Registered physical feedback learning
 
+This page documents the separate draft-adapter recipe, not the retained conditional editor/value method. The repository's physical-feedback narrative for the original method is the [Master Story](PHYSICAL_FEEDBACK_MASTER_STORY_ZH.md); the recipe below keeps its existing material, loss and result bindings.
+
 The objective is to transfer improvements found by continuous refinement and physical tools into the discrete draft generator. The evaluated path keeps the original Plan/prompt, C1 sampler, physical thresholds, and the continuous refiner. It updates draft LoRA parameters using physically checked targets. There is no differentiation through F or CHGNet, no post-F C2 edit, and no learned online verifier claim in this result.
 
 ## What C2 contributes, and how it cooperates with C1
 
 C1 handles periodic dependencies while constructing the draft. C2 supplies the experience from which a better constructor is learned: continuous lattice/coordinate candidates, exact-token verification, representation registration and corrections aligned with actual student prefixes. The active C2 component is a physical feedback and supervision mechanism; it should not be described as an independently successful learned online value model.
 
-Updating DLM LoRA changes its lattice/coordinate predictions and the hidden states consumed by C1. The fixed C1 head then uses these updated inputs to rebuild its periodic axis distribution during the next generation. This provides an offline-learning path from C2 feedback to online coordinate choices. C1 parameters are not readapted in the evaluated 75/25 recipe. See [the C2 module explanation](modules/c2.md) and [中文说明](C2_FEEDBACK_ZH.md).
+Updating DLM LoRA changes its lattice/coordinate predictions and the hidden states consumed by C1. The fixed C1 head then uses these updated inputs to rebuild its periodic axis distribution during the next generation. This provides an offline-learning path from C2 feedback to online coordinate choices. C1 parameters are not readapted in the evaluated 75/25 recipe. See the [registered method](C1_C2_METHOD_ZH.md) and [中文说明](C2_FEEDBACK_ZH.md).
 
 The [complete method and mathematical account](C1_C2_METHOD_ZH.md) covers C1's conditional tree law, its confidence-projected commits, equivalent complete teachers, prefix-constrained completions, the native utility, and the actual learning objective. The [C1 module](modules/c1.md) also gives its probability and training equations in English.
 
