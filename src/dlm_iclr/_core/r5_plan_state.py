@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-"Retained crystal DLM implementation; see docs/method.md for the public workflow."
+from dlm_iclr.runtime.capacity import MAX_ATOMS
+
+"Retained crystal DLM implementation; see docs/reproduction.md for the public workflow."
 import json
 from typing import Any, Dict, Mapping, Sequence
 
@@ -291,7 +293,7 @@ def plan_state_from_arrays(
     return plan
 
 
-def validate_plan_state(plan: Mapping[str, Any], *, max_atoms: int = 20) -> PlanValidation:
+def validate_plan_state(plan: Mapping[str, Any], *, max_atoms: int = MAX_ATOMS) -> PlanValidation:
     try:
         num_atoms = int(plan.get("N"))
     except Exception:

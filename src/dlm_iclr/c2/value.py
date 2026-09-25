@@ -1,6 +1,8 @@
 """Learned KEEP/EDIT values. Physical labels are absent from this module's API."""
 
 from __future__ import annotations
+
+from dlm_iclr.runtime.capacity import MAX_ATOMS
 import math
 from pathlib import Path
 import numpy as np
@@ -25,7 +27,7 @@ GEOMETRY_FEATURES = (
 def geometry_features(current, proposal, positions, num_sites):
     sites = {(position - 8) // 4 for position in positions if position >= 8}
     values = [
-        num_sites / 20,
+        num_sites / MAX_ATOMS,
         len(sites) / num_sites,
         len(positions) / (6 + 3 * num_sites),
         float(any(position < 7 for position in positions)),

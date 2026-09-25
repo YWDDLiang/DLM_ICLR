@@ -33,7 +33,7 @@ def generate_plans(
     assets,
     output,
     *,
-    requests=1050,
+    requests=1000,
     seed=17,
     device="cuda:0",
     usage_role="evaluation",

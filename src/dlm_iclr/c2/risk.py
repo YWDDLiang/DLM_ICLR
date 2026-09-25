@@ -1,5 +1,7 @@
 """Cheap periodic-contact features and a source-balanced failure readout."""
 
+from dlm_iclr.runtime.capacity import MAX_ATOMS
+
 from collections import Counter
 import json
 from pathlib import Path
@@ -71,7 +73,7 @@ def scalar_feature_grid(before, proposal, positions, site, axis, values):
     scope = len(set((p - 8) // 4 for p in positions if p >= 8))
     return np.column_stack(
         [
-            np.full(len(values), n / 20),
+            np.full(len(values), n / MAX_ATOMS),
             np.full(len(values), scope / n),
             np.full(len(values), len(positions) / (6 + 3 * n)),
             np.zeros(len(values)),

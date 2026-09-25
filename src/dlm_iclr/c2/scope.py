@@ -5,6 +5,8 @@ no confidence threshold, rank-based override, or one-atom full-cell forcing.
 """
 
 from __future__ import annotations
+
+from dlm_iclr.runtime.capacity import MAX_ATOMS
 import math
 import torch
 
@@ -22,7 +24,7 @@ def normalized_choices(logits: torch.Tensor, actions: list[int], temperature: fl
 
 
 def feasible_modes(n: int, available_calls: int):
-    if not 1 <= n <= 20 or available_calls < 1:
+    if not 1 <= n <= MAX_ATOMS or available_calls < 1:
         raise ValueError("Need one inspection call and a valid atom count")
     # available_calls includes this inspection and one future scoring call.
     modes = [0]

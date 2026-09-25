@@ -48,6 +48,7 @@ def construct(
     lattice_gamma_last=False,
     temperature=0.7,
     axis_sampler=None,
+    geometry_monitor=True,
 ):
     if len(batch) != 1:
         raise ValueError("Use independent worker processes for construction batch size greater than one")
@@ -74,7 +75,7 @@ def construct(
             {position: [int(value)] for position, value in enumerate(initial_body) if value != MASK_TOKEN_ID}
         )
     monitor = r03_geometry_bridge.ConstructionGeometryMonitor(
-        enabled=True,
+        enabled=geometry_monitor,
         tokenizer=tokenizer,
         generation_position_groups=schedule,
         native_constraints=constraints,
@@ -104,7 +105,7 @@ def construct(
         prefill_token_ids_by_generation_pos=prefill,
         generation_position_groups=schedule,
         lightweight_decoding_constraints=constraints,
-        candidate_hook=monitor.apply_logits,
+        candidate_hook=monitor.apply_logits if geometry_monitor else None,
         **optional,
     )
     suffix = generated[:, prompt.shape[1] :]
@@ -171,7 +172,8 @@ class Constructor:
         hook = self.model.register_forward_pre_hook(count_forward)
         graph = None
         try:
-            sampler = partial(construct, temperature=self.policy.temperature, axis_sampler=axis_sampler)
+            sampler = partial(construct, temperature=self.policy.temperature, axis_sampler=axis_sampler,
+                              geometry_monitor=self.policy.geometry_monitor)
             if self.policy.construction_recovery:
                 suffix, trace = construct_cascade(
                     self.model,

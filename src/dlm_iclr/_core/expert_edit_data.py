@@ -1,6 +1,8 @@
-"""Retained crystal DLM implementation; see docs/method.md for the public workflow."""
+"""Retained crystal DLM implementation; see docs/reproduction.md for the public workflow."""
 
 from __future__ import annotations
+
+from dlm_iclr.runtime.capacity import MAX_ATOMS
 from dataclasses import asdict
 import itertools
 import math
@@ -45,7 +47,7 @@ def certify_geometry(arrays, *, cutoff=0.5, max_pair_images=4_000_000):
         lattice = lattice_from_parameters(arrays["lengths"], arrays["angles"])
         coords = np.asarray(arrays["frac_coords"], dtype=float)
         n = len(arrays["species"])
-        if not 1 <= n <= 20 or coords.shape != (n, 3) or not np.isfinite(coords).all():
+        if not 1 <= n <= MAX_ATOMS or coords.shape != (n, 3) or not np.isfinite(coords).all():
             raise ValueError("invalid coordinate dimensions")
         volume = float(abs(np.linalg.det(lattice)))
         if volume < GEOMETRY_PROTOCOL["minimum_volume_A3"]:

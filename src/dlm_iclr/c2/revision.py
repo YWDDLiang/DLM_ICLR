@@ -1,5 +1,7 @@
 """One local conditional revision using the unchanged original crystal editor."""
 
+from dlm_iclr.runtime.capacity import MAX_ATOMS
+
 from copy import deepcopy
 import numpy as np
 import torch
@@ -285,7 +287,7 @@ class OnePassRepair:
                 b = result[i]
                 c = b["repair_candidate"]
                 n = b["plan"]["plan_state"]["N"]
-                keep_g = torch.tensor([[n / 20, 0, 0, 0, 0, 0, 0, 0, 1]], dtype=torch.float32)
+                keep_g = torch.tensor([[n / MAX_ATOMS, 0, 0, 0, 0, 0, 0, 0, 1]], dtype=torch.float32)
                 value_g = torch.tensor([c["geometry_features"]], dtype=torch.float32)
                 gain = (self.value(h[None], value_g) - self.value(kept[i][None], keep_g))[0]
                 c["predicted_gain"] = gain.tolist()

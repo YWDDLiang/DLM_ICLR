@@ -1,6 +1,8 @@
 """Offline teacher distillation; this module is never imported during inference."""
 
 from __future__ import annotations
+
+from dlm_iclr.runtime.capacity import MAX_ATOMS
 from collections import Counter, defaultdict
 from pathlib import Path
 import math
@@ -151,7 +153,7 @@ def train_value(config, data, output, *, editor_checkpoint=None, device="cuda:0"
     ).to(device)
     geometry = torch.tensor([row["geometry_features"] for row in rows], device=device)
     base_geometry = torch.tensor(
-        [[row["num_sites"] / 20, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0] for row in rows], device=device
+        [[row["num_sites"] / MAX_ATOMS, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0] for row in rows], device=device
     )
     before = torch.tensor([row["before_targets"] for row in rows], device=device)
     after = torch.tensor([row["after_targets"] for row in rows], device=device)

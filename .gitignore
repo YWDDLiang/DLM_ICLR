@@ -8,7 +8,7 @@ build/
 dist/
 outputs/
 checkpoints/
-private/*
+private/
 configs/local*.json
 *.log
 .env
@@ -24,5 +24,19 @@ datasets/
 artifacts/
 *.tmp
 
-!private/*.md
-!private/technical_notes_zh.zip
+!private/.md
+
+results/
+docs/results/
+# Research notes retained locally, excluded from the reproduction tree.
+docs/*
+!docs/reproduction.md
+CONTRIBUTING.md
+configs/custom.json
+src/dlm_iclr/data/presets/training/
+src/dlm_iclr/data/presets/plans/H1A2_1200.jsonl
+src/dlm_iclr/data/presets/plans/H1A2_1050.jsonl
+src/dlm_iclr/data/presets/plans/R03_256.jsonl
+src/dlm_iclr/_core/cif_lite.py
+src/dlm_iclr/_core/generation_schedule.py
+src/dlm_iclr/_core/r5_dynamic_length.py

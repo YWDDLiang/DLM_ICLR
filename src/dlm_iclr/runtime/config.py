@@ -18,9 +18,19 @@ def merge(base, update):
     return result
 
 
-def load(path=None, overrides=()):
+def load(path=None, overrides=(), *, dataset=None):
     defaults = json.loads(files("dlm_iclr").joinpath("defaults.json").read_text(encoding="utf-8"))
-    config = merge(defaults, json.loads(Path(path).read_text(encoding="utf-8-sig"))) if path else defaults
+    from .datasets import profile, canonical_name, activate
+    supplied = json.loads(Path(path).read_text(encoding="utf-8-sig")) if path else {}
+    name = canonical_name(dataset or supplied.get("dataset", {}).get("name", "mp20"))
+    preset = profile(name) if dataset or name in ("mp20", "perov-5", "mpts-52") else {}
+    config = merge(merge(defaults, preset), supplied)
+    config["dataset"]["name"] = name
+    if dataset:
+        old_name = canonical_name(supplied.get("dataset", {}).get("name", name))
+        if old_name != name:
+            raise ValueError("--dataset conflicts with --config; use the matching dataset config")
+        config["dataset"].update({k: v for k, v in preset["dataset"].items() if k != "splits"})
     for assignment in overrides:
         key, raw = assignment.split("=", 1)
         try:
@@ -32,6 +42,7 @@ def load(path=None, overrides=()):
         for parent in parents:
             target = target.setdefault(parent, {})
         target[leaf] = value
+    activate(config)
     config["_config_dir"] = str(Path(path).resolve().parent if path else Path.cwd())
     return config
 
@@ -79,6 +90,11 @@ def backend_config(config, stage="c2"):
         editor_max_calls=config["c2"]["max_calls"],
         editor_batch_size=config["c2"]["batch_size"],
     )
+    if stage == "b0":
+        cfg.inference.temperature = config["b0"].get("temperature", 0.7)
+        cfg.inference.construction_recovery = False
+        cfg.inference.adaptive_lattice_recovery = False
+        cfg.inference.geometry_monitor = False
     t = config["c2"]["training"]
     cfg.training = Training(
         plans=t["plans"],

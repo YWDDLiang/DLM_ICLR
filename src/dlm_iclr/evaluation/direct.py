@@ -12,7 +12,7 @@ from dlm_iclr.runtime.io import file_hash, read_rows, write_json, write_rows
 
 BASIC_METRICS = ("comp_valid", "struct_valid")
 FULL_METRICS = (*BASIC_METRICS, "valid", "wdist_density", "wdist_num_elems", "cov_recall", "cov_precision")
-COVERAGE_CUTOFFS = {"mp20": (0.4, 10.0), "carbon": (0.2, 4.0), "perovskite": (0.2, 4.0)}
+COVERAGE_CUTOFFS = {"mp20": (0.4, 10.0), "carbon": (0.2, 4.0), "perovskite": (0.2, 4.0), "perov-5": (0.2, 4.0), "mpts-52": (0.4, 10.0)}
 
 
 @lru_cache(maxsize=8192)
@@ -154,7 +154,9 @@ def evaluate_direct(
             )
         selected = []
         for index, (row, feature) in enumerate(zip(rows, generated, strict=True)):
-            row["fingerprint_valid"] = feature["error"] is None
+            row["fingerprint_valid"] = (
+                None if str(feature["error"]).startswith("resource_unknown:") else feature["error"] is None
+            )
             row["fingerprint_error"] = feature["error"]
             predicates = (row["comp_valid"], row["struct_valid"], row["fingerprint_valid"])
             row["valid"] = False if False in predicates else None if None in predicates else True
@@ -187,6 +189,13 @@ def evaluate_direct(
             generated, ground_truth, struc_cutoff=struc_cutoff, comp_cutoff=comp_cutoff, requested=len(rows)
         )
         extra.update({name: round(100 * value, 4) for name, value in cov.items()})
+        resource_unknown = sum(row["fingerprint_valid"] is None for row in rows)
+        if resource_unknown:
+            report["coverage_bounds_percent"] = {
+                "cov_precision": [100 * cov["cov_precision"], min(100.0, 100 * (cov["cov_precision"] + resource_unknown / len(rows)))],
+                "cov_recall": [100 * cov["cov_recall"], 100.0],
+            }
+            extra["cov_precision"] = extra["cov_recall"] = None
         report.update(
             reference_sha256=file_hash(reference),
             reference_requests=len(reference_structures),

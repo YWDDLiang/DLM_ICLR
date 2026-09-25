@@ -64,7 +64,7 @@ def test_direct_retains_failed_requests(tmp_path):
     ]
     rows, report = evaluate_direct(records, tmp_path, metrics="comp_struct")
     assert report["counts"]["requests"] == 2
-    assert rows[0]["comp_valid"] and rows[0]["struct_valid"]
+    assert rows[0]["comp_valid"] and rows[0]["struct_valid"], rows[0]
     assert rows[1]["comp_valid"] is False and rows[1]["struct_valid"] is False
 
 

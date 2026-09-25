@@ -1,0 +1,28 @@
+{
+  "dataset": {
+    "name": "perov-5",
+    "label": "Perov-5",
+    "min_atoms": 5,
+    "max_atoms": 5,
+    "splits": {
+      "train": "../datasets/perov-5/train.csv",
+      "val": "../datasets/perov-5/val.csv",
+      "test": "../datasets/perov-5/test.csv"
+    }
+  },
+  "output": "../outputs/perov-5",
+  "sampling": {
+    "plans": null,
+    "requests": 1000
+  },
+  "models": {
+    "diffusion": "../checkpoints/perov-5/diffusion.pt"
+  },
+  "evaluation": {
+    "direct": "full",
+    "coverage_cutoffs": [
+      0.2,
+      4.0
+    ]
+  }
+}

@@ -1,6 +1,8 @@
 """Plan presets, source identities, and composition-disjoint dataset preparation."""
 
 from __future__ import annotations
+
+from dlm_iclr.runtime.capacity import MAX_ATOMS, MIN_ATOMS
 from collections import Counter
 from functools import reduce
 import math
@@ -9,9 +11,8 @@ from dlm_iclr._core.fixed_slot import SYMBOL_TO_Z, FixedSlotConfig
 from dlm_iclr._core.r5_plan_state import build_body_prompt
 from dlm_iclr.runtime.io import fingerprint, read_rows, write_json, write_rows
 
-PRESETS = ("H1A2_1050", "H1A2_1200", "R03_256")
+PRESETS = ("H1A2_1000",)
 PRESET_FILES = {name: f"plans/{name}.jsonl" for name in PRESETS}
-PRESET_FILES["CLEAN_TRAIN_1000"] = "training/clean_train_1000.jsonl"
 
 
 def composition_key(plan):
@@ -29,8 +30,8 @@ def validate_plan(row):
     if not isinstance(plan, dict):
         return "missing_plan_state"
     n, elements, counts = plan.get("N"), plan.get("elements"), plan.get("counts")
-    if type(n) is not int or not 1 <= n <= 20:
-        return "atom_count_outside_1_to_20"
+    if type(n) is not int or not MIN_ATOMS <= n <= MAX_ATOMS:
+        return f"atom_count_outside_{MIN_ATOMS}_to_{MAX_ATOMS}"
     if not isinstance(elements, list) or not isinstance(counts, list) or len(elements) != len(counts):
         return "invalid_element_counts"
     if not elements or len(set(elements)) != len(elements):
@@ -73,6 +74,8 @@ def axis_schedule(plan):
 
 def load_plans(source, *, requests=None, legal_only=False, seed=17):
     source = str(source)
+    if source.startswith("preset:"):
+        source = source[7:]
     path = (
         Path(__file__).parent / "presets" / PRESET_FILES[source] if source in PRESET_FILES else Path(source)
     )

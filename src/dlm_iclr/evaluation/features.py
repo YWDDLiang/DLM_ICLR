@@ -1,7 +1,6 @@
 """Optional CrysLLMGen Direct fingerprints and bounded-memory coverage."""
 
 from __future__ import annotations
-from concurrent.futures import ProcessPoolExecutor
 import importlib.metadata
 from pathlib import Path
 import numpy as np
@@ -42,7 +41,15 @@ def _featurize(payload):
         return {"comp_fp": None, "struct_fp": None, "error": f"{type(error).__name__}: {error}"}
 
 
-def compute_features(structures, *, cache, workers=1):
+def _worker(connection):
+    _initialize()
+    connection.send({"ready": True})
+    while True:
+        payload = connection.recv()
+        connection.send({"result": _featurize(payload)})
+
+
+def compute_features(structures, *, cache, workers=1, timeout=60.0):
     """Cache exact geometry and featurizer identity; retry failed fingerprints."""
     if workers < 1:
         raise ValueError("Direct fingerprint workers must be positive")
@@ -74,23 +81,26 @@ def compute_features(structures, *, cache, workers=1):
         else:
             pending[key] = payload
 
-    def retain(results):
-        for key, value in zip(pending, results, strict=True):
+    if pending:
+        from .._core.isolated_workers import isolated_results
+        for key, _, value in isolated_results(
+            pending.items(), worker_target=_worker, worker_arguments=[()] * workers,
+            task_timeout=timeout, startup_timeout=180.0,
+        ):
+            if value.get("status") == "worker_error":
+                value = {"comp_fp": None, "struct_fp": None,
+                         "error": "resource_unknown:" + value["error"]}
             values[key] = value
             if value["error"] is None:
                 write_json(cache / key[:2] / (key + ".json"), value)
-
-    if workers == 1:
-        retain(map(_featurize, pending.values()))
-    elif pending:
-        with ProcessPoolExecutor(max_workers=workers, initializer=_initialize) as pool:
-            retain(pool.map(_featurize, pending.values()))
     return (
         [
             values[key] if key else {"comp_fp": None, "struct_fp": None, "error": "not_reconstructed"}
             for key in keys
         ],
-        {"identity": identity, "cache_hits": hits, "computed": len(pending)},
+        {"identity": identity, "cache_hits": hits, "computed": len(pending),
+         "seconds_per_structure": timeout,
+         "resource_unknown": sum(str(v["error"]).startswith("resource_unknown:") for v in values.values())},
     )
 
 

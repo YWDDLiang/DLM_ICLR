@@ -1,0 +1,28 @@
+{
+  "dataset": {
+    "name": "mpts-52",
+    "label": "MPTS-52",
+    "min_atoms": 1,
+    "max_atoms": 52,
+    "splits": {
+      "train": "../datasets/mpts-52/train.csv",
+      "val": "../datasets/mpts-52/val.csv",
+      "test": "../datasets/mpts-52/test.csv"
+    }
+  },
+  "output": "../outputs/mpts-52",
+  "sampling": {
+    "plans": null,
+    "requests": 1000
+  },
+  "models": {
+    "diffusion": "../checkpoints/mpts-52/diffusion.pt"
+  },
+  "evaluation": {
+    "direct": "full",
+    "coverage_cutoffs": [
+      0.4,
+      10.0
+    ]
+  }
+}

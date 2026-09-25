@@ -15,13 +15,15 @@ feasibility checks reuse the same schema with a larger max_atoms value.
 
 from __future__ import annotations
 
+from dlm_iclr.runtime.capacity import MAX_ATOMS, LENGTH_MAX_BIN
+
 from dataclasses import dataclass, field
 import json
 import math
 import re
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
-ANSWER_TOKEN_COUNT = 1 + 6 + 20 * 5
+ANSWER_TOKEN_COUNT = 1 + 6 + MAX_ATOMS * 5
 MASK_TOKEN_ID = 126336
 
 CANONICAL_PROMPT = (
@@ -153,10 +155,10 @@ Z_TO_SYMBOL = {z: symbol for symbol, z in SYMBOL_TO_Z.items()}
 class FixedSlotConfig:
     """Configuration for MP-20 fixed-slot tokenization."""
 
-    max_atoms: int = 20
+    max_atoms: int = MAX_ATOMS
     length_step: float = 0.1
     length_min_bin: int = 0
-    length_max_bin: int = 500
+    length_max_bin: int = LENGTH_MAX_BIN
     angle_min_bin: int = 1
     angle_max_bin: int = 179
     coord_min_bin: int = 0

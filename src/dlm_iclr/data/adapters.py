@@ -34,7 +34,7 @@ def align_sites(arrays, plan):
     ), order
 
 
-def prepare(config):
+def prepare(config, *, with_planner=False):
     from transformers import AutoTokenizer
     from pymatgen.core import Structure
     from .._core.dynamic_crystal import (
@@ -52,7 +52,8 @@ def prepare(config):
     tokenizer.add_special_tokens({"additional_special_tokens": build_special_tokens()})
     tokenizer.pad_token = tokenizer.pad_token or tokenizer.eos_token
     tokenizer.save_pretrained(root / "tokenizer")
-    planner_tokenizer = AutoTokenizer.from_pretrained(asset(config, "planner_base"), trust_remote_code=True)
+    planner_tokenizer = (AutoTokenizer.from_pretrained(asset(config, "planner_base"), trust_remote_code=True)
+                         if with_planner else None)
     dataset = config["dataset"]
     statistics = {"dataset": dataset["name"], "splits": {}}
     max_prompt = max_answer = 0
@@ -66,8 +67,8 @@ def prepare(config):
                     if row.get("structure")
                     else Structure.from_str(row["cif"], fmt="cif")
                 )
-                if len(crystal) > dataset["max_atoms"]:
-                    raise ValueError("Structure exceeds configured atom count")
+                if not dataset.get("min_atoms", 1) <= len(crystal) <= dataset["max_atoms"]:
+                    raise ValueError("Structure outside configured atom count range")
                 answer, diagnostic = structure_to_dynamic_answer(crystal)
                 if diagnostic.length_clips or diagnostic.angle_clips or diagnostic.coord_clips:
                     raise ValueError("Structure exceeds the coordinate vocabulary")
@@ -75,19 +76,20 @@ def prepare(config):
                 metadata = metadata_from_csv_row(row)
                 plan = plan_state_from_arrays(arrays, metadata=metadata)
                 # Planner conditions use precisely the original quantized source view.
-                planner_rows.extend(
-                    build_records_for_plan(
-                        split=split,
-                        row_idx=index,
-                        plan_state=plan,
-                        metadata=metadata,
-                        tokenizer=planner_tokenizer,
-                        prompt_style="h1_rich_plan_v1",
-                        include_sample_id=False,
-                        sample_types=["direct_plan"],
-                        weights={"direct_plan": 1.0},
+                if with_planner:
+                    planner_rows.extend(
+                        build_records_for_plan(
+                            split=split,
+                            row_idx=index,
+                            plan_state=plan,
+                            metadata=metadata,
+                            tokenizer=planner_tokenizer,
+                            prompt_style="h1_rich_plan_v1",
+                            include_sample_id=False,
+                            sample_types=["direct_plan"],
+                            weights={"direct_plan": 1.0},
+                        )
                     )
-                )
                 arrays, order = align_sites(arrays, plan)
                 answer, _ = arrays_to_dynamic_answer(
                     arrays["lengths"], arrays["angles"], arrays["species"], arrays["frac_coords"]

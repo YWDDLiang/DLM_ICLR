@@ -7,6 +7,7 @@ import csv
 import gzip
 import math
 from pathlib import Path
+from numpy.linalg import LinAlgError
 from dlm_iclr._core.continuous_keep_edit import structure_of
 from dlm_iclr._core.exact_sun_nu import conjunction, evaluate_sun_predicates
 from dlm_iclr.runtime.io import file_hash, fingerprint, read_json, read_rows, write_json, write_rows
@@ -243,7 +244,11 @@ def score_records(
             amounts = [counts[element] for element in elements]
             divisor = math.gcd(*amounts)
             comp_valid = bool(smact_validity(elements, tuple(value // divisor for value in amounts)))
-            struct_valid = bool(structure_validity(structure))
+            try:
+                struct_valid = bool(structure_validity(structure))
+            except (ValueError, ArithmeticError, LinAlgError) as error:
+                struct_valid = None
+                errors[i] = f"structure_validity:{type(error).__name__}:{error}"
         row = {
             "source_id": record["source_id"],
             "ordinal": record["ordinal"],

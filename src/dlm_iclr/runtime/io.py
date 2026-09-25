@@ -34,6 +34,7 @@ def write_json(path, value):
     temporary.write_text(
         json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False, default=json_default) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
     temporary.replace(path)
 
@@ -42,7 +43,7 @@ def write_rows(path, rows):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    with temporary.open("w", encoding="utf-8") as stream:
+    with temporary.open("w", encoding="utf-8", newline="\n") as stream:
         for row in rows:
             stream.write(json.dumps(row, ensure_ascii=False, allow_nan=False, default=json_default) + "\n")
     temporary.replace(path)

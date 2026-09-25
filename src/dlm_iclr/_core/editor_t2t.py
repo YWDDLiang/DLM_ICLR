@@ -1,4 +1,4 @@
-"""Retained crystal DLM implementation; see docs/method.md for the public workflow."""
+"""Retained crystal DLM implementation; see docs/reproduction.md for the public workflow."""
 
 import torch
 from dlm_iclr._core.expert_edit import inference_view, materialize_edit_batch

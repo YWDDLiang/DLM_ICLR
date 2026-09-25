@@ -11,7 +11,10 @@
     "fields": {
       "cif": "cif",
       "id": "material_id"
-    }
+    },
+    "min_atoms": 1,
+    "label": "MP-20",
+    "length_max_bin": 500
   },
   "models": {
     "planner_base": "hf:meta-llama/Meta-Llama-3-8B",
@@ -55,7 +58,7 @@
       "save_steps": 500
     },
     "sampling": {
-      "requests": 1050,
+      "requests": 1000,
       "batch_size": 1,
       "seed": 17,
       "temperature": 0.9,
@@ -86,7 +89,8 @@
       "up_proj"
     ],
     "save_steps": 500,
-    "eval_max_batches": 50
+    "eval_max_batches": 50,
+    "temperature": 0.7
   },
   "c1": {
     "temperature": 0.7,
@@ -162,7 +166,7 @@
     }
   },
   "evaluation": {
-    "direct": "comp_struct",
+    "direct": "full",
     "composition": "smact3_mixed",
     "stable_threshold": 0.0,
     "metastable_threshold": 0.1,
@@ -171,5 +175,9 @@
     "stress_tolerance_GPa": 0.5,
     "hull_batch_size": 32,
     "coverage_cutoffs": null
+  },
+  "sampling": {
+    "plans": "preset:H1A2_1000",
+    "requests": 1000
   }
 }

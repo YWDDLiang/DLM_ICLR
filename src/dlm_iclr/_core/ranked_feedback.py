@@ -1,4 +1,4 @@
-"""Retained crystal DLM implementation; see docs/method.md for the public workflow."""
+"""Retained crystal DLM implementation; see docs/reproduction.md for the public workflow."""
 
 import math
 

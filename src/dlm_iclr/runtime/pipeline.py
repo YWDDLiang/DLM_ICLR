@@ -6,11 +6,12 @@ from pathlib import Path
 from .config import run_root, asset, backend_config
 from .io import read_json, read_rows, write_json, write_rows, fingerprint
 
-STAGES = {"c1": "raw", "diffusion": "refined", "c2": "edited"}
+STAGES = {"b0": "raw", "c1": "raw", "diffusion": "refined", "c2": "edited"}
 
 
 def stage_settings(config, stage, plans, output):
     roles = {
+        "b0": ["dlm", "b0"],
         "c1": ["dlm", "b0", "c1"],
         "diffusion": ["b0", "diffusion"],
         "c2": ["dlm", "c2", "value", "risk"],
@@ -24,8 +25,15 @@ def stage_settings(config, stage, plans, output):
             "location": location,
             "files": [(f.name, f.stat().st_size, f.stat().st_mtime_ns) for f in members if f.is_file()],
         }
-    definition = {"plans": fingerprint(plans), "models": assets, "settings": config[stage]}
+    definition = {"plans": fingerprint(plans), "models": assets, "settings": config[stage],
+                  "dataset": config["dataset"]}
+    if stage in ("b0", "c1"):
+        other = "c1" if stage == "b0" else "b0"
+        if (output / f"{other}.settings.json").exists():
+            raise ValueError("B0 and C1 require separate output directories")
     previous = {"diffusion": "c1", "c2": "diffusion"}.get(stage)
+    if stage == "diffusion" and (output / "b0.settings.json").exists():
+        previous = "b0"
     if previous:
         definition["input_stage"] = read_json(output / f"{previous}.settings.json")
     if stage == "c2":
@@ -38,6 +46,8 @@ def stage_settings(config, stage, plans, output):
 
 
 def _worker(stage, config, plans, output, rank, world, device, protected):
+    from .datasets import activate
+    activate(config)
     from .device import setup_device
 
     device = setup_device(device, threads=config["runtime"]["threads"])
@@ -50,7 +60,7 @@ def _worker(stage, config, plans, output, rank, world, device, protected):
     ]
     if not indices:
         return
-    if stage == "c1":
+    if stage in ("b0", "c1"):
         from ..c1.generation import Constructor
         from ..c1.trainer import load_head
         from .models import load_model_and_tokenizer
@@ -59,7 +69,7 @@ def _worker(stage, config, plans, output, rank, world, device, protected):
             asset(config, "dlm"), asset(config, "b0"), device, mean_resizing=False
         )
         model.eval().requires_grad_(False)
-        head = load_head(asset(config, "c1"), device)
+        head = load_head(asset(config, "c1"), device) if stage == "c1" else None
         generator = Constructor(model, tokenizer, cfg.inference, axis_head=head)
         for done, i in enumerate(indices, 1):
             value = generator.generate(plans[i])
@@ -156,7 +166,7 @@ def sample(config, stage, *, plans=None, output=None):
     if plans is not None:
         from ..data.plans import load_plans
 
-        planned, _ = load_plans(plans)
+        planned, _ = load_plans(plans, requests=config["sampling"]["requests"])
         if (output / "plans.jsonl").exists() and read_rows(output / "plans.jsonl") != planned:
             raise ValueError("Choose a new output directory for a different Plan sequence")
         write_rows(output / "plans.jsonl", planned)
@@ -178,7 +188,7 @@ def sample(config, stage, *, plans=None, output=None):
     devices = config["runtime"]["devices"]
     count = (
         config["runtime"]["generation_workers_per_device"]
-        if stage == "c1"
+        if stage in ("b0", "c1")
         else config["runtime"]["refine_workers_per_device"]
         if stage == "diffusion"
         else 1
@@ -215,20 +225,26 @@ def sample(config, stage, *, plans=None, output=None):
     return {"stage": stage, "requests": len(records), "records": str(output / f"{STAGES[stage]}.jsonl")}
 
 
-def run(config, plans, *, output=None, start="c1", end="evaluate"):
+def run(config, plans, *, output=None, start="c1", end="evaluate", constructor="c1"):
     from ..evaluation.hull import query
     from ..evaluation.workflow import evaluate
 
     root = Path(output) if output else run_root(config) / "samples"
-    stages = ["c1", "diffusion", "hull", "physics", "c2", "evaluate"]
-    if start != "c1" and plans:
+    from ..evaluation.direct import evaluate_direct
+    stages = [constructor, "diffusion", "hull", "physics", "c2", "evaluate"]
+    if start == "c1" and constructor == "b0":
+        start = "b0"
+    if start not in stages or end not in stages or stages.index(start) > stages.index(end):
+        raise ValueError("Invalid stage range for this constructor")
+    if start != constructor and plans:
         from ..data.plans import load_plans
 
-        rows, _ = load_plans(plans)
-        write_rows(root / "plans.jsonl", rows)
+        rows, _ = load_plans(plans, requests=config["sampling"]["requests"])
+        if read_rows(root / "plans.jsonl") != rows:
+            raise ValueError("Resume Plans differ from the saved request sequence")
     for stage in stages[stages.index(start) : stages.index(end) + 1]:
         if stage in STAGES:
-            result = sample(config, stage, plans=plans if stage == "c1" else None, output=root)
+            result = sample(config, stage, plans=plans if stage == constructor else None, output=root)
         elif stage == "hull":
             result = query(
                 read_rows(root / "refined.jsonl"),
@@ -236,9 +252,18 @@ def run(config, plans, *, output=None, start="c1", end="evaluate"):
                 batch_size=config["evaluation"]["hull_batch_size"],
             )
         else:
-            endpoint = "refined" if stage == "physics" else "edited"
-            _, result = evaluate(
-                config, read_rows(root / f"{endpoint}.jsonl"), root / "evaluation" / endpoint
-            )
+            result = {}
+            for endpoint in (["raw", "refined"] if stage == "physics" else ["edited"]):
+                records = read_rows(root / f"{endpoint}.jsonl")
+                _, direct = evaluate_direct(
+                    records, root / "direct" / endpoint,
+                    metrics=config["evaluation"]["direct"],
+                    reference=run_root(config) / "data/structures/test.jsonl",
+                    dataset=config["dataset"]["name"], workers=config["runtime"]["matching_workers"],
+                    composition=config["evaluation"]["composition"],
+                    coverage_cutoffs=config["evaluation"]["coverage_cutoffs"],
+                )
+                _, physical = evaluate(config, records, root / "evaluation" / endpoint)
+                result[endpoint] = {"direct": direct, "sun": physical}
         write_json(root / "progress.json", {"completed_stage": stage, "result": result})
     return result

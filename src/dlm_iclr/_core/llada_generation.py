@@ -1,6 +1,8 @@
-"""Retained crystal DLM implementation; see docs/method.md for the public workflow."""
+"""Retained crystal DLM implementation; see docs/reproduction.md for the public workflow."""
 
 from __future__ import annotations
+
+from dlm_iclr.runtime.capacity import MAX_ATOMS
 import torch
 from dlm_iclr._core.lattice_geometry import lattice_angle_rad
 from dlm_iclr._core.periodic_geometry_ops import minimum_image_distances
@@ -65,7 +67,7 @@ def _prepare_atom_count_grammar(
     prepared = {
         "representation": representation,
         "body_offset": int(atom_count_grammar.get("body_offset", 0)),
-        "max_atoms": int(atom_count_grammar.get("max_atoms", 20)),
+        "max_atoms": int(atom_count_grammar.get("max_atoms", MAX_ATOMS)),
         "count_token_to_n": {
             int(token_id): int(num_atoms)
             for token_id, num_atoms in atom_count_grammar["count_token_to_n"].items()
@@ -235,7 +237,7 @@ def _apply_duplicate_coordinate_mask(
     x_token_to_bin = coord_token_to_bin.get("X", {})
     y_token_to_bin = coord_token_to_bin.get("Y", {})
     z_token_to_bin = coord_token_to_bin.get("Z", {})
-    max_atoms = int(constraints.get("max_atoms", 20))
+    max_atoms = int(constraints.get("max_atoms", MAX_ATOMS))
     coord_period = constraints.get("coord_period")
     body_offset = int(constraints.get("body_offset", 0))
 
@@ -357,7 +359,7 @@ def _aggregate_periodic_coordinate_alias_logits(
 ) -> None:
     aliases = constraints.get("coordinate_alias_token_ids", {})
     body_offset = int(constraints.get("body_offset", 0))
-    max_atoms = int(constraints.get("max_atoms", 20))
+    max_atoms = int(constraints.get("max_atoms", MAX_ATOMS))
     for slot in range(max_atoms):
         base = body_offset + 7 + 4 * slot
         for component, axis in enumerate(("X", "Y", "Z"), start=1):

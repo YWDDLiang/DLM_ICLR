@@ -23,16 +23,17 @@ class Assets:
 
 @dataclass
 class Inference:
-    plan_source: str = "H1A2_1200"
-    requests: int | None = None
+    plan_source: str = "H1A2_1000"
+    requests: int | None = 1000
     legal_only: bool = False
     seed: int = 17
-    planner_requests: int = 1200
+    planner_requests: int = 1000
     refiner_steps: int = 800
     editor_candidates: int = 8
     editor_max_calls: int = 80
     editor_batch_size: int = 64
     temperature: float = 0.7
+    geometry_monitor: bool = True
     construction_recovery: bool = True
     adaptive_lattice_recovery: bool = True
     sun_weight: float = 2.0
@@ -41,7 +42,7 @@ class Inference:
 
 @dataclass
 class Training:
-    plans: str = "CLEAN_TRAIN_1000"
+    plans: str = "@run/data/plans/train.jsonl"
     seed: int = 20260911
     epochs: int = 8
     batch_size: int = 16
