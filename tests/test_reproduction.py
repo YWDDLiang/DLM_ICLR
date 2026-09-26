@@ -217,7 +217,10 @@ def test_cli_limits_predictions_but_preserves_actual_denominator(tmp_path, monke
     observed = []
     def score(rows, *args, **kwargs):
         observed.append(rows)
-        return [], {"requests": len(rows)}
+        summary = {"requests": len(rows), "metrics": {}}
+        if metrics == "direct":
+            summary["counts"] = {"requests": len(rows)}
+        return [], summary
     if metrics == "direct":
         monkeypatch.setattr(direct, "evaluate_direct", score)
     else:

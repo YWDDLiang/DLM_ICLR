@@ -56,5 +56,29 @@ def test_full_run_cli_prints_final_results(monkeypatch, capsys):
     assert main(["run", "--plans", "plans.jsonl"]) == 0
     output = capsys.readouterr().out
     assert "CrystalDLM results" in output
-    assert "Physical evaluation" in output and "MSUN" in output
+    assert "SUN evaluation" in output and "MSUN" in output
     assert '"metrics"' not in output
+
+
+def test_standalone_direct_prints_only_direct_metrics(monkeypatch, capsys, tmp_path):
+    from dlm_iclr import cli
+    from dlm_iclr.evaluation import direct
+
+    monkeypatch.setattr(cli, "read_rows", lambda _: [{}] * 10)
+    monkeypatch.setattr(direct, "evaluate_direct", lambda *a, **kw: ([], report()["direct"]))
+    assert main(["evaluate", "direct", "--structures", "saved.jsonl", "--output", str(tmp_path)]) == 0
+    output = capsys.readouterr().out
+    assert "Structural validity" in output and "SUN evaluation" not in output
+    assert str(tmp_path) in output
+
+
+def test_standalone_sun_prints_only_physical_metrics(monkeypatch, capsys, tmp_path):
+    from dlm_iclr import cli
+    from dlm_iclr.evaluation import workflow
+
+    monkeypatch.setattr(cli, "read_rows", lambda _: [{}] * 10)
+    monkeypatch.setattr(workflow, "evaluate", lambda *a, **kw: ([], dict(report()["sun"], requests=10)))
+    assert main(["evaluate", "sun", "--structures", "saved.jsonl", "--output", str(tmp_path)]) == 0
+    output = capsys.readouterr().out
+    assert "SUN evaluation" in output and "VUN" in output
+    assert "Structural validity" not in output and '"metrics"' not in output

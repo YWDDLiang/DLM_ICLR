@@ -34,22 +34,23 @@ Use `--num-samples` to set the request count and `--device` to select the GPU. U
 
 | Script | Action |
 | --- | --- |
-| `scripts/01_planner.sh` | Load the Plan set |
+| `scripts/01_planner.sh` | Train the optional Planner and generate Plans |
 | `scripts/02_constructor.sh` | Train the constructor |
 | `scripts/03_periodic.sh` | Train the periodic head |
-| `scripts/04_feedback.sh` | Train reconstruction and verification |
+| `scripts/04_diffusion.sh` | Train the diffusion refiner |
+| `scripts/05_feedback.sh` | Train reconstruction and verification |
 
-Run each script with `bash` and `--config configs/local.json`. Optional Planner and diffusion training:
-
-```bash
-bash scripts/reproduce.sh --config configs/local.json --stage train-planner
-crystaldlm train diffusion --config configs/local.json
-```
+Run each script with `bash` and `--config configs/local.json`. Planner training is optional because the Plan set is provided. To use generated Plans, set `sampling.plans` to the generated file in your run configuration.
 
 For available arguments, run `bash scripts/reproduce.sh --help` or `crystaldlm --help`.
 
 ## Evaluation
 
-The workflow reports Direct and S.U.N./M.S.U.N./V.U.N. results. Failed and unresolved requests remain in the denominator; unresolved rates are reported as intervals. The evaluation settings and per-request records are saved with each run.
+| Script | Results |
+| --- | --- |
+| `scripts/06_evaluate_direct.sh` | Validity, coverage and property distributions |
+| `scripts/07_evaluate_sun.sh` | S.U.N., M.S.U.N. and V.U.N. |
+
+Both evaluate final outputs by default and print results in the terminal. Pass `--structures FILE` to evaluate another saved collection. Failed and unresolved requests remain in the denominator; unresolved rates are reported as intervals.
 
 See [paper results and metric definitions](../RESULTS.md).

@@ -29,18 +29,74 @@ cp configs/mp20.json configs/local.json
 export MP_API_KEY="YOUR_MATERIALS_PROJECT_API_KEY"
 ```
 
-Edit paths in `configs/local.json` if your files are stored elsewhere. The default Plan set is included; Planner training is optional.
+Edit paths in `configs/local.json` if your files are stored elsewhere.
 
 ## 3. Run
 
+### Planner (optional)
+
+Plans are provided, so this stage can be skipped. To train a Planner and generate your own Plans:
+
 ```bash
-bash scripts/reproduce.sh --config configs/local.json --device cuda:0
+bash scripts/01_planner.sh --config configs/local.json
 ```
 
-With trained checkpoints configured, run inference only:
+### DLM base
+
+Train the base model for Plan-conditioned crystal generation.
+
+```bash
+bash scripts/02_constructor.sh --config configs/local.json
+```
+
+### Periodic DLM
+
+Train periodic interactions for crystal construction.
+
+```bash
+bash scripts/03_periodic.sh --config configs/local.json
+```
+
+### Diffusion
+
+Train the lattice and coordinate refiner if needed, then set `models.diffusion` to its checkpoint. Skip training when using a prepared checkpoint.
+
+```bash
+bash scripts/04_diffusion.sh --config configs/local.json
+```
+
+### Physical Feedback
+
+Train reconstruction and selection using physical evaluations.
+
+```bash
+bash scripts/05_feedback.sh --config configs/local.json
+```
+
+Generate structures with the trained models:
 
 ```bash
 bash scripts/reproduce.sh --config configs/local.json --stage inference
+```
+
+## 4. Evaluation
+
+The scripts evaluate final outputs by default. Use `--structures FILE` to evaluate another saved collection.
+
+### Direct
+
+Check structural and compositional validity, coverage, and property distributions.
+
+```bash
+bash scripts/06_evaluate_direct.sh --config configs/local.json
+```
+
+### SUN
+
+Evaluate stability, uniqueness and novelty, reporting S.U.N., M.S.U.N. and V.U.N.
+
+```bash
+bash scripts/07_evaluate_sun.sh --config configs/local.json
 ```
 
 [Usage](docs/reproduction.md) · [Paper results](RESULTS.md) · [Citation](CITATION.cff) · [Third-party notices](THIRD_PARTY_NOTICES.md)

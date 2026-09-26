@@ -172,6 +172,12 @@ def main(argv=None):
         from .runtime.reporting import format_results
 
         print(format_results(result["final"], dataset=config["dataset"].get("label", config["dataset"]["name"])))
+    elif args.command == "evaluate":
+        from .runtime.reporting import format_results
+
+        report = {args.metrics: result, "results_dir": str(args.output)}
+        report["requests"] = result["counts"]["requests"] if args.metrics == "direct" else result["requests"]
+        print(format_results(report, dataset=config["dataset"].get("label", config["dataset"]["name"])))
     else:
         print(json.dumps(result, ensure_ascii=False, default=str, indent=2))
     return 0

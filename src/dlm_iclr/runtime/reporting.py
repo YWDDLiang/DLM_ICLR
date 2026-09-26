@@ -31,8 +31,27 @@ def _format(value, *, percent=False, bounds=None, pending=0):
 
 def format_results(report, *, dataset):
     """Keep unresolved rates as intervals and distinguish distances from percentages."""
-    lines = [f"CrystalDLM results | {dataset} | {report['requests']} requests", "", "Direct"]
-    direct = report["direct"]
+    lines = [f"CrystalDLM results | {dataset} | {report['requests']} requests"]
+    if "direct" in report:
+        lines.extend(["", "Direct", *_direct_lines(report["direct"])])
+    if "sun" in report:
+        lines.extend(["", "SUN evaluation"])
+        for key in ("SUN", "MSUN", "VUN", "V", "U", "N", "Stable", "MetaStable"):
+            metric = report["sun"]["metrics"].get(key)
+            if metric is None:
+                continue
+            value = _format(None, percent=True, bounds=metric["percent_bounds"], pending=metric["pending"])
+            lines.append(f"  {key:<24} {value}")
+    directory = report.get("results_dir")
+    if directory is None and report.get("structures"):
+        directory = Path(report["structures"]).parent
+    if directory is not None:
+        lines.extend(["", f"Saved results: {directory}"])
+    return "\n".join(lines)
+
+
+def _direct_lines(direct):
+    lines = []
     for key, label, percent in DIRECT_LABELS:
         if key not in direct["metrics"]:
             continue
@@ -43,13 +62,4 @@ def format_results(report, *, dataset):
             total = direct["counts"]["requests"]
             bounds = [100 * v / total for v in direct["count_bounds"][key]] if total else None
         lines.append(f"  {label:<24} {_format(value, percent=percent, bounds=bounds, pending=pending)}")
-    lines.extend(["", "Physical evaluation"])
-    for key in ("SUN", "MSUN", "VUN", "V", "U", "N", "Stable", "MetaStable"):
-        metric = report["sun"]["metrics"].get(key)
-        if metric is None:
-            continue
-        value = _format(None, percent=True, bounds=metric["percent_bounds"], pending=metric["pending"])
-        lines.append(f"  {key:<24} {value}")
-    if report.get("structures"):
-        lines.extend(["", f"Saved results: {Path(report['structures']).parent}"])
-    return "\n".join(lines)
+    return lines

@@ -18,11 +18,12 @@ from dlm_iclr.runtime.io import fingerprint, read_json, write_json  # noqa: E402
 def parser():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--stage", default="all",
-                   choices=["all", "prepare", "planner", "train-planner", "constructor", "periodic", "feedback", "inference"],
-                   metavar="{all,prepare,planner,train-planner,constructor,periodic,feedback,inference}")
+                   choices=["all", "prepare", "planner", "train-planner", "constructor", "periodic", "diffusion", "feedback", "inference", "evaluate-direct", "evaluate-sun"],
+                   metavar="{all,prepare,planner,train-planner,constructor,periodic,diffusion,feedback,inference,evaluate-direct,evaluate-sun}")
     p.add_argument("--dataset", help="mp20 (default), perov-5, mpts-52")
     p.add_argument("--config", type=Path)
     p.add_argument("--plans", type=Path, help="Saved Plan JSONL; required for non-MP20 inference")
+    p.add_argument("--structures", type=Path, help="Evaluation input; defaults to the run's final collection")
     p.add_argument("--num-samples", type=int, help="Override the configured request count (default: 1000)")
     p.add_argument("--output", type=Path, help="Run root, including data, checkpoints and samples")
     p.add_argument("--device", help="Torch device, e.g. cuda:0")
@@ -68,16 +69,26 @@ def commands(args, config, root):
     common = ["--config", str(root / "reproduce.config.json")]
     base = [sys.executable, "-m", "dlm_iclr"]
     steps = []
+    if args.structures is not None and args.stage not in ("evaluate-direct", "evaluate-sun"):
+        raise ValueError("--structures is available for evaluate-direct and evaluate-sun")
+    if args.stage in ("evaluate-direct", "evaluate-sun"):
+        metric = args.stage.removeprefix("evaluate-")
+        source = args.structures.resolve() if args.structures else root / "samples/final.jsonl"
+        directory = "direct" if metric == "direct" else "evaluation"
+        return [[*base, "evaluate", metric, *common, "--structures", str(source),
+                 "--output", str(root / "samples" / directory / source.stem)]]
     needs_panel = args.stage in ("all", "planner", "inference")
     if needs_panel and not config["sampling"].get("plans"):
         raise ValueError("Pass --plans for Perov-5/MPTS-52; the packaged MP-20 Plan set is MP20 only")
-    if args.stage in ("all", "prepare", "train-planner", "constructor", "periodic", "feedback", "inference") and not args.skip_prepare:
+    if args.stage in ("all", "prepare", "train-planner", "constructor", "periodic", "diffusion", "feedback", "inference") and not args.skip_prepare:
         steps.append([*base, "prepare", *common, *(["--with-planner"] if args.stage == "train-planner" else [])])
     if needs_panel:
         steps.append([*base, "plans", *common])
-    modules = ["constructor", "periodic", "feedback"] if args.stage == "all" else ["planner"] if args.stage == "train-planner" else [args.stage] if args.stage in ("constructor", "periodic", "feedback") else []
+    modules = ["constructor", "periodic", "feedback"] if args.stage == "all" else ["planner"] if args.stage == "train-planner" else [args.stage] if args.stage in ("constructor", "periodic", "diffusion", "feedback") else []
     for module in modules:
         steps.append([*base, "train", module, *common, *(["--resume"] if args.resume else [])])
+    if args.stage == "train-planner":
+        steps.append([*base, "sample", "planner", *common, "--output", str(root / "plans/generated.jsonl")])
     if args.stage in ("all", "inference"):
         steps.append([*base, "run", *common, "--plans", str(root / "plans/evaluation.jsonl")])
     return steps
