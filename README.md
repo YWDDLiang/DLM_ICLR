@@ -1,12 +1,25 @@
 # CrystalDLM
 
-Reproduce crystal generation with a fixed composition Plan, a masked diffusion language model (B0), periodic construction (C1), frozen continuous refinement (F800), and physical-feedback editing (C2).
+**Feedback Learning of Periodic Diffusion Language Models for Crystal Generation**
 
-The default experiment is **MP20 with the included H1A2 1000-Plan panel**. Planner training is optional. Every method uses the same fixed Plan order, prompts and random seeds.
+CrystalDLM uses lattice-conditioned periodic interactions to construct crystal geometry and learns reference-conditioned reconstruction and relative verification from physical feedback.
+
+`Planner → Periodic DLM → Diffusion → Reconstruction & relative verification`
+
+[Results](RESULTS.md) · [Reproduction guide](docs/reproduction.md)
+
+## Models
+
+| Paper name | Components |
+| --- | --- |
+| DLM | Base constructor + diffusion |
+| Periodic DLM | Base constructor + periodic head + diffusion |
+| CrystalDLM | Periodic DLM + physical-feedback reconstruction and selection |
+| CrystalDLM (draft) | Periodic constructor output before diffusion |
 
 ## Install
 
-Use Linux, Python 3.11, and a CUDA GPU with enough memory for the 8B backbone. The reference package set targets PyTorch 2.4.1 / CUDA 12.1:
+Use Python 3.11 on Linux. The reference environment uses PyTorch 2.4.1 and CUDA 12.1.
 
 ```bash
 python -m venv .venv
@@ -17,62 +30,58 @@ python -m pip install torch-scatter==2.1.2 -f https://data.pyg.org/whl/torch-2.4
 python -m pip install -r requirements.txt
 ```
 
-For another CUDA/PyTorch build, install matching PyTorch/PyG wheels. The Python launcher also works on Windows (`python -X utf8 scripts/reproduce.py ...`); GPU training is supported on Linux. Third-party data and weights retain their original licenses; see [notices](THIRD_PARTY_NOTICES.md).
+## Quick start
 
-## One command
+The default is **MP-20 with 1000 fixed H1A2 Plans**. Planner training is optional.
 
-Provide the dataset's `train.csv`, `val.csv`, and `test.csv` under `datasets/mp20/` (CIF column `cif`, identifier column `material_id`). Copy `configs/mp20.json` to `configs/local.json` and set `models.diffusion` to a compatible frozen diffusion checkpoint. Foundation model identifiers and local checkpoint paths are configurable. The foundation model and diffusion weights are **not bundled**.
+Place `train.csv`, `val.csv`, and `test.csv` in `datasets/mp20/`. Set the dataset and frozen diffusion checkpoint paths in `configs/local.json`.
 
 ```bash
 cp configs/mp20.json configs/local.json
-# Edit dataset/checkpoint paths in configs/local.json first.
-export MP_API_KEY=...  # Needed when fetching missing reference hull entries.
+# Set paths in configs/local.json.
+export MP_API_KEY=...
 bash scripts/reproduce.sh --config configs/local.json
 ```
 
-This runs data preparation → fixed Plan selection → B0 training → C1 training → C2 training → generation/F800/C2 → Direct and SUN/MSUN/VUN evaluation. Each stage finishes before the next starts. Planner and diffusion training are not included by default. C2 training uses prepared TRAIN sources, separately from the fixed evaluation Plans.
+The workflow prepares data, trains the constructor and periodic head, fits the reconstruction model and verifier, and evaluates generated outputs. It uses the configured frozen diffusion model.
 
 ```bash
-# Inspect every resolved command and setting without loading models.
+# Inspect commands and settings.
 bash scripts/reproduce.sh --config configs/local.json --dry-run
-# Use already trained B0/C1/C2 checkpoints specified in the config.
+# Generate and evaluate with configured trained checkpoints.
 bash scripts/reproduce.sh --config configs/local.json --stage inference
-# Reuse prepared data and resume compatible training/checkpoints.
+# Resume with prepared data.
 bash scripts/reproduce.sh --config configs/local.json --resume --skip-prepare
 ```
 
-## Module commands
+## Stage commands
 
-All entry points share `--config`, `--dataset`, `--num-samples` (default 1000), `--output`, `--device`, and `--set SECTION.KEY=VALUE`.
-
-| Entry | Action |
+| Script | Action |
 | --- | --- |
-| `bash scripts/01_planner.sh` | Export the fixed H1A2 panel; no Planner training or model load |
-| `bash scripts/02_b0.sh` | Prepare data and train B0 |
-| `bash scripts/03_c1.sh` | Prepare data and train C1 using the configured B0 |
-| `bash scripts/04_c2.sh` | Prepare data and run C2 warm-up, collection, physical supervision and fitting |
-| `bash scripts/reproduce.sh --stage train-planner` | Explicitly prepare and train the optional Planner |
-| `bash scripts/train.sh diffusion --config configs/local.json` | Optionally train diffusion from prepared data |
+| `scripts/01_planner.sh` | Export the default Plan panel |
+| `scripts/02_constructor.sh` | Train the base DLM constructor |
+| `scripts/03_periodic.sh` | Fit the lattice-conditioned periodic head |
+| `scripts/04_feedback.sh` | Fit reference-conditioned reconstruction and relative verification |
 
-Pass the same `--config configs/local.json` to module commands. With prepared data, add `--skip-prepare`. A module's prerequisite checkpoints must exist, or be produced by an earlier stage. Details and individual sampling/evaluation commands are in the [reproduction guide](docs/reproduction.md).
+Run each with `bash`, adding `--config configs/local.json` and optionally `--skip-prepare`. Planner training uses `scripts/reproduce.sh --stage train-planner`; diffusion training uses `crystaldlm train diffusion` after data preparation.
 
-## Other datasets
+## Datasets
 
-| Dataset argument | Atom range | Default evaluation Plan source |
-| --- | --- | --- |
-| `mp20` | 1–20 | Included H1A2 1000-Plan panel |
-| `perov-5` | Exactly 5 | User-supplied Plan JSONL |
-| `mpts-52` | 1–52 | User-supplied Plan JSONL |
+| Dataset | Argument | Atoms per cell | Plans |
+| --- | --- | --- | --- |
+| MP-20 | `mp20` | 1–20 | Included H1A2 panel |
+| Perov-5 | `perov-5` | 5 | User-supplied JSONL |
+| MPTS-52 | `mpts-52` | 1–52 | User-supplied JSONL |
 
 ```bash
-bash scripts/reproduce.sh --dataset perov-5 --plans /absolute/path/perov-plans.jsonl
-bash scripts/reproduce.sh --dataset mpts-52 --plans /absolute/path/mpts-plans.jsonl
+bash scripts/reproduce.sh --dataset perov-5 --plans /path/to/perov-plans.jsonl
+bash scripts/reproduce.sh --dataset mpts-52 --plans /path/to/mpts-plans.jsonl
 ```
 
-Set each dataset's paths in its matching config (or pass `--config`). Use models trained with that dataset's vocabulary/capacity. The loader validates Plan atom counts, the body canvas is `7 + 4N`, and Planner prompts use the dataset's name and atom range. Changing the dataset does not make an MP20-trained checkpoint a trained Perov-5/MPTS-52 checkpoint.
+Use the matching dataset config and checkpoints. `--num-samples` changes the default 1000 requests; `--device` and `--set` configure execution.
 
 ## Outputs
 
-Runs write to `outputs/<dataset>/` by default. `plans/evaluation.manifest.json` records selection and hashes. `samples/raw.jsonl`, `refined.jsonl`, and `edited.jsonl` retain every selected request, including failures. Direct reports are under `samples/direct/`; SUN/MSUN/VUN reports are under `samples/evaluation/`, with separate raw, refined and edited endpoints. Unknown evaluations remain explicit.
+Under `outputs/<dataset>/samples/`, `raw.jsonl` contains periodic drafts, `refined.jsonl` contains diffusion references, and `edited.jsonl` contains final CrystalDLM outputs. Direct and physical-quality summaries are stored separately in `direct/` and `evaluation/`.
 
-See the [evaluation protocol](docs/reproduction.md#evaluation-protocol) for endpoint definitions and selection rules.
+[Reproduction details](docs/reproduction.md) include configuration, metric definitions and saved-record formats. See [third-party notices](THIRD_PARTY_NOTICES.md) for upstream code, data and model terms.

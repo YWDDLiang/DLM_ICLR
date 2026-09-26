@@ -140,7 +140,7 @@ def test_one_command_uses_fresh_stages_and_never_trains_planner_by_default(tmp_p
     config, root = module.resolve(args)
     commands = module.commands(args, config, root)
     assert [x[3] for x in commands] == ["prepare", "plans", "train", "train", "train", "run"]
-    assert [x[4] for x in commands if x[3] == "train"] == ["b0", "c1", "c2"]
+    assert [x[4] for x in commands if x[3] == "train"] == ["constructor", "periodic", "feedback"]
     assert config["sampling"]["requests"] == config["planner"]["sampling"]["requests"] == 1000
     assert "--with-planner" not in commands[0]
     assert config["c2"]["training"]["plans"] == "@run/data/plans/train.jsonl"

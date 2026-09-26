@@ -24,7 +24,6 @@ datasets/
 artifacts/
 *.tmp
 
-!private/.md
 
 results/
 docs/results/

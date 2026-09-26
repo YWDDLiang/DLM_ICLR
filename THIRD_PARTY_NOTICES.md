@@ -1,6 +1,6 @@
 # Third-party notices
 
-Original DLM-ICLR project code is distributed under the repository's MIT license. External datasets and model weights keep their own terms.
+Original CrystalDLM code is distributed under the repository's MIT license. External datasets and model weights keep their own terms.
 
 The vendored refinement components in `src/dlm_iclr/_vendor/crysllmgen` are derived from [CrysLLMGen](https://github.com/kdmsit/crysllmgen), copyright 2025 Kishalay Das (KD), under the MIT license. The retained license is included beside the code and in [licenses/CrysLLMGen.txt](licenses/CrysLLMGen.txt). The numerical model, validity metrics and Direct composition scaler are included with namespaced imports. `src/dlm_iclr/diffusion/trainer.py` adapts the upstream training loop; `src/dlm_iclr/evaluation/direct.py` and `features.py` adapt generation metrics and coverage formulas from commit `94bb287751cd20a882c7c1df7ca736633d78e5e1`. Please cite *LLM Meets Diffusion: A Hybrid Framework for Crystal Material Generation*, NeurIPS 2025.
 

@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from .runtime.config import load, run_root, asset, backend_config, path
 from .runtime.io import read_rows, write_json
+from .runtime.names import module_key, feedback_stage_key
 
 
 def parser():
@@ -15,7 +16,7 @@ def parser():
     common.add_argument("--num-samples", type=int, help="Fixed request count (default: 1000)")
     common.add_argument("--set", dest="overrides", action="append", default=[], metavar="SECTION.KEY=VALUE")
     main = argparse.ArgumentParser(
-        prog="dlm", description="Crystal generation, refinement and physical evaluation"
+        prog="crystaldlm", description="Periodic crystal construction and physical-feedback reconstruction"
     )
     commands = main.add_subparsers(dest="command", required=True)
     p = commands.add_parser("config", parents=[common], help="Write a portable configuration")
@@ -26,29 +27,38 @@ def parser():
     p.add_argument("--source")
     p.add_argument("--output", type=Path)
     p = commands.add_parser("train", parents=[common], help="Train a module or the full stack")
-    p.add_argument("module", choices=["planner", "b0", "c1", "diffusion", "c2", "all"])
+    p.add_argument("module", type=module_key, choices=["planner", "b0", "c1", "diffusion", "c2", "all"],
+                   metavar="{planner,constructor,periodic,diffusion,feedback,all}")
     p.add_argument("--device", default=None)
     p.add_argument("--resume", action="store_true")
     p.add_argument("--include-planner", action="store_true", help="Include Planner when module=all")
     p.add_argument(
-        "--stage", choices=["warmup", "collect", "label", "compile", "editor", "light", "value", "risk"]
+        "--stage", type=feedback_stage_key,
+        choices=["warmup", "collect", "label", "compile", "editor", "light", "value", "risk"],
+        metavar="{warmup,collect,label,compile,reconstruction,refit,verifier,risk}"
     )
     p = commands.add_parser("sample", parents=[common], help="Sample one stage")
-    p.add_argument("module", choices=["planner", "b0", "c1", "diffusion", "c2"])
+    p.add_argument("module", type=module_key, choices=["planner", "b0", "c1", "diffusion", "c2"],
+                   metavar="{planner,constructor,periodic,diffusion,feedback}")
     p.add_argument("--plans")
     p.add_argument("--output", type=Path)
     p.add_argument("--device", default=None)
     p = commands.add_parser(
-        "run", parents=[common], help="Plan -> raw -> refinement -> physics -> editing -> metrics"
+        "run", parents=[common], help="Plan -> periodic draft -> diffusion reference -> feedback -> metrics"
     )
     p.add_argument("--plans", required=True)
-    p.add_argument("--constructor", choices=["b0", "c1"], default="c1")
+    p.add_argument("--constructor", type=module_key, choices=["b0", "c1"], default="c1",
+                   metavar="{constructor,periodic}")
     p.add_argument("--output", type=Path)
     p.add_argument(
-        "--from-stage", default="c1", choices=["b0", "c1", "diffusion", "hull", "physics", "c2", "evaluate"]
+        "--from-stage", type=module_key, default="c1",
+        choices=["b0", "c1", "diffusion", "hull", "physics", "c2", "evaluate"],
+        metavar="{constructor,periodic,diffusion,hull,physics,feedback,evaluate}"
     )
     p.add_argument(
-        "--to-stage", default="evaluate", choices=["b0", "c1", "diffusion", "hull", "physics", "c2", "evaluate"]
+        "--to-stage", type=module_key, default="evaluate",
+        choices=["b0", "c1", "diffusion", "hull", "physics", "c2", "evaluate"],
+        metavar="{constructor,periodic,diffusion,hull,physics,feedback,evaluate}"
     )
     p = commands.add_parser("hull", parents=[common], help="Query Materials Project competitor energies")
     p.add_argument("--structures", type=Path, required=True)

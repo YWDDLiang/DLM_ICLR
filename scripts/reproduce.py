@@ -13,11 +13,14 @@ sys.path.insert(0, str(REPO / "src"))
 from dlm_iclr.runtime.config import load, path, run_root  # noqa: E402
 from dlm_iclr.runtime.datasets import canonical_name  # noqa: E402
 from dlm_iclr.runtime.io import fingerprint, read_json, write_json  # noqa: E402
+from dlm_iclr.runtime.names import module_key, module_name  # noqa: E402
 
 
 def parser():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--stage", default="all", choices=["all", "prepare", "planner", "train-planner", "b0", "c1", "c2", "inference"])
+    p.add_argument("--stage", type=module_key, default="all",
+                   choices=["all", "prepare", "planner", "train-planner", "b0", "c1", "c2", "inference"],
+                   metavar="{all,prepare,planner,train-planner,constructor,periodic,feedback,inference}")
     p.add_argument("--dataset", help="mp20 (default), perov-5, mpts-52")
     p.add_argument("--config", type=Path)
     p.add_argument("--plans", type=Path, help="Saved Plan JSONL; required for non-MP20 inference")
@@ -72,7 +75,7 @@ def commands(args, config, root):
         steps.append([*base, "plans", *common])
     modules = ["b0", "c1", "c2"] if args.stage == "all" else ["planner"] if args.stage == "train-planner" else [args.stage] if args.stage in ("b0", "c1", "c2") else []
     for module in modules:
-        steps.append([*base, "train", module, *common, *(["--resume"] if args.resume else [])])
+        steps.append([*base, "train", module_name(module), *common, *(["--resume"] if args.resume else [])])
     if args.stage in ("all", "inference"):
         steps.append([*base, "run", *common, "--plans", str(root / "plans/evaluation.jsonl")])
     return steps

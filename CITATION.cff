@@ -1,9 +1,9 @@
 cff-version: 1.2.0
-message: "Please cite DLM-ICLR and the upstream methods used in your experiment."
-title: "DLM-ICLR: Modular Crystal Diffusion Language Models and Refinement"
+message: "Please cite CrystalDLM and the upstream methods used in your experiment."
+title: "CrystalDLM: Feedback Learning of Periodic Diffusion Language Models for Crystal Generation"
 type: software
 authors:
-  - name: "DLM-ICLR contributors"
+  - name: "CrystalDLM contributors"
 version: 0.2.0
 repository-code: "https://github.com/YWDDLiang/DLM_ICLR"
 license: MIT
