@@ -2,8 +2,6 @@
 
 Reproduction repository for **CrystalDLM: Feedback Learning of Periodic Diffusion Language Models for Crystal Generation**.
 
-Default: **MP-20, 1000 requests, included Plan set**.
-
 ## 1. Install
 
 Python 3.11, Linux, CUDA 12.1.
