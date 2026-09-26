@@ -70,10 +70,12 @@ class Refiner:
     def __init__(self, checkpoint, tokenizer, device, *, steps=800, reuse_fixed_geometry=False):
         from dlm_iclr._vendor.crysllmgen.models_ddpm.diffusion import CSPDiffusion
 
-        self.model = CSPDiffusion(1000, "train").to(device)
+        saved = torch.load(checkpoint, map_location="cpu", weights_only=True)
+        state = saved["model"] if "model" in saved else saved
+        timesteps = len(state["beta_scheduler.betas"]) - 1
+        self.model = CSPDiffusion(timesteps, "train").to(device)
         self.model.device = torch.device(device)
-        saved = torch.load(checkpoint, map_location=device, weights_only=True)
-        self.model.load_state_dict(saved["model"] if "model" in saved else saved, strict=True)
+        self.model.load_state_dict(state, strict=True)
         self.model.eval()
         self.vocabulary = tokenizer.get_vocab()
         self.inverse = {int(value): token for token, value in self.vocabulary.items()}

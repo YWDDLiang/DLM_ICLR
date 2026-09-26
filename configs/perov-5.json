@@ -16,7 +16,7 @@
     "requests": 1000
   },
   "models": {
-    "diffusion": "../checkpoints/perov-5/diffusion.pt"
+    "diffusion": "@run/diffusion/last.pt"
   },
   "evaluation": {
     "direct": "full"

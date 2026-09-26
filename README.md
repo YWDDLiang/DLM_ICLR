@@ -22,14 +22,14 @@ python -m pip install -r requirements.txt
 | Input | Default location |
 | --- | --- |
 | Dataset splits, with `cif` and `material_id` columns | `datasets/mp20/`: `train.csv`, `val.csv`, `test.csv` |
-| Frozen diffusion checkpoint | `checkpoints/mp20/diffusion.pt` |
+| Diffusion checkpoint, if using a prepared model | `outputs/mp20/diffusion/last.pt` |
 
 ```bash
 cp configs/mp20.json configs/local.json
 export MP_API_KEY="YOUR_MATERIALS_PROJECT_API_KEY"
 ```
 
-Edit paths in `configs/local.json` if your files are stored elsewhere.
+Set data and external checkpoint paths in `configs/local.json` before starting a run.
 
 ## 3. Run
 
@@ -61,7 +61,7 @@ bash scripts/03_periodic.sh --config configs/local.json
 
 #### Diffusion
 
-Train a refiner if needed, then set `models.diffusion` to its checkpoint. Skip training when using a prepared checkpoint.
+Train a refiner if needed. Its checkpoint is saved at the default location used by later stages. Skip training when using a prepared checkpoint.
 
 ```bash
 bash scripts/04_diffusion.sh --config configs/local.json

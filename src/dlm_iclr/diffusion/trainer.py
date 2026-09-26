@@ -7,7 +7,7 @@ from functools import partial
 from pathlib import Path
 import torch
 from ..runtime.config import run_root
-from ..runtime.io import read_rows, write_json
+from ..runtime.io import file_hash, read_rows, write_json
 from ..runtime.device import setup_device
 from ..runtime.checkpoint import seed_all, rng_state, restore_rng, save
 
@@ -19,15 +19,21 @@ class CrystalGraphs(torch.utils.data.Dataset):
 
         cache = Path(cache)
         cache.parent.mkdir(parents=True, exist_ok=True)
+        source_hash = file_hash(source)
+        saved = None
         if cache.exists():
-            self.graphs = torch.load(cache, map_location="cpu", weights_only=False)
+            saved = torch.load(cache, map_location="cpu", weights_only=False)
+        if isinstance(saved, dict) and saved.get("source_sha256") == source_hash:
+            self.graphs = saved["graphs"]
         else:
             self.graphs = []
             for row in read_rows(source):
                 cif = Structure.from_dict(row["structure"]).to(fmt="cif")
                 *_, graph = process_one(cif, True, False, "crystalnn", False, 0.01)
                 self.graphs.append(graph)
-            torch.save(self.graphs, cache)
+            temporary = cache.with_suffix(".tmp")
+            torch.save({"source_sha256": source_hash, "graphs": self.graphs}, temporary)
+            temporary.replace(cache)
 
     def __len__(self):
         return len(self.graphs)

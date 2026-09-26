@@ -140,14 +140,16 @@ def fit_risk(x, y, sources, *, seed=20260915):
     scaler = StandardScaler().fit(x[train], sample_weight=w)
     model = LogisticRegression(C=0.5, max_iter=400, solver="lbfgs", random_state=seed)
     model.fit(scaler.transform(x[train]), y[train], sample_weight=w)
-    prob = model.predict_proba(scaler.transform(x[~train]))[:, 1]
+    prob = model.predict_proba(scaler.transform(x[~train]))[:, 1] if (~train).any() else np.asarray([])
+    has_validation = bool(len(prob))
+    both_classes = has_validation and len(np.unique(y[~train])) == 2
     metrics = {
         "validation_rows": int((~train).sum()),
-        "failure_prevalence": float(y[~train].mean()),
-        "mean_absolute_error": float(np.abs(prob - y[~train]).mean()),
-        "brier": float(brier_score_loss(y[~train], prob)),
-        "auc": float(roc_auc_score(y[~train], prob)),
-        "average_precision": float(average_precision_score(y[~train], prob)),
+        "failure_prevalence": float(y[~train].mean()) if has_validation else None,
+        "mean_absolute_error": float(np.abs(prob - y[~train]).mean()) if has_validation else None,
+        "brier": float(brier_score_loss(y[~train], prob)) if has_validation else None,
+        "auc": float(roc_auc_score(y[~train], prob)) if both_classes else None,
+        "average_precision": float(average_precision_score(y[~train], prob)) if both_classes else None,
     }
     saved = {
         "schema": "periodic_contact_risk_v1",

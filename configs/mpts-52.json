@@ -16,7 +16,7 @@
     "requests": 1000
   },
   "models": {
-    "diffusion": "../checkpoints/mpts-52/diffusion.pt"
+    "diffusion": "@run/diffusion/last.pt"
   },
   "evaluation": {
     "direct": "full"

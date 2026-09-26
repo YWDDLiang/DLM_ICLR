@@ -12,9 +12,9 @@ license = {text = "MIT"}
 dependencies = ["numpy>=1.26,<2"]
 
 [project.optional-dependencies]
-data = ["pymatgen==2025.6.14", "smact==3.1.0", "transformers==4.54.0", "torch>=2.4", "ase>=3.23"]
-train = ["torch>=2.4", "transformers==4.54.0", "peft==0.16.0", "accelerate>=0.33", "safetensors>=0.5", "pymatgen==2025.6.14", "smact==3.1.0", "ase>=3.23", "tqdm>=4.66", "scikit-learn>=1.4"]
-refine = ["torch>=2.4", "torch-geometric>=1.7.2,<3", "torch-scatter>=2.1", "einops>=0.8", "tqdm>=4.66", "pymatgen==2025.6.14"]
+data = ["pymatgen==2025.6.14", "smact==3.1.0", "transformers==4.54.0", "torch>=2.4.1", "ase>=3.23"]
+train = ["torch>=2.4.1", "transformers==4.54.0", "peft==0.16.0", "accelerate>=0.33", "safetensors>=0.5", "pymatgen==2025.6.14", "smact==3.1.0", "ase>=3.23", "tqdm>=4.66", "scikit-learn>=1.4"]
+refine = ["torch>=2.4.1", "torch-geometric>=1.7.2,<3", "torch-scatter>=2.1", "einops>=0.8", "tqdm>=4.66", "pymatgen==2025.6.14"]
 physics = ["chgnet==0.4.2", "ase==3.28.0", "pymatgen==2025.6.14", "smact==3.1.0", "mp-api>=0.45"]
 direct = ["pymatgen==2025.6.14", "smact==3.1.0", "ase>=3.23", "scipy>=1.10", "matminer>=0.9.3,<0.10"]
 dev = ["pytest>=8", "ruff>=0.6", "build>=1.2"]

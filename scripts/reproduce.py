@@ -12,7 +12,7 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
 from dlm_iclr.runtime.config import load, path, run_root  # noqa: E402
 from dlm_iclr.runtime.datasets import canonical_name  # noqa: E402
-from dlm_iclr.runtime.io import fingerprint, read_json, write_json  # noqa: E402
+from dlm_iclr.runtime.io import fingerprint, write_json  # noqa: E402
 
 
 def parser():
@@ -65,8 +65,12 @@ def resolve(args):
     return result, root
 
 
+def configuration_path(config, root):
+    return root / "configs" / (fingerprint(config) + ".json")
+
+
 def commands(args, config, root):
-    common = ["--config", str(root / "reproduce.config.json")]
+    common = ["--config", str(configuration_path(config, root))]
     base = [sys.executable, "-m", "dlm_iclr"]
     steps = []
     if args.structures is not None and args.stage not in ("evaluate-direct", "evaluate-sun"):
@@ -114,10 +118,9 @@ def main(argv=None):
         checkpoint = root / value[5:] if value.startswith("@run/") else Path(value)
         if not checkpoint.is_file():
             raise FileNotFoundError("Set models.diffusion to the dataset's frozen diffusion checkpoint before running")
-    snapshot = root / "reproduce.config.json"
-    if snapshot.exists() and fingerprint(read_json(snapshot)) != fingerprint(config):
-        raise ValueError("Run configuration changed. Choose a new --output directory.")
+    snapshot = configuration_path(config, root)
     write_json(snapshot, config)
+    write_json(root / "reproduce.config.json", config)
     import os
     env = dict(os.environ, PYTHONUTF8="1", PYTHONPATH=str(REPO / "src") + os.pathsep + os.environ.get("PYTHONPATH", ""))
     for i, command in enumerate(steps, 1):
