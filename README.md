@@ -37,26 +37,10 @@ Edit paths in `configs/local.json` if your files are stored elsewhere. The defau
 bash scripts/reproduce.sh --config configs/local.json --device cuda:0
 ```
 
-This prepares data, trains the constructor and feedback models, generates structures, and evaluates the outputs.
-
 With trained checkpoints configured, run inference only:
 
 ```bash
 bash scripts/reproduce.sh --config configs/local.json --stage inference
 ```
 
-## Options
-
-| Setting | Default | Purpose |
-| --- | --- | --- |
-| `--num-samples` | `1000` | Number of generation requests |
-| `--device` | `cuda:0` | Execution device |
-
-Perov-5 and MPTS-52 use their dataset configs and a supplied Plan file:
-
-```bash
-bash scripts/reproduce.sh --dataset perov-5 --plans /path/to/perov-plans.jsonl
-bash scripts/reproduce.sh --dataset mpts-52 --plans /path/to/mpts-plans.jsonl
-```
-
-[Detailed commands](docs/reproduction.md) · [Paper results](RESULTS.md) · [Citation](CITATION.cff) · [Third-party notices](THIRD_PARTY_NOTICES.md)
+[Usage](docs/reproduction.md) · [Paper results](RESULTS.md) · [Citation](CITATION.cff) · [Third-party notices](THIRD_PARTY_NOTICES.md)

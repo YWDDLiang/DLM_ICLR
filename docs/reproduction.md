@@ -1,134 +1,55 @@
-# Running CrystalDLM
+# Usage
 
-## Files and configuration
+Install the environment and prepare the inputs as described in the [README](../README.md).
 
-Start from `configs/mp20.json`, `configs/perov-5.json`, or `configs/mpts-52.json`. Paths are relative to the config; `@run/` refers to its output directory. Foundation-model identifiers use `hf:owner/model`.
+## Configuration
 
-| Input | Config key |
-| --- | --- |
-| TRAIN/VAL/TEST data | `dataset.splits` |
-| Language backbone | `models.dlm` |
-| Base constructor checkpoint | `models.constructor` |
-| Periodic head | `models.periodic` |
-| Frozen diffusion checkpoint | `models.diffusion` |
-| Reconstruction model | `models.feedback` |
-| Relative verifier and risk model | `models.verifier`, `models.risk` |
+Copy the matching dataset config and update its data and checkpoint paths. Paths resolve relative to the config file; `@run/` refers to the output directory.
 
-The full workflow trains the constructor, periodic head, reconstruction model and verifier. Inference uses the configured trained checkpoints. Supply a diffusion checkpoint for either mode.
+| Dataset | Config | Plans |
+| --- | --- | --- |
+| MP-20 | `configs/mp20.json` | Included |
+| Perov-5 | `configs/perov-5.json` | User supplied |
+| MPTS-52 | `configs/mpts-52.json` | User supplied |
 
-CSV data uses `cif` and `material_id` columns. Structure JSONL and CIF directories are also supported; column mappings belong in `dataset.fields`.
+For inference, set the trained checkpoints under `models`: `constructor`, `periodic`, `diffusion`, `feedback`, `verifier`, and `risk`. Parameter defaults are in [defaults.json](../src/dlm_iclr/defaults.json).
 
-## Commands
+Plan files use JSONL records with `source_id` and `plan_state`; use the [included Plan file](../src/dlm_iclr/data/presets/plans/mp20_default.jsonl) as the format reference.
+
+## Run
 
 ```bash
 # Full workflow.
 bash scripts/reproduce.sh --config configs/local.json
-# Inspect the commands before execution.
-bash scripts/reproduce.sh --config configs/local.json --dry-run
-# Resume training with prepared data.
-bash scripts/reproduce.sh --config configs/local.json --resume --skip-prepare
 # Inference with trained checkpoints.
 bash scripts/reproduce.sh --config configs/local.json --stage inference
+# Another dataset.
+bash scripts/reproduce.sh --dataset perov-5 --plans /path/to/perov-plans.jsonl
+bash scripts/reproduce.sh --dataset mpts-52 --plans /path/to/mpts-plans.jsonl
 ```
 
-For individual stages, use:
+Use `--num-samples` to set the request count and `--device` to select the GPU. Use a new `--output` directory when changing the configuration.
 
-| Entry | Action |
+## Individual stages
+
+| Script | Action |
 | --- | --- |
-| `bash scripts/01_planner.sh` | Export the default Plan set |
-| `bash scripts/02_constructor.sh` | Train the base constructor |
-| `bash scripts/03_periodic.sh` | Fit the periodic head |
-| `bash scripts/04_feedback.sh` | Train reconstruction and relative verification |
+| `scripts/01_planner.sh` | Load the Plan set |
+| `scripts/02_constructor.sh` | Train the constructor |
+| `scripts/03_periodic.sh` | Train the periodic head |
+| `scripts/04_feedback.sh` | Train reconstruction and verification |
 
-Pass `--config configs/local.json` to each entry. Prepared data is reused when input and output hashes match. To rebuild it:
-
-```bash
-crystaldlm prepare --config configs/local.json --force
-```
-
-Planner and diffusion training are available separately:
+Run each script with `bash` and `--config configs/local.json`. Optional Planner and diffusion training:
 
 ```bash
 bash scripts/reproduce.sh --config configs/local.json --stage train-planner
-crystaldlm sample planner --config configs/local.json
 crystaldlm train diffusion --config configs/local.json
 ```
 
-Feedback fitting stages are `warmup`, `collect`, `label`, `compile`, `reconstruction`, `refit`, `verifier`, and `risk`:
+For available arguments, run `bash scripts/reproduce.sh --help` or `crystaldlm --help`.
 
-```bash
-crystaldlm train feedback --config configs/local.json --stage reconstruction --resume
-```
+## Evaluation
 
-## Feedback options
+The workflow reports Direct and S.U.N./M.S.U.N./V.U.N. results. Failed and unresolved requests remain in the denominator; unresolved rates are reported as intervals. The evaluation settings and per-request records are saved with each run.
 
-Both options default to `true`:
-
-```json
-{
-  "feedback": {
-    "protect_sun": true,
-    "physical_rollback": true
-  }
-}
-```
-
-`protect_sun` retains references already confirmed S.U.N. and sends other editable references to reconstruction. The learned selector always includes the unchanged reference.
-
-`physical_rollback` evaluates the selected reconstruction, then restores its paired reference when that reference was confirmed M.S.U.N. and the reconstruction is not confirmed S.U.N. or M.S.U.N. Unresolved reconstruction evaluations remain recorded. Direct and N/U-based metrics are recomputed on the final selected collection using the saved physical labels.
-
-```bash
-bash scripts/reproduce.sh --config configs/local.json --output outputs/custom \
-  --set feedback.protect_sun=false --set feedback.physical_rollback=false
-```
-
-Changed policies or model settings use a new output directory. The resolved settings and per-request decisions are saved with the results.
-
-## Data and Plans
-
-MP-20 uses the included `mp20_default` Plan set. Other datasets require `--plans /path/to/plans.jsonl` and matching checkpoints.
-
-| Dataset | Argument | Atoms per cell |
-| --- | --- | --- |
-| MP-20 | `mp20` | 1–20 |
-| Perov-5 | `perov-5` | 5 |
-| MPTS-52 | `mpts-52` | 1–52 |
-
-Each Plan row has a unique `source_id` and a `plan_state`. Prompts and seeds may be supplied or derived deterministically. Example:
-
-```json
-{"source_id":"example:0","body_eligible":true,"plan_state":{"N":5,"elements":["Ca","Ti","O"],"counts":[1,1,3],"formula":"CaTiO3","reduced_formula":"CaTiO3","charge_bucket":"neutral_plausible","oxidation_candidates":"unknown","anion_framework":"oxide","lattice_system":"cubic","spacegroup_bucket":"sg_195_230","volume_per_atom_bin":"volpa_010_014","prototype_key":"example"}}
-```
-
-The default request count is 1000. `--num-samples` takes precedence over the configured count. Every selected request, including failures, remains in the evaluation denominator.
-
-## Sampling and evaluation
-
-```bash
-# Base constructor drafts.
-crystaldlm sample constructor --config configs/local.json --plans outputs/mp20/plans/evaluation.jsonl --output outputs/mp20/base-samples
-# Periodic drafts and diffusion references.
-crystaldlm sample periodic --config configs/local.json --plans outputs/mp20/plans/evaluation.jsonl --output outputs/mp20/samples
-crystaldlm sample diffusion --config configs/local.json --output outputs/mp20/samples
-# Evaluate an existing final collection.
-crystaldlm evaluate direct --config configs/local.json --structures outputs/mp20/samples/final.jsonl --output outputs/mp20/direct-final --full
-crystaldlm evaluate sun --config configs/local.json --structures outputs/mp20/samples/final.jsonl --output outputs/mp20/physical-final
-```
-
-The full workflow fetches missing hull references using `MP_API_KEY`. For standalone evaluation, prepare the hull with `crystaldlm hull --config configs/local.json --structures FILE.jsonl`.
-
-Direct evaluates saved geometry before physical relaxation. Physical screening uses CHGNet 0.3.0 and joint position/cell FIRE relaxation, up to 1000 steps with force/stress tolerances 0.1 eV/Å and 0.5 GPa. S.U.N. and M.S.U.N. use hull thresholds 0 and 0.1 eV/atom. N/U compare saved structures with TRAIN references and earlier outputs, using StructureMatcher tolerances 0.2, 0.3 and 5 degrees. Unresolved evaluations are retained as unknown.
-
-## Outputs
-
-All paths below are relative to `outputs/<dataset>/samples/`.
-
-| File or directory | Content |
-| --- | --- |
-| `final.jsonl`, `final.summary.json` | Final selected structures and metrics |
-| `raw.jsonl`, `refined.jsonl` | Constructor drafts and diffusion references |
-| `edited.jsonl` | Reconstructions before physical rollback |
-| `rollback.jsonl` | Selected collection when physical rollback is enabled |
-| `direct/`, `evaluation/` | Separate metrics for each saved collection |
-| `evaluation/rollback/decisions.jsonl` | Per-request reference/reconstruction selection |
-| `finalization.settings.json` | Selection policy and evaluation identities |
+See [paper results and metric definitions](../RESULTS.md).
