@@ -1,6 +1,6 @@
 # CrystalDLM
 
-Feedback Learning of Periodic Diffusion Language Models for Crystal Generation.
+Reproduction repository for **CrystalDLM: Feedback Learning of Periodic Diffusion Language Models for Crystal Generation**.
 
 Default: **MP-20, 1000 requests, included Plan set**.
 
@@ -8,9 +8,9 @@ Default: **MP-20, 1000 requests, included Plan set**.
 
 Python 3.11, Linux, CUDA 12.1.
 
+Run from the repository directory:
+
 ```bash
-git clone https://github.com/YWDDLiang/CrystalDLM.git
-cd CrystalDLM
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
