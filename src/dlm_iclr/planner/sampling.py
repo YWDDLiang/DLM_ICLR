@@ -1,11 +1,11 @@
-"""Generate fresh H1 rich Plans with the configured Llama checkpoint."""
+"""Generate fresh Planner rich Plans with the configured Llama checkpoint."""
 
 from __future__ import annotations
 from pathlib import Path
 import re
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, StoppingCriteria, StoppingCriteriaList
-from dlm_iclr._core.h1_llm_planner import (
+from dlm_iclr._core.autoregressive_planner import (
     canonical_plan_record_for_style,
     clean_generated_plan_text,
     format_planner_prompt,
@@ -15,7 +15,7 @@ from dlm_iclr._core.h1_llm_planner import (
 )
 from dlm_iclr.runtime.io import fingerprint, write_rows, write_json
 
-STYLE = "h1_rich_plan_v1"
+STYLE = "rich_plan_v1"
 
 
 class PlanEnd(StoppingCriteria):

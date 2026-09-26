@@ -4,8 +4,8 @@ from __future__ import annotations
 import torch
 from dlm_iclr._core.expert_edit import inference_view, materialize_edit_batch
 from dlm_iclr._core.fixed_slot import MASK_TOKEN_ID
-from dlm_iclr._core.r03_physics_transfer import geometry_support_report
-from dlm_iclr._core.rsi_preference import legal_vector
+from dlm_iclr._core.geometry_constraints import geometry_support_report
+from dlm_iclr._core.geometry_risk import legal_vector
 
 MODES = ("none", "local_xyz", "all_xyz", "full_cell")
 COUNTS = (1, 2, 4, 8)

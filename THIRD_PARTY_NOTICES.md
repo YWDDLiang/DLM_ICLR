@@ -12,4 +12,4 @@ Physical evaluation uses [CHGNet](https://github.com/CederGroupHub/chgnet), [ASE
 
 Full Direct evaluation additionally uses [matminer](https://github.com/hackingmaterials/matminer) for Magpie/CrystalNN fingerprints and [SciPy](https://github.com/scipy/scipy) for Wasserstein and fingerprint distances. Their package source is not vendored here. Matminer incorporates feature data with its own attribution; cite the package and underlying descriptors when reporting those metrics.
 
-The Planner uses external Meta-Llama-3-8B weights under the provider's Llama 3 license. The training and preprocessing code adapt the project's H1A2 implementation. The periodic C1 head and C2 teacher/revision components build on ideas discussed in CoDD, RemeDi and VIDD; their implementation scope and primary references are listed in [docs/reproduction.md](docs/reproduction.md).
+The Planner uses external Meta-Llama-3-8B weights under the provider's Llama 3 license.

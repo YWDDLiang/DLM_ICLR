@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 from dlm_iclr._core.dynamic_crystal import arrays_to_structure
 from dlm_iclr._core.expert_edit_data import arrays_from_structure, quantize_arrays, certify_geometry
 from dlm_iclr._core.continuous_keep_edit import geometry
-from dlm_iclr._core.r03_physics_transfer import build_repair_constraints, geometry_support_report
+from dlm_iclr._core.geometry_constraints import build_repair_constraints, geometry_support_report
 from dlm_iclr.periodic.generation import make_record
 
 

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 from typing import Any, Mapping, Sequence
-from .._core.h1_llm_planner import (
-    H1_PLANNER_PROMPT_VERSION,
+from .._core.autoregressive_planner import (
+    PLANNER_PROMPT_VERSION,
     teacher_formula_answer,
     build_planner_messages,
     format_planner_prompt,
 )
-from .._core.r5_plan_state import PLAN_STATE_VERSION
+from .._core.plan_schema import PLAN_STATE_VERSION
 
 
 def token_len(tokenizer: Any, text: str) -> int | None:
@@ -53,10 +53,10 @@ def build_record(
     else:
         prompt_text = format_messages_prompt(tokenizer, messages)
     return {
-        "task": f"h1_llm_{task}",
+        "task": f"planner_{task}",
         "h1a3_sample_type": task,
-        "representation": f"h1_llm_plan_{prompt_style}",
-        "prompt_version": H1_PLANNER_PROMPT_VERSION,
+        "representation": f"plan_{prompt_style}",
+        "prompt_version": PLANNER_PROMPT_VERSION,
         "prompt_style": prompt_style,
         "plan_state_version": PLAN_STATE_VERSION,
         "split": split,

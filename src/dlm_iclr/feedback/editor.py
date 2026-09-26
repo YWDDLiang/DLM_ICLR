@@ -5,7 +5,7 @@ import copy
 import torch
 from dlm_iclr._core.continuous_keep_edit import commit_patch
 from dlm_iclr._core.post_refine_contract import derived_seed
-from dlm_iclr._core.r03_physics_transfer import build_repair_constraints
+from dlm_iclr._core.geometry_constraints import build_repair_constraints
 from dlm_iclr.feedback.proposals import propose_batch, STREAMS
 from dlm_iclr.feedback.value import choose, extract_features, geometry_features
 

@@ -3,7 +3,6 @@ from pathlib import Path
 from .plans import load_plans, PRESET_FILES
 from ..runtime.config import path, run_root
 from ..runtime.io import read_rows, write_rows, write_json, file_hash
-from ..runtime.names import preset_key
 
 
 def select(config, *, source=None, output=None):
@@ -13,7 +12,7 @@ def select(config, *, source=None, output=None):
     if source.startswith("preset:"):
         if config["dataset"]["name"] != "mp20":
             raise ValueError("The packaged MP-20 Plan set belongs to MP20 only")
-        location = Path(__file__).parent / "presets" / PRESET_FILES[preset_key(source[7:])]
+        location = Path(__file__).parent / "presets" / PRESET_FILES[source[7:]]
     elif source.startswith("@run/"):
         location = run_root(config) / source[5:]
     else:

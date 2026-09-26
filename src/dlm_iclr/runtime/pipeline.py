@@ -1,19 +1,19 @@
 """Stage execution over one saved Plan order, with independent GPU workers."""
 
 from copy import deepcopy
+from dataclasses import asdict
 import multiprocessing as mp
 from pathlib import Path
 from .config import run_root, asset, backend_config
 from .io import read_json, read_rows, write_json, write_rows, fingerprint
-from .names import MODULE_NAMES, module_key
 
 STAGES = {"constructor": "raw", "periodic": "raw", "diffusion": "refined", "feedback": "edited"}
 
 
 def stage_settings(config, stage, plans, output):
-    stage = module_key(stage)
-    if any((output / f"{previous}.settings.json").exists() for previous in MODULE_NAMES):
-        raise ValueError("This output directory uses earlier stage metadata; choose a new output directory.")
+    if any(p.name.removesuffix(".settings.json") not in {*STAGES, "finalization"}
+           for p in output.glob("*.settings.json")):
+        raise ValueError("Unsupported stage metadata; choose a new output directory.")
     roles = {
         "constructor": ["dlm", "constructor"],
         "periodic": ["dlm", "constructor", "periodic"],
@@ -32,6 +32,7 @@ def stage_settings(config, stage, plans, output):
     definition = {"plans": fingerprint(plans), "models": assets, "settings": config[stage],
                   "dataset": config["dataset"]}
     if stage in ("constructor", "periodic"):
+        definition["construction"] = asdict(backend_config(config, stage=stage).inference)
         other = "periodic" if stage == "constructor" else "constructor"
         if (output / f"{other}.settings.json").exists():
             raise ValueError("base constructor and periodic construction require separate output directories")
@@ -166,7 +167,6 @@ def _worker(stage, config, plans, output, rank, world, device, protected):
 
 
 def sample(config, stage, *, plans=None, output=None):
-    stage = module_key(stage)
     output = Path(output) if output else run_root(config) / "samples"
     if plans is not None:
         from ..data.plans import load_plans
@@ -234,7 +234,6 @@ def run(config, plans, *, output=None, start="periodic", end="evaluate", constru
     from ..evaluation.hull import query
     from ..evaluation.workflow import evaluate
 
-    start, end, constructor = map(module_key, (start, end, constructor))
     root = Path(output) if output else run_root(config) / "samples"
     from ..evaluation.direct import evaluate_direct
     stages = [constructor, "diffusion", "hull", "physics", "feedback", "evaluate"]

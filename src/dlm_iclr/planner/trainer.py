@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LoRA SFT for the H1 Llama formula planner."""
+"""LoRA SFT for the Planner Llama formula planner."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from torch.utils.data import DataLoader, Dataset, RandomSampler
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer, get_cosine_schedule_with_warmup
 
-from dlm_iclr._core.h1_llm_planner import (
+from dlm_iclr._core.autoregressive_planner import (
     disable_peft_bnb_autodetect,
     ensure_peft_cache_compat,
     load_llama3_compatible_config,
@@ -48,7 +48,7 @@ def format_prompt(tokenizer, record: dict[str, Any]) -> str:
         return str(tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True))
     if isinstance(messages, list) and len(messages) >= 2:
         return f"System: {messages[0]['content']}\n\nUser: {messages[1]['content']}\n\nAssistant:"
-    raise ValueError("H1 SFT record has neither messages nor prompt")
+    raise ValueError("Planner SFT record has neither messages nor prompt")
 
 
 class FormulaPlanDataset(Dataset):
@@ -71,7 +71,7 @@ class FormulaPlanDataset(Dataset):
         answer_ids = self.tokenizer(answer + eos, add_special_tokens=False)["input_ids"]
         if len(answer_ids) >= self.max_length:
             raise ValueError(
-                f"H1 formula answer uses {len(answer_ids)} tokens, which does not fit max_length={self.max_length}"
+                f"Planner formula answer uses {len(answer_ids)} tokens, which does not fit max_length={self.max_length}"
             )
         max_prompt_tokens = self.max_length - len(answer_ids)
         if len(prompt_ids) > max_prompt_tokens:
@@ -435,7 +435,7 @@ def main() -> None:
     best_eval_loss = resume_state["best_eval_loss"] if resume_state else None
     best_step = resume_state["best_step"] if resume_state else None
     model.zero_grad(set_to_none=True)
-    progress = tqdm(total=total_updates, initial=global_step, desc="H1 Llama planner SFT")
+    progress = tqdm(total=total_updates, initial=global_step, desc="Planner Llama planner SFT")
     while global_step < total_updates:
         train_iter = iter(train_loader)
         if resume_state is not None:

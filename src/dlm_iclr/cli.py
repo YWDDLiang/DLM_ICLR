@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 from .runtime.config import load, run_root, asset, backend_config, path
 from .runtime.io import read_rows, write_json
-from .runtime.names import module_key, feedback_stage_key
 
 
 def parser():
@@ -28,18 +27,18 @@ def parser():
     p.add_argument("--source")
     p.add_argument("--output", type=Path)
     p = commands.add_parser("train", parents=[common], help="Train a module or the full stack")
-    p.add_argument("module", type=module_key, choices=["planner", "constructor", "periodic", "diffusion", "feedback", "all"],
+    p.add_argument("module", choices=["planner", "constructor", "periodic", "diffusion", "feedback", "all"],
                    metavar="{planner,constructor,periodic,diffusion,feedback,all}")
     p.add_argument("--device", default=None)
     p.add_argument("--resume", action="store_true")
     p.add_argument("--include-planner", action="store_true", help="Include Planner when module=all")
     p.add_argument(
-        "--stage", type=feedback_stage_key,
+        "--stage",
         choices=["warmup", "collect", "label", "compile", "reconstruction", "refit", "verifier", "risk"],
         metavar="{warmup,collect,label,compile,reconstruction,refit,verifier,risk}"
     )
     p = commands.add_parser("sample", parents=[common], help="Sample one stage")
-    p.add_argument("module", type=module_key, choices=["planner", "constructor", "periodic", "diffusion", "feedback"],
+    p.add_argument("module", choices=["planner", "constructor", "periodic", "diffusion", "feedback"],
                    metavar="{planner,constructor,periodic,diffusion,feedback}")
     p.add_argument("--plans")
     p.add_argument("--output", type=Path)
@@ -48,16 +47,16 @@ def parser():
         "run", parents=[common], help="Plan -> periodic draft -> diffusion reference -> feedback -> metrics"
     )
     p.add_argument("--plans", required=True)
-    p.add_argument("--constructor", type=module_key, choices=["constructor", "periodic"], default="periodic",
+    p.add_argument("--constructor", choices=["constructor", "periodic"], default="periodic",
                    metavar="{constructor,periodic}")
     p.add_argument("--output", type=Path)
     p.add_argument(
-        "--from-stage", type=module_key, default="periodic",
+        "--from-stage", default="periodic",
         choices=["constructor", "periodic", "diffusion", "hull", "physics", "feedback", "evaluate"],
         metavar="{constructor,periodic,diffusion,hull,physics,feedback,evaluate}"
     )
     p.add_argument(
-        "--to-stage", type=module_key, default="evaluate",
+        "--to-stage", default="evaluate",
         choices=["constructor", "periodic", "diffusion", "hull", "physics", "feedback", "evaluate"],
         metavar="{constructor,periodic,diffusion,hull,physics,feedback,evaluate}"
     )

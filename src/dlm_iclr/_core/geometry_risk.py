@@ -3,7 +3,7 @@
 from __future__ import annotations
 import torch
 from dlm_iclr._core.fixed_slot import MASK_TOKEN_ID
-from dlm_iclr._core.r03_physics_transfer import supported_scalar_logits
+from dlm_iclr._core.geometry_constraints import supported_scalar_logits
 from dlm_iclr._core.llada_generation import _apply_lightweight_decoding_masks
 
 

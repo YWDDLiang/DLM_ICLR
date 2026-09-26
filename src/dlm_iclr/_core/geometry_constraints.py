@@ -42,7 +42,7 @@ def _integer(value: Any, name: str) -> int:
 
 
 def build_repair_constraints(tokenizer: Any) -> dict[str, Any]:
-    """Token-ID maps for the fixed legacy schema/alias/125-image support."""
+    """Token-ID maps for the typed schema, periodic aliases and 125-image support."""
     config, vocab = FixedSlotConfig(), tokenizer.get_vocab()
 
     def ids(prefix: str, low: int, high: int) -> dict[int, int]:

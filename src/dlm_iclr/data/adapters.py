@@ -44,7 +44,7 @@ def prepare(config, *, with_planner=False, force=False):
         arrays_to_dynamic_answer,
     )
     from .._core.fixed_slot import metadata_from_csv_row
-    from .._core.r5_plan_state import plan_state_from_arrays, build_body_prompt
+    from .._core.plan_schema import plan_state_from_arrays, build_body_prompt
     from ..planner.prepare import build_records_for_plan
     from .preparation import input_identity, tokenizer_identity, read_receipt, matches, outputs
 
@@ -93,7 +93,7 @@ def prepare(config, *, with_planner=False, force=False):
                             plan_state=plan,
                             metadata=metadata,
                             tokenizer=planner_tokenizer,
-                            prompt_style="h1_rich_plan_v1",
+                            prompt_style="rich_plan_v1",
                             include_sample_id=False,
                             sample_types=["direct_plan"],
                             weights={"direct_plan": 1.0},

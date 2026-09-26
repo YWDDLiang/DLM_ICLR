@@ -17,7 +17,6 @@ from dlm_iclr.runtime.io import file_hash, fingerprint, read_json, write_json
 
 RELAXATION_PROTOCOL = {
     **COMMON_RELAXATION_PROTOCOL,
-    "max_steps": 1000,
     "optimizer_stop": "joint_atomic_force_and_stress_v1",
 }
 
@@ -56,8 +55,8 @@ class Labeler:
 
         self.core = physics_core
         self.protocol = {**RELAXATION_PROTOCOL, **(protocol or {})}
-        os.environ["RSI_JOINT_PHYSICAL_STOP"] = "1"
-        os.environ["RSI_STRESS_TOLERANCE"] = str(self.protocol["stress_tolerance_GPa"])
+        os.environ["CRYSTALDLM_JOINT_PHYSICAL_STOP"] = "1"
+        os.environ["CRYSTALDLM_STRESS_TOLERANCE"] = str(self.protocol["stress_tolerance_GPa"])
         torch.set_num_threads(1)
         if str(device).startswith("cuda"):
             torch.cuda.set_device(device)

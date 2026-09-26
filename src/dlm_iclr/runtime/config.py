@@ -5,7 +5,6 @@ import json
 import os
 from pathlib import Path
 from importlib.resources import files
-from .names import configuration_names, setting_key, model_key, module_key
 
 
 def merge(base, update):
@@ -19,10 +18,27 @@ def merge(base, update):
     return result
 
 
+def validate_keys(config, defaults):
+    """Reject unsupported sections and model roles instead of silently ignoring them."""
+    unknown = set(config) - set(defaults) - {"_config_dir"}
+    if unknown:
+        raise ValueError(f"Unknown configuration sections: {', '.join(sorted(unknown))}")
+    for section in ("models", "feedback"):
+        if section in config:
+            unknown = set(config[section]) - set(defaults[section])
+            if unknown:
+                raise ValueError(f"Unknown {section} settings: {', '.join(sorted(unknown))}")
+    if "training" in config.get("feedback", {}):
+        unknown = set(config["feedback"]["training"]) - set(defaults["feedback"]["training"])
+        if unknown:
+            raise ValueError(f"Unknown feedback training settings: {', '.join(sorted(unknown))}")
+
+
 def load(path=None, overrides=(), *, dataset=None):
     defaults = json.loads(files("dlm_iclr").joinpath("defaults.json").read_text(encoding="utf-8"))
     from .datasets import profile, canonical_name, activate
-    supplied = configuration_names(json.loads(Path(path).read_text(encoding="utf-8-sig"))) if path else {}
+    supplied = json.loads(Path(path).read_text(encoding="utf-8-sig")) if path else {}
+    validate_keys(supplied, defaults)
     name = canonical_name(dataset or supplied.get("dataset", {}).get("name", "mp20"))
     preset = profile(name) if dataset or name in ("mp20", "perov-5", "mpts-52") else {}
     config = merge(merge(defaults, preset), supplied)
@@ -34,7 +50,6 @@ def load(path=None, overrides=(), *, dataset=None):
         config["dataset"].update({k: v for k, v in preset["dataset"].items() if k != "splits"})
     for assignment in overrides:
         key, raw = assignment.split("=", 1)
-        key = setting_key(key)
         try:
             value = json.loads(raw)
         except json.JSONDecodeError:
@@ -44,7 +59,7 @@ def load(path=None, overrides=(), *, dataset=None):
         for parent in parents:
             target = target.setdefault(parent, {})
         target[leaf] = value
-    config = configuration_names(config)
+    validate_keys(config, defaults)
     # Paper runs set feedback.physical_rollback=False; learned KEEP remains enabled.
     for option in ("protect_sun", "physical_rollback"):
         if type(config["feedback"][option]) is not bool:
@@ -66,7 +81,7 @@ def run_root(config):
 
 
 def asset(config, name):
-    value = config["models"][model_key(name)]
+    value = config["models"][name]
     if value.startswith("@run/"):
         return str(run_root(config) / value[5:])
     if value.startswith(("hf:",)):
@@ -77,7 +92,6 @@ def asset(config, name):
 def backend_config(config, stage="feedback"):
     from .base_config import Assets, Config, Inference, Training
 
-    stage = module_key(stage)
     cfg = Config()
     cfg.assets = Assets(
         base_model=asset(config, "dlm"),
@@ -100,9 +114,6 @@ def backend_config(config, stage="feedback"):
     )
     if stage == "constructor":
         cfg.inference.temperature = config["constructor"].get("temperature", 0.7)
-        cfg.inference.construction_recovery = False
-        cfg.inference.adaptive_lattice_recovery = False
-        cfg.inference.geometry_monitor = False
     t = config["feedback"]["training"]
     cfg.training = Training(
         plans=t["plans"],

@@ -82,7 +82,7 @@ def choose_result(bundle, penalty, minimum_risk_reduction=0.0):
 
 class OnePassRepair:
     def __init__(self, model, tokenizer, value, risk, settings):
-        from dlm_iclr._core.r03_physics_transfer import build_repair_constraints
+        from dlm_iclr._core.geometry_constraints import build_repair_constraints
 
         self.model = model
         self.tokenizer = tokenizer
@@ -97,7 +97,7 @@ class OnePassRepair:
     def repair(self, bundles, *, keep_features=None):
         from dlm_iclr._core.expert_edit import inference_view, materialize_edit_batch
         from dlm_iclr._core.fixed_slot import MASK_TOKEN_ID
-        from dlm_iclr._core.rsi_preference import legal_vector
+        from dlm_iclr._core.geometry_risk import legal_vector
         from dlm_iclr._core.post_refine_contract import derived_seed
         from dlm_iclr._core.continuous_keep_edit import commit_patch
         from dlm_iclr.feedback.value import geometry_features, extract_features

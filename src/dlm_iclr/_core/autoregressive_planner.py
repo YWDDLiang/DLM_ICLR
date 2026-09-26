@@ -1,4 +1,4 @@
-"""H1 LLM formula-planner helpers."""
+"""Autoregressive composition and coarse-structure planning."""
 
 from __future__ import annotations
 
@@ -8,27 +8,27 @@ import re
 from typing import Any, Dict, Mapping
 
 from dlm_iclr._core.crysllmgen_text import CRYSLLMGEN_TEXT_PROMPT
-from dlm_iclr._core.r5_plan_body import (
-    H1_RICH_PLAN_FORMAT,
-    R5C_FORMULA_END_PLAN_FORMAT,
+from dlm_iclr._core.plan_serialization import (
+    RICH_PLAN_FORMAT,
+    FORMULA_END_PLAN_FORMAT,
     format_composition_plan,
     has_plan_end_marker,
     has_plan_tail_after_end_marker,
     parse_composition_plan,
 )
-from dlm_iclr._core.r5_plan_state import build_body_prompt, validate_plan_state
+from dlm_iclr._core.plan_schema import build_body_prompt, validate_plan_state
 
 
-H1_PLANNER_PROMPT_VERSION = "h1_llm_formula_planner_v1"
-H1_PLANNER_PROMPT_STYLE_CHAT = "chat_formula_end_v1"
-H1_PLANNER_PROMPT_STYLE_FORMULA_PREFILL = "formula_prefill_v1"
-H1_PLANNER_PROMPT_STYLE_RICH_PLAN = H1_RICH_PLAN_FORMAT
-H1_PLANNER_PROMPT_STYLES = (
-    H1_PLANNER_PROMPT_STYLE_CHAT,
-    H1_PLANNER_PROMPT_STYLE_FORMULA_PREFILL,
-    H1_PLANNER_PROMPT_STYLE_RICH_PLAN,
+PLANNER_PROMPT_VERSION = "formula_planner_v1"
+PLANNER_PROMPT_STYLE_CHAT = "chat_formula_end_v1"
+PLANNER_PROMPT_STYLE_FORMULA_PREFILL = "formula_prefill_v1"
+PLANNER_PROMPT_STYLE_RICH_PLAN = RICH_PLAN_FORMAT
+PLANNER_PROMPT_STYLES = (
+    PLANNER_PROMPT_STYLE_CHAT,
+    PLANNER_PROMPT_STYLE_FORMULA_PREFILL,
+    PLANNER_PROMPT_STYLE_RICH_PLAN,
 )
-H1_PLANNER_SYSTEM_PROMPT = (
+PLANNER_SYSTEM_PROMPT = (
     f"You are a materials composition planner for de novo {DATASET_LABEL} bulk crystal generation. "
     "Generate only a composition formula plan. Do not generate lattice, coordinates, CIF, "
     "explanations, candidates, rankings, or database lookups."
@@ -38,9 +38,8 @@ H1_PLANNER_SYSTEM_PROMPT = (
 def load_llama3_compatible_config(model_path: str, *, trust_remote_code: bool = True) -> Any:
     """Load Llama-3.1 config on older Transformers builds.
 
-    The A800 environment currently pins a Transformers version whose LlamaConfig
-    accepts only ``{"type", "factor"}`` rope scaling fields.  Llama-3.1 stores
-    the richer ``rope_type=llama3`` dictionary.  For H1 prompts we stay far below
+    Some Transformers versions have a LlamaConfig that accepts only ``{"type", "factor"}`` rope scaling fields.  Llama-3.1 stores
+    the richer ``rope_type=llama3`` dictionary.  For Planner prompts we stay far below
     the original context window, so falling back to dynamic rope scaling is a
     loader compatibility shim rather than a sampling prior.
     """
@@ -87,7 +86,7 @@ def ensure_peft_cache_compat() -> None:
 
 
 def disable_peft_bnb_autodetect() -> None:
-    """Avoid optional bitsandbytes dispatch paths in older A800 environments."""
+    """Disable optional quantized adapters for full-precision loading."""
 
     try:
         import peft.import_utils as peft_import_utils
@@ -102,10 +101,10 @@ def disable_peft_bnb_autodetect() -> None:
 
 
 def normalize_prompt_style(prompt_style: str | None = None) -> str:
-    style = H1_PLANNER_PROMPT_STYLE_CHAT if prompt_style is None else str(prompt_style).strip()
-    if style not in H1_PLANNER_PROMPT_STYLES:
+    style = PLANNER_PROMPT_STYLE_CHAT if prompt_style is None else str(prompt_style).strip()
+    if style not in PLANNER_PROMPT_STYLES:
         raise ValueError(
-            f"unknown H1 planner prompt style {style!r}; expected one of {H1_PLANNER_PROMPT_STYLES}"
+            f"unknown Planner planner prompt style {style!r}; expected one of {PLANNER_PROMPT_STYLES}"
         )
     return style
 
@@ -113,7 +112,7 @@ def normalize_prompt_style(prompt_style: str | None = None) -> str:
 def build_planner_user_prompt(*, sample_idx: int | None = None, prompt_style: str | None = None) -> str:
     style = normalize_prompt_style(prompt_style)
     sample_line = "" if sample_idx is None else f"\nsample_id: {int(sample_idx)}"
-    if style == H1_PLANNER_PROMPT_STYLE_RICH_PLAN:
+    if style == PLANNER_PROMPT_STYLE_RICH_PLAN:
         return (
             f"{CRYSLLMGEN_TEXT_PROMPT.rstrip()}\n\n"
             "Return exactly seven lines in this format:\n"
@@ -133,7 +132,7 @@ def build_planner_user_prompt(*, sample_idx: int | None = None, prompt_style: st
         )
     prefill_hint = (
         "\nThe assistant prompt may already contain `formula:`; if so, continue with the formula value only."
-        if style == H1_PLANNER_PROMPT_STYLE_FORMULA_PREFILL
+        if style == PLANNER_PROMPT_STYLE_FORMULA_PREFILL
         else ""
     )
     return (
@@ -155,7 +154,7 @@ def build_planner_messages(
     *, sample_idx: int | None = None, prompt_style: str | None = None
 ) -> list[dict[str, str]]:
     return [
-        {"role": "system", "content": H1_PLANNER_SYSTEM_PROMPT},
+        {"role": "system", "content": PLANNER_SYSTEM_PROMPT},
         {
             "role": "user",
             "content": build_planner_user_prompt(sample_idx=sample_idx, prompt_style=prompt_style),
@@ -180,7 +179,7 @@ def format_planner_prompt(
 ) -> str:
     style = normalize_prompt_style(prompt_style)
     prompt = format_chat_prompt(tokenizer, sample_idx=sample_idx, prompt_style=style)
-    if style == H1_PLANNER_PROMPT_STYLE_FORMULA_PREFILL:
+    if style == PLANNER_PROMPT_STYLE_FORMULA_PREFILL:
         return prompt.rstrip() + " formula: "
     return prompt
 
@@ -191,7 +190,7 @@ def clean_generated_plan_text(
     prompt_style: str | None = None,
     truncate_after_marker: bool = True,
 ) -> str:
-    """Normalize only the text boundary of a generated H1 formula plan.
+    """Normalize only the text boundary of a generated Planner formula plan.
 
     This helper deliberately does not repair chemistry or invent missing fields.
     It only removes prompt echo before the first ``formula:`` label, converts an
@@ -201,7 +200,7 @@ def clean_generated_plan_text(
 
     style = normalize_prompt_style(prompt_style)
     cleaned = str(text).replace("\r\n", "\n").replace("\r", "\n").strip()
-    if style == H1_PLANNER_PROMPT_STYLE_FORMULA_PREFILL and "formula:" not in cleaned.lower():
+    if style == PLANNER_PROMPT_STYLE_FORMULA_PREFILL and "formula:" not in cleaned.lower():
         cleaned = "formula: " + cleaned.lstrip()
     formula_idx = cleaned.lower().find("formula:")
     if formula_idx >= 0:
@@ -223,7 +222,7 @@ def canonical_plan_record(
         raw_plan_text,
         sample_idx=sample_idx,
         max_atoms=max_atoms,
-        prompt_style=H1_PLANNER_PROMPT_STYLE_CHAT,
+        prompt_style=PLANNER_PROMPT_STYLE_CHAT,
     )
 
 
@@ -236,7 +235,7 @@ def canonical_plan_record_for_style(
 ) -> Dict[str, Any]:
     style = normalize_prompt_style(prompt_style)
     plan_style = (
-        H1_RICH_PLAN_FORMAT if style == H1_PLANNER_PROMPT_STYLE_RICH_PLAN else R5C_FORMULA_END_PLAN_FORMAT
+        RICH_PLAN_FORMAT if style == PLANNER_PROMPT_STYLE_RICH_PLAN else FORMULA_END_PLAN_FORMAT
     )
     plan = parse_composition_plan(raw_plan_text, plan_style=plan_style, max_atoms=max_atoms)
     validation = validate_plan_state(plan)
@@ -257,21 +256,21 @@ def canonical_plan_record_for_style(
 def teacher_formula_answer(plan_state: Mapping[str, Any], *, prompt_style: str | None = None) -> str:
     style = normalize_prompt_style(prompt_style)
     plan_style = (
-        H1_RICH_PLAN_FORMAT if style == H1_PLANNER_PROMPT_STYLE_RICH_PLAN else R5C_FORMULA_END_PLAN_FORMAT
+        RICH_PLAN_FORMAT if style == PLANNER_PROMPT_STYLE_RICH_PLAN else FORMULA_END_PLAN_FORMAT
     )
     answer = format_composition_plan(plan_state, plan_style=plan_style)
-    if style == H1_PLANNER_PROMPT_STYLE_FORMULA_PREFILL:
+    if style == PLANNER_PROMPT_STYLE_FORMULA_PREFILL:
         return answer.split(":", 1)[1].lstrip()
     return answer
 
 
 __all__ = [
-    "H1_PLANNER_PROMPT_VERSION",
-    "H1_PLANNER_PROMPT_STYLE_CHAT",
-    "H1_PLANNER_PROMPT_STYLE_FORMULA_PREFILL",
-    "H1_PLANNER_PROMPT_STYLE_RICH_PLAN",
-    "H1_PLANNER_PROMPT_STYLES",
-    "H1_PLANNER_SYSTEM_PROMPT",
+    "PLANNER_PROMPT_VERSION",
+    "PLANNER_PROMPT_STYLE_CHAT",
+    "PLANNER_PROMPT_STYLE_FORMULA_PREFILL",
+    "PLANNER_PROMPT_STYLE_RICH_PLAN",
+    "PLANNER_PROMPT_STYLES",
+    "PLANNER_SYSTEM_PROMPT",
     "build_planner_messages",
     "build_planner_user_prompt",
     "canonical_plan_record",

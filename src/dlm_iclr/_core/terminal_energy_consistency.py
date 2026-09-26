@@ -26,7 +26,7 @@ COMMON_RELAXATION_PROTOCOL = {
     "fire_dt": 0.1,
     "fire_maxstep": 0.2,
     "stress_tolerance_GPa": 0.5,
-    "max_steps": 500,
+    "max_steps": 1000,
 }
 
 

@@ -13,10 +13,10 @@ import torch
 from dlm_iclr._core.fixed_slot import MASK_TOKEN_ID
 from dlm_iclr._core.lattice_geometry import lattice_angle_rad
 from dlm_iclr._core.llada_generation import _apply_lightweight_decoding_masks, _lattice_matrix_from_token_ids
-from dlm_iclr._core.r03_physics_transfer import build_repair_constraints
+from dlm_iclr._core.geometry_constraints import build_repair_constraints
 
 
-SCHEMA = "r03_construction_geometry_bridge_v1"
+SCHEMA = "construction_geometry_v1"
 
 
 PROTOCOL = {
@@ -25,7 +25,7 @@ PROTOCOL = {
     "image_radius": 2,
     "periodic_image_count": 125,
     "min_lattice_rad": 1e-4,
-    "reveal_order": "unchanged_R03_lattice_X_Y_Z",
+    "reveal_order": "unchanged_crystal_lattice_X_Y_Z",
     "sampling_noise": "unchanged_frozen_paired_suffix_candidates",
     "self_image_hard_mask_added": False,
     "lattice_system_spacegroup_volume_bin_hard_rules_added": False,
@@ -77,19 +77,19 @@ def _checked_groups(groups: Sequence[Sequence[int]]) -> tuple[tuple[int, ...], .
         or sorted(flattened) != list(range(length))
         or any(not group for group in normalized)
     ):
-        raise GeometryBridgeContractError("R03 groups must cover exact 7+4N positions once")
+        raise GeometryBridgeContractError("crystal groups must cover exact 7+4N positions once")
     stages = []
     for group in normalized:
         kinds = {_stage(position) for position in group}
         if len(kinds) != 1:
-            raise GeometryBridgeContractError("geometry bridge cannot change or mix R03 axis groups")
+            raise GeometryBridgeContractError("geometry bridge cannot change or mix crystal axis groups")
         stages.append(next(iter(kinds)))
     order = {name: rank for rank, name in enumerate(("prefilled_composition", "lattice", "X", "Y", "Z"))}
     if stages[:2] != ["prefilled_composition", "lattice"] or [order[s] for s in stages] != sorted(
         order[s] for s in stages
     ):
         raise GeometryBridgeContractError(
-            "the frozen R03 lattice-to-X-to-Y-to-Z dependency order is required"
+            "the frozen crystal lattice-to-X-to-Y-to-Z dependency order is required"
         )
     return normalized
 
@@ -131,7 +131,7 @@ class ConstructionGeometryMonitor:
             native_constraints.get(k) != v for k, v in required.items()
         ):
             raise GeometryBridgeContractError(
-                "original R03 schema, duplicate and nondegenerate-lattice guards must stay enabled"
+                "original crystal schema, duplicate and nondegenerate-lattice guards must stay enabled"
             )
         # A pure tokenizer-map builder. No old physical checkpoint or dataset
         # is loaded by this shared helper.
@@ -144,7 +144,7 @@ class ConstructionGeometryMonitor:
             "gamma_bin_to_token_id",
         ):
             if native_constraints.get(key) != self.constraints.get(key):
-                raise GeometryBridgeContractError(f"native R03 token map differs at {key}")
+                raise GeometryBridgeContractError(f"native crystal token map differs at {key}")
         # The frozen constructor has already applied these two original masks.
         # Do not touch logits outside the active group a second time.
         self.constraints = {
@@ -221,15 +221,15 @@ class ConstructionGeometryMonitor:
             or step_in_group < 0
         ):
             raise GeometryBridgeContractError(
-                "geometry ON requires one exact R03 request and the original candidate-logit ABI"
+                "geometry ON requires one exact crystal request and the original candidate-logit ABI"
             )
         body = x[:, prompt_length:]
         n = self.constraints["count_token_to_n"].get(int(body[0, 0]))
         if n is None or gen_length != 7 + 4 * n:
-            raise GeometryBridgeContractError("R03 N prefill is missing or its cardinality changed")
+            raise GeometryBridgeContractError("crystal N prefill is missing or its cardinality changed")
         if any(int(body[0, 7 + 4 * slot]) not in self.element_ids for slot in range(n)):
             raise GeometryBridgeContractError(
-                "R03 element prefill is missing or outside the unchanged vocabulary"
+                "crystal element prefill is missing or outside the unchanged vocabulary"
             )
         active = torch.zeros_like(body, dtype=torch.bool)
         positions = list(self.groups[semantic_group])
@@ -277,11 +277,11 @@ class ConstructionGeometryMonitor:
                     token = int(body[0, 8 + 4 * slot + component])
                     if token != self.mask_id and token not in self.constraints["coord_token_to_bin"][axis]:
                         raise GeometryBridgeContractError(
-                            "visible coordinate is outside the unchanged R03 coordinate vocabulary"
+                            "visible coordinate is outside the unchanged crystal coordinate vocabulary"
                         )
                     if stage == "Z" and axis in "XY" and token == self.mask_id:
                         raise GeometryBridgeContractError(
-                            "active R03 Z requires every X and Y to be already visible"
+                            "active crystal Z requires every X and Y to be already visible"
                         )
         suffix = logits[:, prompt_length : prompt_length + gen_length]
         before = suffix[active].clone()

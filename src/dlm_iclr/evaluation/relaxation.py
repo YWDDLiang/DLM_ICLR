@@ -332,7 +332,7 @@ def recorded_fire_class(FIRE):
             return self.physical_convergence(super().gradient_converged(gradient))
 
         def physical_convergence(self, native):
-            if os.environ.get("RSI_JOINT_PHYSICAL_STOP") != "1":
+            if os.environ.get("CRYSTALDLM_JOINT_PHYSICAL_STOP") != "1":
                 return native
             from dlm_iclr._core.ranked_feedback import joint_stop_status
 
@@ -341,7 +341,7 @@ def recorded_fire_class(FIRE):
                 atoms.get_forces(apply_constraint=False),
                 np.asarray(atoms.get_stress(voigt=False, apply_constraint=False)) * EV_A3_TO_GPA,
                 fmax=float(self.fmax),
-                stress_tolerance=float(os.environ.get("RSI_STRESS_TOLERANCE", ".5")),
+                stress_tolerance=float(os.environ.get("CRYSTALDLM_STRESS_TOLERANCE", ".5")),
             )
             _OPT_STATUS.update(filter_converged=bool(native), **physical)
             # Catch a collapsing cell without spending the remainder of 1000 steps.

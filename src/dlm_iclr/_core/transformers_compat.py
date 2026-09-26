@@ -32,8 +32,8 @@ def ensure_create_bidirectional_mask() -> bool:
     """Install a small fallback for newer remote-code model imports.
 
     Some LLaDA2 checkpoints import ``create_bidirectional_mask`` from
-    ``transformers.masking_utils``.  The A800 environment currently has a
-    Transformers build where that symbol is absent, while the model code only
+    ``transformers.masking_utils``. Some Transformers versions omit that symbol,
+    while the model code only
     needs a full bidirectional padding mask for our fixed-length SFT/sampling
     batches.  Returning ``None`` for fully unmasked batches matches the common
     Transformers convention and keeps the model path unchanged.

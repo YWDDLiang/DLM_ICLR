@@ -4,11 +4,11 @@ from __future__ import annotations
 from collections import Counter
 from functools import partial
 import torch
-from dlm_iclr._core import paired_llada, r03_geometry_bridge
+from dlm_iclr._core import paired_llada, construction_geometry
 from dlm_iclr._core.construction_recovery import construct_cascade
 from dlm_iclr._core.dynamic_crystal import parse_dynamic_answer, arrays_to_structure
 from dlm_iclr._core.fixed_slot import FixedSlotConfig, MASK_TOKEN_ID, Z_TO_SYMBOL
-from dlm_iclr._core.r03_physics_transfer import build_repair_constraints, geometry_support_report
+from dlm_iclr._core.geometry_constraints import build_repair_constraints, geometry_support_report
 from dlm_iclr.runtime.models import build_dynamic_lightweight_constraints
 from dlm_iclr.data.plans import axis_schedule
 
@@ -74,7 +74,7 @@ def construct(
         prefill.update(
             {position: [int(value)] for position, value in enumerate(initial_body) if value != MASK_TOKEN_ID}
         )
-    monitor = r03_geometry_bridge.ConstructionGeometryMonitor(
+    monitor = construction_geometry.ConstructionGeometryMonitor(
         enabled=geometry_monitor,
         tokenizer=tokenizer,
         generation_position_groups=schedule,
@@ -183,7 +183,7 @@ class Constructor:
                     construct=sampler,
                     constraints=self.constraints,
                     repair_constraints=self.support,
-                    geometry_api=r03_geometry_bridge,
+                    geometry_api=construction_geometry,
                     complete_geometry=lambda body: geometry_support_report(body, constraints=self.support),
                     adaptive_lattice=self.policy.adaptive_lattice_recovery,
                 )
@@ -205,7 +205,7 @@ class Constructor:
                 graph["sample_idx"] = plan["original_ordinal"]
             except (ValueError, FloatingPointError, RuntimeError) as error:
                 trace["graph_failure"] = str(error)
-        except r03_geometry_bridge.GeometryNoLegalSupport as error:
+        except construction_geometry.GeometryNoLegalSupport as error:
             record = make_record(plan, stage="G", reason="construction_geometry_exhausted")
             trace = {"construction_failure": error.to_dict()}
         except (ValueError, FloatingPointError) as error:

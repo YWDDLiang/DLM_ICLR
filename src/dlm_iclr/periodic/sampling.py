@@ -1,7 +1,7 @@
 """Periodic-axis candidates inside the retained per-commit DLM constructor.
 
 No extra DLM forward, new geometry veto, future-token commit, or F invocation.
-Geometry support/recovery and confidence commit remain the caller's legacy
+Geometry support/recovery and confidence commit remain the caller's
 rules. Joint candidate log probability is NOT the probability of the projected
 confidence-selected transition (uncommitted candidates are auxiliary draws).
 """
@@ -93,7 +93,7 @@ class AxisCandidateSampler:
     def __call__(self, logits, *, hidden, group_positions, mask_id, **arguments):
         self.pending = None
         axis = _axis(group_positions)
-        # Same legacy candidate generation for all non-axis values. Its random
+        # Same candidate generation for all non-axis values. Its random
         # streams are stateless; neutral construction never calls this wrapper.
         candidates, confidence = _paired_suffix_candidates(logits, **arguments)
         if not self.enabled or axis is None:
@@ -129,7 +129,7 @@ class AxisCandidateSampler:
         )
         tokens = torch.tensor(self.axis_tokens[axis], device=device)
         token_logits = logits[0, offset + positions][:, tokens]
-        # Legacy geometry/schema masks use finfo.min, not -inf. Preserve their
+        # Geometry/schema masks use finfo.min, not -inf. Preserve their
         # excluded support explicitly before exact log-domain inference.
         token_logits = torch.where(
             token_logits == torch.finfo(logits.dtype).min,
@@ -161,7 +161,7 @@ class AxisCandidateSampler:
         base = arguments["base_seeds"][0]
         seed = derive_subseed(base, "periodic_axis_joint_candidates_v1", group, step)
         sample = law.sample(1, generator=torch.Generator(device=device).manual_seed(seed))[0]
-        # Only the current schedule group participates in the legacy top-k.
+        # Only the current schedule group participates in the confidence top-k.
         # Other sampled axes/sites remain hypothetical and are only logged.
         active = [int(p) for p in group_positions if int(body[p]) == mask_id]
         for p in positions.tolist():
@@ -192,7 +192,7 @@ class AxisCandidateSampler:
             "alias_policy": "000_100_logaddexp_to_000_before_temperature",
             "hidden_dtype": str(hidden.dtype),
             "logits_dtype": str(logits.dtype),
-            "confidence_source": "legacy_untempered_unary_at_joint_candidate_not_calibrated_joint_confidence",
+            "confidence_source": "untempered_unary_at_joint_candidate",
             "joint_sample_is_auxiliary_not_projected_transition_log_probability": True,
             "new_geometry_veto": False,
             "extra_DLM_calls": 0,
@@ -220,7 +220,7 @@ class AxisCandidateSampler:
             "neutral_reason": self.neutral_reason,
             "head_config": self.head.config(),
             "parents": list(self.parents),
-            "same_legacy_commit_rule": True,
+            "same_confidence_commit_rule": True,
             "DLM_reforward_each_commit": True,
             "extra_DLM_calls": 0,
             "neutral_uses_current_checkpoint": True,

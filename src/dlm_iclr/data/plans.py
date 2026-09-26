@@ -8,9 +8,8 @@ from functools import reduce
 import math
 from pathlib import Path
 from dlm_iclr._core.fixed_slot import SYMBOL_TO_Z, FixedSlotConfig
-from dlm_iclr._core.r5_plan_state import build_body_prompt
+from dlm_iclr._core.plan_schema import build_body_prompt
 from dlm_iclr.runtime.io import fingerprint, read_rows, write_json, write_rows
-from dlm_iclr.runtime.names import preset_key
 
 PRESETS = ("mp20_default",)
 PRESET_FILES = {name: f"plans/{name}.jsonl" for name in PRESETS}
@@ -77,7 +76,6 @@ def load_plans(source, *, requests=None, legal_only=False, seed=17):
     source = str(source)
     if source.startswith("preset:"):
         source = source[7:]
-    source = preset_key(source)
     path = (
         Path(__file__).parent / "presets" / PRESET_FILES[source] if source in PRESET_FILES else Path(source)
     )

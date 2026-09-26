@@ -6,8 +6,8 @@ import torch
 from ..runtime.io import read_rows, write_json
 from ..runtime.models import load_editor
 from ..runtime.checkpoint import rng_state, restore_rng, save
-from .._core.r03_physics_transfer import build_repair_constraints
-from .._core.rsi_minibatch import decision_head_parameter
+from .._core.geometry_constraints import build_repair_constraints
+from .._core.reconstruction_views import decision_head_parameter
 from .._core.editor_minibatch import train_editor_minibatches
 
 

@@ -115,7 +115,7 @@ def patch_numeric_fields(current_record, old_tokens, new_tokens, inverse, *, sel
 
 
 def commit_patch(current_record, old_tokens, new_tokens, inverse, *, editable=True):
-    """Legacy acceptance behavior around the shared continuous-field patcher."""
+    """Apply an accepted proposal using continuous reference fields."""
     if not editable:
         return copy.deepcopy(current_record), dict(applied=False, reason="no_matching_token_view", changed=[])
     try:

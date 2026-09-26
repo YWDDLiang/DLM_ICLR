@@ -101,7 +101,7 @@ def axis_view(row, schema, *, seed, epoch, axis=None, cut=None):
         "lattice": lattice.tolist(),
         "elements": [schema.element_map[target[7 + 4 * i]] for i in range(n)],
         "supervision": "original_MP20_typed_axis_prefix_joint_NLL",
-        "geometry_support": "typed_only_not_legacy_geometry_monitor",
+        "geometry_support": "typed_support",
     }
     view["view_hash"] = fingerprint(view)
     return view

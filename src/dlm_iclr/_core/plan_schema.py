@@ -41,7 +41,7 @@ import math
 from dlm_iclr._core.composition_validity import classify_smact_validity, element_symbols, reduced_composition
 from dlm_iclr._core.fixed_slot import SYMBOL_TO_Z
 
-PLAN_STATE_VERSION = "r5_plan_state_v1"
+PLAN_STATE_VERSION = "plan_state_v1"
 ALLOWED_LATTICE_SYSTEMS = {
     "triclinic",
     "monoclinic",

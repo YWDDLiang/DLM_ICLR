@@ -8,7 +8,7 @@ import time
 import torch
 from dlm_iclr._core.editor_t2t import dense_loss, dense_vectors
 from dlm_iclr._core.expert_edit import ExpertEditObjective
-from dlm_iclr._core.rsi_minibatch import (
+from dlm_iclr._core.reconstruction_views import (
     decision_head_parameter,
     editor_head_loss,
     epoch_indices,

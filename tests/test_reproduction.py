@@ -35,11 +35,10 @@ def test_frozen_panel_selection_and_identity():
     rows, _ = load_plans("preset:mp20_default", requests=1000)
     assert len(rows) == 1000
     assert all(validate_plan(r) is None for r in rows)
-    assert rows[0]["source_id"] == "H1A2_1200:0000"
-    assert rows[-1]["original_ordinal"] == 1011
-    assert hashlib.sha256(PANEL.read_bytes()).hexdigest() == manifest["selected_sha256"]
-    expected = [i for i in range(1200) if i not in {r["original_ordinal"] for r in manifest["excluded_invalid_plans"]}][:1000]
-    assert [r["original_ordinal"] for r in rows] == expected
+    assert [r["source_id"] for r in rows] == [f"mp20_default:{i:04d}" for i in range(1000)]
+    assert hashlib.sha256(PANEL.read_bytes()).hexdigest() == manifest["sha256"]
+    assert manifest["requests"] == len(rows)
+    assert [r["original_ordinal"] for r in rows] == [r["original_ordinal"] for r in original]
     for a, b in zip(rows, original):
         assert a["body_prompt"] == b["body_prompt"]
         assert a["body_noise_seed"] == b["body_noise_seed"]
@@ -67,9 +66,9 @@ from dlm_iclr.runtime.config import load
 c=load(dataset=sys.argv[1])
 from dlm_iclr.runtime.capacity import MAX_ATOMS,MIN_ATOMS
 from dlm_iclr._core.dynamic_crystal import arrays_to_dynamic_answer,parse_dynamic_answer
-from dlm_iclr._core.h1_llm_planner import build_planner_user_prompt
+from dlm_iclr._core.autoregressive_planner import build_planner_user_prompt
 from dlm_iclr.data.plans import validate_plan
-from dlm_iclr._core.r5_plan_state import build_body_prompt
+from dlm_iclr._core.plan_schema import build_body_prompt
 from dlm_iclr._core.expert_edit import ExpertEditConfig
 from dlm_iclr.feedback.scope import feasible_modes
 n=MAX_ATOMS
@@ -79,7 +78,7 @@ plan=dict(N=n,elements=['Si'],counts=[n],anion_framework='other',charge_bucket='
 assert validate_plan({'plan_state':plan,'body_prompt':build_body_prompt(plan).rstrip()+'\\n'}) is None
 assert ExpertEditConfig(hidden_size=8).max_sites == n
 assert feasible_modes(n,80)
-prompt=build_planner_user_prompt(prompt_style='h1_rich_plan_v1')
+prompt=build_planner_user_prompt(prompt_style='rich_plan_v1')
 assert c['dataset']['label'] in prompt
 print(json.dumps([MIN_ATOMS,MAX_ATOMS,7+4*n]))
 ''', name)
@@ -117,8 +116,9 @@ def test_base_constructor_retains_native_constraints_without_periodic_head():
     import inspect
     c = load()
     policy = backend_config(c, stage="constructor").inference
-    assert not policy.geometry_monitor and not policy.construction_recovery
-    assert not policy.adaptive_lattice_recovery
+    assert policy.geometry_monitor and policy.construction_recovery
+    assert policy == backend_config(c, stage="periodic").inference
+    assert policy.adaptive_lattice_recovery
     assert inspect.signature(construct).parameters["geometry_monitor"].default is True
     from dlm_iclr.periodic.generation import Constructor
     from dlm_iclr._core.dynamic_crystal import build_special_tokens

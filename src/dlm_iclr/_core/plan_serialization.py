@@ -5,7 +5,7 @@ from collections import Counter
 import re
 from typing import Any, Dict, Mapping, Sequence
 from dlm_iclr._core.fixed_slot import SYMBOL_TO_Z
-from dlm_iclr._core.r5_plan_state import (
+from dlm_iclr._core.plan_schema import (
     ALLOWED_LATTICE_SYSTEMS,
     ALLOWED_SPACEGROUP_BUCKETS,
     CHARGE_BUCKET_TO_CODE,
@@ -14,21 +14,21 @@ from dlm_iclr._core.r5_plan_state import (
     prototype_key,
 )
 
-R5C_PLAN_FORMAT = "formula_text"
-R5C_FORMULA_END_PLAN_FORMAT = "formula_end_v1"
-R5C_SEMANTIC_PLAN_FORMAT = "semantic_formula_v1"
-H1_RICH_PLAN_FORMAT = "h1_rich_plan_v1"
-R5C_PLAN_STYLES = (
-    R5C_PLAN_FORMAT,
-    R5C_FORMULA_END_PLAN_FORMAT,
-    R5C_SEMANTIC_PLAN_FORMAT,
-    H1_RICH_PLAN_FORMAT,
+PLAN_FORMAT = "formula_text"
+FORMULA_END_PLAN_FORMAT = "formula_end_v1"
+SEMANTIC_PLAN_FORMAT = "semantic_formula_v1"
+RICH_PLAN_FORMAT = "rich_plan_v1"
+PLAN_STYLES = (
+    PLAN_FORMAT,
+    FORMULA_END_PLAN_FORMAT,
+    SEMANTIC_PLAN_FORMAT,
+    RICH_PLAN_FORMAT,
 )
-R5C_PLAN_FIELDS = ("formula",)
-H1_RICH_PLAN_FIELDS = ("formula", "anion", "charge", "lattice", "spacegroup", "volume")
-R5C_PLAN_END_FIELD = "end"
-R5C_PLAN_END_VALUE = "plan"
-H1_RICH_ANION_FRAMEWORKS = {
+PLAN_FIELDS = ("formula",)
+RICH_PLAN_FIELDS = ("formula", "anion", "charge", "lattice", "spacegroup", "volume")
+PLAN_END_FIELD = "end"
+PLAN_END_VALUE = "plan"
+RICH_ANION_FRAMEWORKS = {
     "oxide",
     "sulfide",
     "chalcogenide",
@@ -113,9 +113,9 @@ CARBIDE_BORIDE_SYMBOLS = {"B", "C", "Si", "Ge"}
 
 
 def normalize_plan_style(plan_style: str | None = None) -> str:
-    style = R5C_PLAN_FORMAT if plan_style is None else str(plan_style).strip()
-    if style not in R5C_PLAN_STYLES:
-        raise ValueError(f"unknown R5-C plan style {style!r}; expected one of {R5C_PLAN_STYLES}")
+    style = PLAN_FORMAT if plan_style is None else str(plan_style).strip()
+    if style not in PLAN_STYLES:
+        raise ValueError(f"unknown formula plan style {style!r}; expected one of {PLAN_STYLES}")
     return style
 
 
@@ -252,7 +252,7 @@ def semantic_consistency_from_plan(plan_state: Mapping[str, Any]) -> Dict[str, b
 
 def _normalize_rich_anion(value: Any) -> str:
     normalized = _normalize_generated_label(str(value))
-    if normalized not in H1_RICH_ANION_FRAMEWORKS:
+    if normalized not in RICH_ANION_FRAMEWORKS:
         raise ValueError(f"invalid rich-plan anion field {value!r}")
     return normalized
 
@@ -298,9 +298,9 @@ def rich_fields_from_plan_state(plan_state: Mapping[str, Any]) -> Dict[str, str]
 def format_composition_plan(plan_state: Mapping[str, Any], *, plan_style: str | None = None) -> str:
     plan = composition_plan_from_state(plan_state)
     style = normalize_plan_style(plan_style)
-    if style == R5C_FORMULA_END_PLAN_FORMAT:
-        return f"formula: {plan['formula']}\n{R5C_PLAN_END_FIELD}: {R5C_PLAN_END_VALUE}"
-    if style == R5C_SEMANTIC_PLAN_FORMAT:
+    if style == FORMULA_END_PLAN_FORMAT:
+        return f"formula: {plan['formula']}\n{PLAN_END_FIELD}: {PLAN_END_VALUE}"
+    if style == SEMANTIC_PLAN_FORMAT:
         semantic = semantic_fields_from_plan(plan)
         return "\n".join(
             [
@@ -310,7 +310,7 @@ def format_composition_plan(plan_state: Mapping[str, Any], *, plan_style: str | 
                 f"formula: {plan['formula']}",
             ]
         )
-    if style == H1_RICH_PLAN_FORMAT:
+    if style == RICH_PLAN_FORMAT:
         rich = rich_fields_from_plan_state(plan_state)
         return "\n".join(
             [
@@ -320,7 +320,7 @@ def format_composition_plan(plan_state: Mapping[str, Any], *, plan_style: str | 
                 f"lattice: {rich['lattice']}",
                 f"spacegroup: {rich['spacegroup']}",
                 f"volume: {rich['volume']}",
-                f"{R5C_PLAN_END_FIELD}: {R5C_PLAN_END_VALUE}",
+                f"{PLAN_END_FIELD}: {PLAN_END_VALUE}",
             ]
         )
     return f"formula: {plan['formula']}"
@@ -342,12 +342,12 @@ def _normalize_generated_label(value: str) -> str:
 
 def has_plan_end_marker(text: str) -> bool:
     cleaned = _strip_special_tail(text)
-    return re.search(f"(?im)^\\s*{R5C_PLAN_END_FIELD}\\s*:\\s*{R5C_PLAN_END_VALUE}\\s*$", cleaned) is not None
+    return re.search(f"(?im)^\\s*{PLAN_END_FIELD}\\s*:\\s*{PLAN_END_VALUE}\\s*$", cleaned) is not None
 
 
 def has_plan_tail_after_end_marker(text: str) -> bool:
     cleaned = _strip_special_tail(text)
-    match = re.search(f"(?im)^\\s*{R5C_PLAN_END_FIELD}\\s*:\\s*{R5C_PLAN_END_VALUE}\\s*$", cleaned)
+    match = re.search(f"(?im)^\\s*{PLAN_END_FIELD}\\s*:\\s*{PLAN_END_VALUE}\\s*$", cleaned)
     if match is None:
         return False
     tail = cleaned[match.end() :].strip()
@@ -364,7 +364,7 @@ def parse_composition_plan(
     ``counts`` and ``N`` are intentionally derived by Python from ``formula``.
     This avoids making the model emit redundant arithmetic fields that can
     contradict each other during de novo sampling. DN4 semantic fields are
-    diagnostics only; they never override the formula-derived composition. H1
+    diagnostics only; they never override the formula-derived composition. Planner
     rich fields are generated conditioning fields; they condition the body
     executor, but never override formula-derived composition.
     """
@@ -386,24 +386,24 @@ def parse_composition_plan(
         if match:
             key = match.group(1).lower()
             fields[key] = match.group(2).strip()
-            if key == R5C_PLAN_END_FIELD and _normalize_generated_label(fields[key]) == R5C_PLAN_END_VALUE:
+            if key == PLAN_END_FIELD and _normalize_generated_label(fields[key]) == PLAN_END_VALUE:
                 break
             continue
-        if fields and (not set(R5C_PLAN_FIELDS).issubset(fields)):
+        if fields and (not set(PLAN_FIELDS).issubset(fields)):
             continue
-    missing = [field for field in R5C_PLAN_FIELDS if field.lower() not in fields]
+    missing = [field for field in PLAN_FIELDS if field.lower() not in fields]
     if missing:
         raise ValueError(f"composition plan missing fields: {','.join(missing)}")
-    if requested_style == R5C_FORMULA_END_PLAN_FORMAT:
-        marker_value = _normalize_generated_label(fields.get(R5C_PLAN_END_FIELD, ""))
-        if marker_value != R5C_PLAN_END_VALUE:
+    if requested_style == FORMULA_END_PLAN_FORMAT:
+        marker_value = _normalize_generated_label(fields.get(PLAN_END_FIELD, ""))
+        if marker_value != PLAN_END_VALUE:
             raise ValueError("composition plan missing required end: plan marker")
-    if requested_style == H1_RICH_PLAN_FORMAT:
-        missing_rich = [field for field in H1_RICH_PLAN_FIELDS if field not in fields]
+    if requested_style == RICH_PLAN_FORMAT:
+        missing_rich = [field for field in RICH_PLAN_FIELDS if field not in fields]
         if missing_rich:
             raise ValueError(f"rich composition plan missing fields: {','.join(missing_rich)}")
-        marker_value = _normalize_generated_label(fields.get(R5C_PLAN_END_FIELD, ""))
-        if marker_value != R5C_PLAN_END_VALUE:
+        marker_value = _normalize_generated_label(fields.get(PLAN_END_FIELD, ""))
+        if marker_value != PLAN_END_VALUE:
             raise ValueError("rich composition plan missing required end: plan marker")
     formula_value = fields["formula"].split("<", 1)[0].strip()
     if not formula_value:
@@ -416,14 +416,14 @@ def parse_composition_plan(
     formula = formula_from_symbol_counts(symbols, counts)
     has_rich_fields = any((key in fields for key in ("anion", "charge", "lattice", "spacegroup", "volume")))
     inferred_style = (
-        R5C_FORMULA_END_PLAN_FORMAT
-        if _normalize_generated_label(fields.get(R5C_PLAN_END_FIELD, "")) == R5C_PLAN_END_VALUE
+        FORMULA_END_PLAN_FORMAT
+        if _normalize_generated_label(fields.get(PLAN_END_FIELD, "")) == PLAN_END_VALUE
         and (not has_rich_fields)
-        else H1_RICH_PLAN_FORMAT
+        else RICH_PLAN_FORMAT
         if has_rich_fields
-        else R5C_SEMANTIC_PLAN_FORMAT
+        else SEMANTIC_PLAN_FORMAT
         if any((key in fields for key in ("family", "arity", "size")))
-        else R5C_PLAN_FORMAT
+        else PLAN_FORMAT
     )
     output_style = requested_style or inferred_style
     plan: Dict[str, Any] = {
@@ -441,14 +441,14 @@ def parse_composition_plan(
         "volume_per_atom_bin": "volpa_unknown",
         "prototype_key": f"formula={formula}|N={num_atoms}",
         "plan_format": output_style,
-        "plan_end_marker_present": _normalize_generated_label(fields.get(R5C_PLAN_END_FIELD, ""))
-        == R5C_PLAN_END_VALUE,
+        "plan_end_marker_present": _normalize_generated_label(fields.get(PLAN_END_FIELD, ""))
+        == PLAN_END_VALUE,
         "derived_counts_from_formula": True,
         "derived_n_from_formula": True,
     }
     expected = semantic_fields_from_plan(plan)
     plan.update(expected)
-    if output_style == H1_RICH_PLAN_FORMAT or has_rich_fields:
+    if output_style == RICH_PLAN_FORMAT or has_rich_fields:
         generated_rich = {
             "anion": _normalize_rich_anion(fields.get("anion", "")),
             "charge": _normalize_rich_charge(fields.get("charge", "")),

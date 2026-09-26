@@ -1,16 +1,7 @@
-"""Fixed-slot crystal representation used by the MP-20 DLM experiments.
+"""Typed crystal vocabulary and fixed-slot conversion helpers.
 
-The schema follows rawplan.md:
-
-    <N_012>
-    <LA_080> <LB_080> <LC_056> <AA_090> <AB_090> <AG_120>
-    <S00> <E_Na> <X_033> <Y_066> <Z_000>
-    ...
-    <S19> <EMPTY> <X_PAD> <Y_PAD> <Z_PAD>
-
-The default MP-20 answer is 107 semantic tokens: 1 atom-count token,
-6 lattice tokens, and 20 atom slots with 5 tokens each. Some downstream
-feasibility checks reuse the same schema with a larger max_atoms value.
+The constructor uses the dynamic 7+4N serialization in dynamic_crystal.py.
+These helpers also provide shared token ranges and element mappings.
 """
 
 from __future__ import annotations
