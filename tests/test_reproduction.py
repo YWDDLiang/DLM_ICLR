@@ -149,7 +149,7 @@ def test_one_command_uses_fresh_stages_and_never_trains_planner_by_default(tmp_p
 def test_pipeline_evaluates_all_endpoints_without_relabeling(tmp_path, monkeypatch):
     from dlm_iclr.runtime import pipeline
     from dlm_iclr.evaluation import direct, workflow, hull
-    c = load(overrides=[f"output={tmp_path}"])
+    c = load(overrides=[f"output={tmp_path}", "feedback.physical_rollback=false"])
     calls = []
     def fake_sample(config, stage, **kwargs):
         calls.append(stage)

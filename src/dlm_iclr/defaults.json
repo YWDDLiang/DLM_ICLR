@@ -126,6 +126,7 @@
   "feedback": {
     "temperature": 0.7,
     "protect_sun": true,
+    "physical_rollback": true,
     "candidates": 8,
     "max_calls": 80,
     "batch_size": 64,

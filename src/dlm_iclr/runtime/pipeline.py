@@ -268,8 +268,12 @@ def run(config, plans, *, output=None, start="periodic", end="evaluate", constru
                     dataset=config["dataset"]["name"], workers=config["runtime"]["matching_workers"],
                     composition=config["evaluation"]["composition"],
                     coverage_cutoffs=config["evaluation"]["coverage_cutoffs"],
+                    cache=run_root(config) / "cache/direct",
                 )
                 _, physical = evaluate(config, records, root / "evaluation" / endpoint)
                 result[endpoint] = {"direct": direct, "sun": physical}
+            if stage == "evaluate":
+                from .finalize import finalize
+                result["final"] = finalize(config, root, result["edited"])
         write_json(root / "progress.json", {"completed_stage": stage, "result": result})
     return result

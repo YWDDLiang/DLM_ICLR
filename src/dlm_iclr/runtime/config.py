@@ -45,6 +45,10 @@ def load(path=None, overrides=(), *, dataset=None):
             target = target.setdefault(parent, {})
         target[leaf] = value
     config = configuration_names(config)
+    # Paper runs set feedback.physical_rollback=False; learned KEEP remains enabled.
+    for option in ("protect_sun", "physical_rollback"):
+        if type(config["feedback"][option]) is not bool:
+            raise ValueError(f"feedback.{option} must be a JSON boolean (true or false)")
     activate(config)
     config["_config_dir"] = str(Path(path).resolve().parent if path else Path.cwd())
     return config

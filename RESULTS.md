@@ -1,6 +1,6 @@
 # Results
 
-Results reported in **CrystalDLM: Feedback Learning of Periodic Diffusion Language Models for Crystal Generation**, manuscript v34 (Tables 1–4). Rates are percentages. Density and # Element are Wasserstein-1 distances for mass density and the number of distinct elements.
+Results reported in **CrystalDLM: Feedback Learning of Periodic Diffusion Language Models for Crystal Generation** (Tables 1–4). Rates are percentages. Density and # Element are Wasserstein-1 distances for mass density and the number of distinct elements.
 
 ## De novo crystal generation
 
