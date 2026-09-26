@@ -36,15 +36,45 @@ def test_evaluation_allows_an_explicit_collection(tmp_path):
     assert Path(command[command.index("--structures") + 1]) == source.resolve()
 
 
-def test_optional_planner_trains_and_samples_without_exporting_default_plans():
+def test_optional_planner_training_does_not_sample():
     module = launcher()
     args = module.parser().parse_args(["--stage", "train-planner"])
     config, root = module.resolve(args)
     commands = module.commands(args, config, root)
     assert "--with-planner" in commands[0]
     assert commands[1][3:5] == ["train", "planner"]
-    assert commands[2][3:5] == ["sample", "planner"]
-    assert len(commands) == 3
+    assert len(commands) == 2
+
+
+def test_planner_inference_only_samples():
+    module = launcher()
+    args = module.parser().parse_args(["--stage", "sample-planner"])
+    config, root = module.resolve(args)
+    commands = module.commands(args, config, root)
+    assert len(commands) == 1 and commands[0][3:5] == ["sample", "planner"]
+
+
+@pytest.mark.parametrize("stage,expected,prepare", [
+    ("feedback-collect", ["warmup", "collect", "label"], True),
+    ("feedback-fit", ["compile", "reconstruction", "refit", "verifier", "risk"], False),
+])
+def test_feedback_collect_and_fit_have_separate_dependencies(stage, expected, prepare):
+    module = launcher()
+    args = module.parser().parse_args(["--stage", stage, "--resume"])
+    config, root = module.resolve(args)
+    commands = module.commands(args, config, root)
+    if prepare:
+        assert commands.pop(0)[3] == "prepare"
+    assert [c[c.index("--stage") + 1] for c in commands] == expected
+    assert all(c[3:5] == ["train", "feedback"] and "--resume" in c for c in commands)
+
+
+def test_inference_does_not_train_or_collect_feedback():
+    module = launcher()
+    args = module.parser().parse_args(["--stage", "inference"])
+    config, root = module.resolve(args)
+    commands = module.commands(args, config, root)
+    assert [c[3] for c in commands] == ["prepare", "plans", "run"]
 
 
 def test_diffusion_stage_prepares_data_and_trains_refiner():

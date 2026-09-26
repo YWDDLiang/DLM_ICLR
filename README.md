@@ -33,15 +33,17 @@ Edit paths in `configs/local.json` if your files are stored elsewhere.
 
 ## 3. Run
 
-### Planner (optional)
+### Train
 
-Plans are provided, so this stage can be skipped. To train a Planner and generate your own Plans:
+#### Planner (optional)
+
+Plans are provided, so Planner training can be skipped.
 
 ```bash
 bash scripts/01_planner.sh --config configs/local.json
 ```
 
-### DLM base
+#### DLM base
 
 Train the base model for Plan-conditioned crystal generation.
 
@@ -49,7 +51,7 @@ Train the base model for Plan-conditioned crystal generation.
 bash scripts/02_constructor.sh --config configs/local.json
 ```
 
-### Periodic DLM
+#### Periodic DLM
 
 Train periodic interactions for crystal construction.
 
@@ -57,26 +59,37 @@ Train periodic interactions for crystal construction.
 bash scripts/03_periodic.sh --config configs/local.json
 ```
 
-### Diffusion
+#### Diffusion
 
-Train the lattice and coordinate refiner if needed, then set `models.diffusion` to its checkpoint. Skip training when using a prepared checkpoint.
+Train a refiner if needed, then set `models.diffusion` to its checkpoint. Skip training when using a prepared checkpoint.
 
 ```bash
 bash scripts/04_diffusion.sh --config configs/local.json
 ```
 
-### Physical Feedback
+#### Physical Feedback
 
-Train reconstruction and selection using physical evaluations.
+Generate feedback data with the provided collection code, then train reconstruction and selection. Collection requires the TRAIN split and trained constructor, periodic and diffusion models; see [required inputs](docs/feedback_data.md).
 
 ```bash
-bash scripts/05_feedback.sh --config configs/local.json
+# Collect structures and physical labels.
+bash scripts/05_collect_feedback.sh --config configs/local.json
+# Train from the collected data.
+bash scripts/06_train_feedback.sh --config configs/local.json
 ```
 
-Generate structures with the trained models:
+### Inference
+
+With trained checkpoints configured, generate structures using the supplied Plans or a custom file via `--plans`:
 
 ```bash
-bash scripts/reproduce.sh --config configs/local.json --stage inference
+bash scripts/inference.sh --config configs/local.json
+```
+
+To generate new Plans with a trained Planner (optional):
+
+```bash
+bash scripts/sample_plans.sh --config configs/local.json
 ```
 
 ## 4. Evaluation
@@ -88,7 +101,7 @@ The scripts evaluate final outputs by default. Use `--structures FILE` to evalua
 Check structural and compositional validity, coverage, and property distributions.
 
 ```bash
-bash scripts/06_evaluate_direct.sh --config configs/local.json
+bash scripts/07_evaluate_direct.sh --config configs/local.json
 ```
 
 ### SUN
@@ -96,7 +109,7 @@ bash scripts/06_evaluate_direct.sh --config configs/local.json
 Evaluate stability, uniqueness and novelty, reporting S.U.N., M.S.U.N. and V.U.N.
 
 ```bash
-bash scripts/07_evaluate_sun.sh --config configs/local.json
+bash scripts/08_evaluate_sun.sh --config configs/local.json
 ```
 
 [Usage](docs/reproduction.md) · [Paper results](RESULTS.md) · [Citation](CITATION.cff) · [Third-party notices](THIRD_PARTY_NOTICES.md)

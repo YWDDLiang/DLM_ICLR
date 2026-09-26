@@ -4,6 +4,58 @@ from ..runtime.config import run_root, asset, path, backend_config
 from ..runtime.io import read_rows, read_json, write_rows, write_json
 
 
+def require_feedback_inputs(config):
+    """Check collected feedback inputs before starting model fitting."""
+    root = run_root(config) / "feedback"
+    files = [root / "collection/bundles.jsonl", root / "labels/current.jsonl"]
+    files += [root / "labels" / f"candidate_{i}.jsonl" for i in range(config["feedback"]["candidates"])]
+    missing = [str(p.relative_to(root)) for p in files if not p.is_file()]
+    if not (root / "warmup/checkpoint").is_dir():
+        missing.append("warmup/checkpoint/")
+    if missing:
+        raise FileNotFoundError(
+            "Run scripts/05_collect_feedback.sh before feedback training (see docs/feedback_data.md). Missing: "
+            + ", ".join(missing)
+        )
+
+
+def load_feedback_inputs(config):
+    from ..evaluation.physics import record_key
+
+    require_feedback_inputs(config)
+    root = run_root(config) / "feedback"
+    bundles = read_rows(root / "collection/bundles.jsonl")
+    if not bundles:
+        raise ValueError("Feedback data must contain at least one training source")
+    groups = ["current", *[f"candidate_{i}" for i in range(config["feedback"]["candidates"])]]
+    scores = {name: read_rows(root / "labels" / f"{name}.jsonl") for name in groups}
+    if any(len(rows) != len(bundles) for rows in scores.values()):
+        raise ValueError("Feedback label files must have one row per training source")
+    seen = set()
+    for index, bundle in enumerate(bundles):
+        plan = bundle["plan"]
+        source = plan["source_id"]
+        if source in seen or plan.get("provenance", {}).get("usage_role") != "train":
+            raise ValueError("Feedback sources must be unique TRAIN records")
+        seen.add(source)
+        before = bundle["F"]["record"]
+        candidates = {c["rank"]: c for c in bundle["E"]["candidates"]}
+        if len(candidates) != len(bundle["E"]["candidates"]) or any(
+            type(rank) is not int or not 0 <= rank < config["feedback"]["candidates"] for rank in candidates
+        ):
+            raise ValueError("Feedback candidate ranks must be unique and within the configured count")
+        records = {"current": before}
+        for rank in range(config["feedback"]["candidates"]):
+            records[f"candidate_{rank}"] = candidates[rank]["record"] if rank in candidates else dict(
+                before, success=False, reason="candidate_not_generated"
+            )
+        for name, record in records.items():
+            score = scores[name][index]
+            if record["source_id"] != source or score["source_id"] != source or score["record_key"] != record_key(record):
+                raise ValueError(f"Feedback label does not match source and geometry: {name}, row {index}")
+    return bundles, scores
+
+
 def collect(config, *, device="cuda:0"):
     import torch
     from ..data.plans import load_plans
@@ -114,11 +166,7 @@ def compile_data(config):
     from .teacher import build
 
     root = run_root(config)
-    bundles = read_rows(root / "feedback/collection/bundles.jsonl")
-    scores = {
-        n: read_rows(root / "feedback/labels" / f"{n}.jsonl")
-        for n in ["current", *[f"candidate_{r}" for r in range(config["feedback"]["candidates"])]]
-    }
+    bundles, scores = load_feedback_inputs(config)
     editor, value = compile_sources(
         [b["plan"] for b in bundles],
         [b["F"] for b in bundles],
@@ -145,11 +193,7 @@ def fit_risk(config):
     from .risk import features, target, fit_risk
 
     root = run_root(config)
-    bundles = read_rows(root / "feedback/collection/bundles.jsonl")
-    scores = {
-        n: read_rows(root / "feedback/labels" / f"{n}.jsonl")
-        for n in ["current", *[f"candidate_{r}" for r in range(config["feedback"]["candidates"])]]
-    }
+    bundles, scores = load_feedback_inputs(config)
     x = []
     y = []
     sources = []

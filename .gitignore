@@ -29,6 +29,7 @@ results/
 docs/results/
 docs/*
 !docs/reproduction.md
+!docs/feedback_data.md
 CONTRIBUTING.md
 configs/custom.json
 src/dlm_iclr/data/presets/training/
