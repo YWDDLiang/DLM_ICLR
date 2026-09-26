@@ -45,25 +45,12 @@ With trained checkpoints configured, run inference only:
 bash scripts/reproduce.sh --config configs/local.json --stage inference
 ```
 
-Final structures: `outputs/mp20/samples/final.jsonl`
-
-Final metrics: `outputs/mp20/samples/final.summary.json`
-
 ## Options
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
 | `--num-samples` | `1000` | Number of generation requests |
 | `--device` | `cuda:0` | Execution device |
-| `feedback.protect_sun` | `true` | Retain confirmed S.U.N. references before reconstruction |
-| `feedback.physical_rollback` | `true` | Restore confirmed M.S.U.N. references when reconstruction is not confirmed S.U.N./M.S.U.N. |
-
-Set feedback options in the config or override them on the command line:
-
-```bash
-bash scripts/reproduce.sh --config configs/local.json \
-  --set feedback.physical_rollback=false
-```
 
 Perov-5 and MPTS-52 use their dataset configs and a supplied Plan file:
 

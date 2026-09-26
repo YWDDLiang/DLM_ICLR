@@ -168,5 +168,10 @@ def main(argv=None):
         limit = config["sampling"]["requests"]
         labels = read_rows(args.labels)[:limit] if args.labels else None
         _, result = evaluate(config, read_rows(args.structures)[:limit], args.output, labels=labels)
-    print(json.dumps(result, ensure_ascii=False, default=str, indent=2))
+    if args.command == "run" and "final" in result:
+        from .runtime.reporting import format_results
+
+        print(format_results(result["final"], dataset=config["dataset"].get("label", config["dataset"]["name"])))
+    else:
+        print(json.dumps(result, ensure_ascii=False, default=str, indent=2))
     return 0
