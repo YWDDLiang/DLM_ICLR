@@ -1,14 +1,16 @@
 # CrystalDLM
 
-Train, generate and evaluate crystal structures. Default: **MP-20, 1000 requests, included Plan set**.
+Feedback Learning of Periodic Diffusion Language Models for Crystal Generation.
+
+Default: **MP-20, 1000 requests, included Plan set**.
 
 ## 1. Install
 
 Python 3.11, Linux, CUDA 12.1.
 
 ```bash
-git clone https://github.com/YWDDLiang/DLM_ICLR.git
-cd DLM_ICLR
+git clone https://github.com/YWDDLiang/CrystalDLM.git
+cd CrystalDLM
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
