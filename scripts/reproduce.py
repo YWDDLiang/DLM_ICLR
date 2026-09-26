@@ -19,7 +19,7 @@ from dlm_iclr.runtime.names import module_key, module_name  # noqa: E402
 def parser():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--stage", type=module_key, default="all",
-                   choices=["all", "prepare", "planner", "train-planner", "b0", "c1", "c2", "inference"],
+                   choices=["all", "prepare", "planner", "train-planner", "constructor", "periodic", "feedback", "inference"],
                    metavar="{all,prepare,planner,train-planner,constructor,periodic,feedback,inference}")
     p.add_argument("--dataset", help="mp20 (default), perov-5, mpts-52")
     p.add_argument("--config", type=Path)
@@ -54,7 +54,7 @@ def resolve(args):
     for key, value in c["models"].items():
         if value and not value.startswith(("hf:", "@run/")):
             result["models"][key] = str(path(c, value).resolve())
-    for section, key in [(result["sampling"], "plans"), (result["c2"]["training"], "plans")]:
+    for section, key in [(result["sampling"], "plans"), (result["feedback"]["training"], "plans")]:
         value = section.get(key)
         if value and not value.startswith(("preset:", "@run/")):
             section[key] = str(path(c, value).resolve())
@@ -68,12 +68,12 @@ def commands(args, config, root):
     steps = []
     needs_panel = args.stage in ("all", "planner", "inference")
     if needs_panel and not config["sampling"].get("plans"):
-        raise ValueError("Pass --plans for Perov-5/MPTS-52; the packaged H1A2 panel is MP20 only")
-    if args.stage in ("all", "prepare", "train-planner", "b0", "c1", "c2", "inference") and not args.skip_prepare:
+        raise ValueError("Pass --plans for Perov-5/MPTS-52; the packaged MP-20 Plan set is MP20 only")
+    if args.stage in ("all", "prepare", "train-planner", "constructor", "periodic", "feedback", "inference") and not args.skip_prepare:
         steps.append([*base, "prepare", *common, *(["--with-planner"] if args.stage == "train-planner" else [])])
     if needs_panel:
         steps.append([*base, "plans", *common])
-    modules = ["b0", "c1", "c2"] if args.stage == "all" else ["planner"] if args.stage == "train-planner" else [args.stage] if args.stage in ("b0", "c1", "c2") else []
+    modules = ["constructor", "periodic", "feedback"] if args.stage == "all" else ["planner"] if args.stage == "train-planner" else [args.stage] if args.stage in ("constructor", "periodic", "feedback") else []
     for module in modules:
         steps.append([*base, "train", module_name(module), *common, *(["--resume"] if args.resume else [])])
     if args.stage in ("all", "inference"):
@@ -88,7 +88,7 @@ def main(argv=None):
     if args.dry_run:
         print(json.dumps({"config": config, "commands": steps}, indent=2))
         return 0
-    if args.stage in ("all", "c2", "inference"):
+    if args.stage in ("all", "feedback", "inference"):
         value = config["models"]["diffusion"]
         checkpoint = root / value[5:] if value.startswith("@run/") else Path(value)
         if not checkpoint.is_file():

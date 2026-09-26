@@ -1,4 +1,4 @@
-"""H1A2 seven-line planner supervision."""
+"""Seven-line crystal Plan supervision."""
 
 from __future__ import annotations
 from typing import Any, Mapping, Sequence

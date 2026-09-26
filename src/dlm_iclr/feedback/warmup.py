@@ -83,11 +83,11 @@ class NumericVocabulary:
 
 
 def train(config, *, device="cuda:0", resume=False):
-    root, recipe = run_root(config), config["c2"]["training"]
+    root, recipe = run_root(config), config["feedback"]["training"]
     device = setup_device(device, threads=config["runtime"]["threads"])
     seed_all(recipe["warmup_seed"])
-    model, tokenizer = load_editor(asset(config, "dlm"), asset(config, "b0"), device, trainable=True)
-    output = root / "c2/warmup"
+    model, tokenizer = load_editor(asset(config, "dlm"), asset(config, "constructor"), device, trainable=True)
+    output = root / "feedback/warmup"
     extra = tuple(k for k in model.extra_modules() if k != "quality_head")
     selected = {}
     for name, p in model.named_parameters():
@@ -151,7 +151,7 @@ def train(config, *, device="cuda:0", resume=False):
                     schema,
                     [rows[index] for index in part],
                     generators,
-                    config["c2"]["max_calls"],
+                    config["feedback"]["max_calls"],
                 )
                 (loss / len(indices)).backward()
                 total += float(loss.detach())
@@ -174,7 +174,7 @@ def train(config, *, device="cuda:0", resume=False):
                     },
                 )
             if completed % 20 == 0:
-                print({"stage": "c2-warmup", "step": completed, "loss": total / len(indices)}, flush=True)
+                print({"stage": "feedback-warmup", "step": completed, "loss": total / len(indices)}, flush=True)
     model.save_pretrained(output / "checkpoint", save_embedding_layers=False)
     tokenizer.save_pretrained(output / "checkpoint")
     write_json(

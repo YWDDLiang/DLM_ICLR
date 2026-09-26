@@ -50,7 +50,7 @@ def build_repair_constraints(tokenizer: Any) -> dict[str, Any]:
         for value in range(low, high + 1):
             token = f"<{prefix}_{value:03d}>"
             if token not in vocab:
-                raise TransferContractError(f"B0 tokenizer lacks {token}; no vocabulary extension allowed")
+                raise TransferContractError(f"base constructor tokenizer lacks {token}; no vocabulary extension allowed")
             result[int(vocab[token])] = value
         if len(result) != high - low + 1:
             raise TransferContractError("crystal token IDs are not one-to-one")
@@ -84,7 +84,7 @@ def _checked_constraints(tokenizer: Any, constraints: Mapping[str, Any] | None) 
         if result.get(key) != value:
             raise TransferContractError(f"repair support changed at {key}")
     if result.get("body_offset", 0) != 0 or result.get("length_step") != 0.1:
-        raise TransferContractError("repair requires the unchanged B0 body ABI")
+        raise TransferContractError("repair requires the unchanged base constructor body ABI")
     return result
 
 

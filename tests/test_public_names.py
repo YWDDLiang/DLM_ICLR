@@ -14,20 +14,21 @@ def test_sample_name_routes_to_existing_stage(monkeypatch, public, internal):
     monkeypatch.setattr(pipeline, "sample", lambda c, stage, **kw: calls.append(stage) or {})
     main(["sample", public])
     main(["sample", internal])
-    assert calls == [internal, internal]
-    assert parser().parse_args(["train", public]).module == internal
+    assert calls == [public, public]
+    assert parser().parse_args(["train", public]).module == public
 
 
 @pytest.mark.parametrize("public,internal", [("reconstruction", "editor"), ("refit", "light"), ("verifier", "value")])
 def test_feedback_training_names(public, internal):
     args = parser().parse_args(["train", "feedback", "--stage", public])
-    assert args.module == "c2" and args.stage == internal
+    assert args.module == "feedback" and args.stage == public
+    assert parser().parse_args(["train", "c2", "--stage", internal]).stage == public
 
 
 def test_named_resume_boundary():
     args = parser().parse_args(["run", "--plans", "panel.jsonl", "--constructor", "periodic",
                                 "--from-stage", "feedback"])
-    assert args.constructor == "c1" and args.from_stage == "c2"
+    assert args.constructor == "periodic" and args.from_stage == "feedback"
 
 
 @pytest.mark.parametrize("public,internal", [("constructor", "b0"), ("periodic", "c1"), ("feedback", "c2")])

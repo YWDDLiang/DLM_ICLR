@@ -18,7 +18,7 @@ from dlm_iclr._core.fixed_slot import SYMBOL_TO_Z
 from dlm_iclr._core.llada_generation import _model_logits, _lattice_matrix_from_token_ids
 from dlm_iclr._core.paired_llada import _paired_suffix_candidates
 from dlm_iclr._core.paired_noise import derive_subseed
-from dlm_iclr.c1.distribution import PeriodicAxisLaw, collapse_alias_logits, registered_parents
+from dlm_iclr.periodic.distribution import PeriodicAxisLaw, collapse_alias_logits, registered_parents
 
 
 def _axis(group):
@@ -223,7 +223,7 @@ class AxisCandidateSampler:
             "same_legacy_commit_rule": True,
             "DLM_reforward_each_commit": True,
             "extra_DLM_calls": 0,
-            "neutral_is_same_asset_sampler_not_historical_S0_identity": True,
+            "neutral_uses_current_checkpoint": True,
             "attempts": deepcopy(self.attempts),
             "events": deepcopy(self.events),
         }

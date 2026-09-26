@@ -35,11 +35,11 @@ def training_rows(path, schema):
 
 
 def train(config, *, device="cuda:0", resume=False):
-    root, settings = run_root(config), config["c1"]["training"]
+    root, settings = run_root(config), config["periodic"]["training"]
     device = setup_device(device, threads=config["runtime"]["threads"])
     seed_all(settings["seed"])
     model, tokenizer = load_model_and_tokenizer(
-        asset(config, "dlm"), asset(config, "b0"), device, mean_resizing=False
+        asset(config, "dlm"), asset(config, "constructor"), device, mean_resizing=False
     )
     model.eval().requires_grad_(False)
     schema = AxisTrainingSchema(tokenizer)
@@ -53,7 +53,7 @@ def train(config, *, device="cuda:0", resume=False):
         potential_bound=settings["potential_bound"],
     ).to(device)
     optimizer = torch.optim.Adam(head.parameters(), lr=settings["learning_rate"], weight_decay=0.0)
-    output = root / "c1"
+    output = root / "periodic"
     step = epoch0 = cursor = 0
     best = math.inf
     if resume and (output / "last.pt").exists():
@@ -76,7 +76,7 @@ def train(config, *, device="cuda:0", resume=False):
                 predictions, _ = forward_views(model, tokenizer, views, max_length=settings["max_length"])
                 values.extend(
                     float(
-                        loss_from_prediction(head, schema, v, p, temperature=config["c1"]["temperature"])[0]
+                        loss_from_prediction(head, schema, v, p, temperature=config["periodic"]["temperature"])[0]
                     )
                     for v, p in zip(views, predictions)
                 )
@@ -117,14 +117,14 @@ def train(config, *, device="cuda:0", resume=False):
                 predictions, _ = forward_views(model, tokenizer, part, max_length=settings["max_length"])
                 for view, pred in zip(part, predictions):
                     loss, _ = loss_from_prediction(
-                        head, schema, view, pred, temperature=config["c1"]["temperature"]
+                        head, schema, view, pred, temperature=config["periodic"]["temperature"]
                     )
                     (loss / len(views)).backward()
                     losses.append(float(loss.detach()))
             optimizer.step()
             step += 1
             if step % 20 == 0:
-                print({"stage": "c1", "step": step, "nll": sum(losses) / len(losses)}, flush=True)
+                print({"stage": "periodic", "step": step, "nll": sum(losses) / len(losses)}, flush=True)
             end = start + len(selected)
             end_epoch = end == len(rows)
             if step % settings["save_every"] == 0 or end_epoch:

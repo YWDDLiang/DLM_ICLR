@@ -256,7 +256,7 @@ class ExpertEditDLM(StateConditionedDLM):
             **kwargs,
         )
         if not output.hidden_states:
-            raise RuntimeError("B0 must expose its final normalized hidden state")
+            raise RuntimeError("base constructor must expose its final normalized hidden state")
         final = output.hidden_states[-1]
         if detach_head_features:
             final = final.detach()
@@ -297,7 +297,7 @@ def set_editor_trainable(model):
         model.get_input_embeddings().weight.requires_grad
         or model.get_output_embeddings().weight.requires_grad
     ):
-        raise ValueError("original B0 embedding/head tables must remain frozen")
+        raise ValueError("original base constructor embedding/head tables must remain frozen")
     return counts
 
 
@@ -400,7 +400,7 @@ class ExpertEditObjective:
             vector, ids = self.typed_vector(output.logits, rr, pp, family, axis)
             matches = targets[rr, pp, None] == ids[None]
             if not bool(matches.any(-1).all()):
-                raise ValueError("corrected target is outside its typed B0 vocabulary")
+                raise ValueError("corrected target is outside its typed base constructor vocabulary")
             ce = nn.functional.cross_entropy(vector, matches.long().argmax(-1), reduction="none")
             field_sums[family] += ce.detach().sum()
             field_counts[family] += len(rr)

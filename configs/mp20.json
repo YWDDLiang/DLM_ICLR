@@ -12,7 +12,7 @@
   },
   "output": "../outputs/mp20",
   "sampling": {
-    "plans": "preset:H1A2_1000",
+    "plans": "preset:mp20_default",
     "requests": 1000
   },
   "models": {

@@ -14,10 +14,10 @@ from dlm_iclr._core.dynamic_crystal import arrays_to_dynamic_tokens, build_speci
 def test_config_merges_defaults_and_resolves_paths(tmp_path):
     config_file = tmp_path / "custom.json"
     config_file.write_text(json.dumps({"output": "runs", "dataset": {"name": "custom"}}))
-    c = load(config_file, ["b0.effective_batch_size=32", 'runtime.devices=["cpu"]'])
-    assert c["b0"]["effective_batch_size"] == 32 and c["b0"]["lora_r"] == 8
+    c = load(config_file, ["constructor.effective_batch_size=32", 'runtime.devices=["cpu"]'])
+    assert c["constructor"]["effective_batch_size"] == 32 and c["constructor"]["lora_r"] == 8
     assert run_root(c) == tmp_path / "runs"
-    assert asset(c, "b0") == str(tmp_path / "runs/b0/final")
+    assert asset(c, "constructor") == str(tmp_path / "runs/constructor/final")
 
 
 def test_dataset_column_mapping_preserves_polymorphs(tmp_path):

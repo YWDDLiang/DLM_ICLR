@@ -8,10 +8,10 @@ from pathlib import Path
 import math
 import time
 import torch
-from dlm_iclr.c2.feedback import INVALID
+from dlm_iclr.feedback.feedback import INVALID
 from dlm_iclr.runtime.io import read_rows, write_json
 from dlm_iclr.runtime.models import load_editor
-from dlm_iclr.c2.value import ValueNetwork, extract_features
+from dlm_iclr.feedback.value import ValueNetwork, extract_features
 
 
 def privileged_training_features(score):
@@ -240,7 +240,7 @@ def train_value(config, data, output, *, editor_checkpoint=None, device="cuda:0"
         for name, parameter in model.named_parameters()
     }
     model.cpu().save(
-        output / "autonomous_value.pt",
+        output / "relative_verifier.pt",
         metadata={
             "training_rows": len(rows),
             "training_sources": len(groups),
@@ -263,4 +263,4 @@ def train_value(config, data, output, *, editor_checkpoint=None, device="cuda:0"
             "settings": vars(training),
         },
     )
-    return output / "autonomous_value.pt"
+    return output / "relative_verifier.pt"

@@ -23,7 +23,7 @@ class Assets:
 
 @dataclass
 class Inference:
-    plan_source: str = "H1A2_1000"
+    plan_source: str = "mp20_default"
     requests: int | None = 1000
     legal_only: bool = False
     seed: int = 17

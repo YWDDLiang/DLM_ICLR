@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 import torch
-from dlm_iclr.c2.scope import (
+from dlm_iclr.feedback.scope import (
     feasible_modes,
     feasible_counts,
     COUNTS,
@@ -10,7 +10,7 @@ from dlm_iclr.c2.scope import (
     normalized_choices,
     ordered_site_logprob,
 )
-from dlm_iclr.c2.warmup_forward import forward_e
+from dlm_iclr.feedback.warmup_forward import forward_e
 
 
 def warm_example(row, schema, generator, *, mask_id, available_calls, forced_mode=None):

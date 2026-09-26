@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 from importlib.resources import files
+from .names import configuration_names, setting_key, model_key, module_key
 
 
 def merge(base, update):
@@ -21,7 +22,7 @@ def merge(base, update):
 def load(path=None, overrides=(), *, dataset=None):
     defaults = json.loads(files("dlm_iclr").joinpath("defaults.json").read_text(encoding="utf-8"))
     from .datasets import profile, canonical_name, activate
-    supplied = json.loads(Path(path).read_text(encoding="utf-8-sig")) if path else {}
+    supplied = configuration_names(json.loads(Path(path).read_text(encoding="utf-8-sig"))) if path else {}
     name = canonical_name(dataset or supplied.get("dataset", {}).get("name", "mp20"))
     preset = profile(name) if dataset or name in ("mp20", "perov-5", "mpts-52") else {}
     config = merge(merge(defaults, preset), supplied)
@@ -33,6 +34,7 @@ def load(path=None, overrides=(), *, dataset=None):
         config["dataset"].update({k: v for k, v in preset["dataset"].items() if k != "splits"})
     for assignment in overrides:
         key, raw = assignment.split("=", 1)
+        key = setting_key(key)
         try:
             value = json.loads(raw)
         except json.JSONDecodeError:
@@ -42,6 +44,7 @@ def load(path=None, overrides=(), *, dataset=None):
         for parent in parents:
             target = target.setdefault(parent, {})
         target[leaf] = value
+    config = configuration_names(config)
     activate(config)
     config["_config_dir"] = str(Path(path).resolve().parent if path else Path.cwd())
     return config
@@ -59,7 +62,7 @@ def run_root(config):
 
 
 def asset(config, name):
-    value = config["models"][name]
+    value = config["models"][model_key(name)]
     if value.startswith("@run/"):
         return str(run_root(config) / value[5:])
     if value.startswith(("hf:",)):
@@ -67,15 +70,16 @@ def asset(config, name):
     return str(path(config, value)) if value else ""
 
 
-def backend_config(config, stage="c2"):
+def backend_config(config, stage="feedback"):
     from .base_config import Assets, Config, Inference, Training
 
+    stage = module_key(stage)
     cfg = Config()
     cfg.assets = Assets(
         base_model=asset(config, "dlm"),
-        generator=asset(config, "b0"),
-        editor=asset(config, "c2"),
-        value=asset(config, "value"),
+        generator=asset(config, "constructor"),
+        editor=asset(config, "feedback"),
+        value=asset(config, "verifier"),
         refiner=asset(config, "diffusion"),
         planner_base=asset(config, "planner_base"),
         planner=asset(config, "planner"),
@@ -84,18 +88,18 @@ def backend_config(config, stage="c2"):
         novelty_reference=str(run_root(config) / "data/structures/train.jsonl"),
     )
     cfg.inference = Inference(
-        temperature=config["c1" if stage == "c1" else "c2"]["temperature"],
+        temperature=config["periodic" if stage == "periodic" else "feedback"]["temperature"],
         refiner_steps=config["diffusion"]["steps"],
-        editor_candidates=config["c2"]["candidates"],
-        editor_max_calls=config["c2"]["max_calls"],
-        editor_batch_size=config["c2"]["batch_size"],
+        editor_candidates=config["feedback"]["candidates"],
+        editor_max_calls=config["feedback"]["max_calls"],
+        editor_batch_size=config["feedback"]["batch_size"],
     )
-    if stage == "b0":
-        cfg.inference.temperature = config["b0"].get("temperature", 0.7)
+    if stage == "constructor":
+        cfg.inference.temperature = config["constructor"].get("temperature", 0.7)
         cfg.inference.construction_recovery = False
         cfg.inference.adaptive_lattice_recovery = False
         cfg.inference.geometry_monitor = False
-    t = config["c2"]["training"]
+    t = config["feedback"]["training"]
     cfg.training = Training(
         plans=t["plans"],
         seed=t["seed"],

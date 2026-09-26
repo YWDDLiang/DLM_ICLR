@@ -15,7 +15,7 @@ def train_actor(
     branch, config, data, output, *, checkpoint=None, device="cuda:0", parameter_scope="all", resume=False
 ):
     if branch != "E":
-        raise ValueError("Use the C1 trainer for geometric generation")
+        raise ValueError("Use the periodic construction trainer for geometric generation")
     rows, output = read_rows(data), Path(output)
     if not rows or any(row.get("source_split") != "train" for row in rows):
         raise ValueError("Editor training requires training examples")

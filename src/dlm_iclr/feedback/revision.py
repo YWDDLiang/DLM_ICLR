@@ -6,7 +6,7 @@ from copy import deepcopy
 import numpy as np
 import torch
 
-from dlm_iclr.c2.risk import structure, scalar_feature_grid
+from dlm_iclr.feedback.risk import structure, scalar_feature_grid
 
 
 def tilted_probabilities(probability, risk, strength, kl_budget):
@@ -100,7 +100,7 @@ class OnePassRepair:
         from dlm_iclr._core.rsi_preference import legal_vector
         from dlm_iclr._core.post_refine_contract import derived_seed
         from dlm_iclr._core.continuous_keep_edit import commit_patch
-        from dlm_iclr.c2.value import geometry_features, extract_features
+        from dlm_iclr.feedback.value import geometry_features, extract_features
 
         result = deepcopy(bundles)
         queries = []

@@ -1,0 +1,1 @@
+"""Lattice-conditioned periodic construction."""

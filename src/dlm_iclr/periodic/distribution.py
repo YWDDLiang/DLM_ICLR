@@ -1,9 +1,4 @@
-"""Learned periodic axis tree; rebuild after every DLM commit/parameter update.
-
-This module executes no DLM/F/physics call and imposes no distance/SPD veto on
-sampled coordinates. Zero edge energy recovers the SAME unary distribution,
-not the complete legacy sampler, RNG stream, support rules or S0 checkpoint.
-"""
+"""Lattice-conditioned periodic axis distributions and exact tree inference."""
 
 from __future__ import annotations
 

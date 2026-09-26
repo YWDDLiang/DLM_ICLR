@@ -1,9 +1,9 @@
-"""A single C2 entry point composing the already validated editing and repair steps."""
+"""Reference-conditioned reconstruction, selection and bounded revision."""
 
 from copy import deepcopy
 
 
-class C2:
+class FeedbackReconstructor:
     def __init__(self, editor, onepass):
         self.editor = editor
         self.onepass = onepass
@@ -20,5 +20,5 @@ class C2:
         return self.onepass.repair(prepared, keep_features=features["keep"])
 
     def edit(self, plan, refined):
-        """Return the full trace for one Plan and its continuous F800 wrapper."""
+        """Return the full trace for one Plan and its diffusion reference."""
         return self.edit_many([plan], [refined])[0]

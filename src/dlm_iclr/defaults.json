@@ -20,13 +20,13 @@
     "planner_base": "hf:meta-llama/Meta-Llama-3-8B",
     "planner": "@run/planner/epoch2/final",
     "dlm": "hf:GSAI-ML/LLaDA-8B-Instruct",
-    "b0": "@run/b0/final",
-    "c1": "@run/c1/best.pt",
+    "constructor": "@run/constructor/final",
+    "periodic": "@run/periodic/best.pt",
     "diffusion": "@run/diffusion/last.pt",
-    "c2": "@run/c2/light/checkpoint",
-    "value": "@run/c2/value/autonomous_value.pt",
-    "risk": "@run/c2/risk/model.json",
-    "chgnet": ""
+    "feedback": "@run/feedback/refit/checkpoint",
+    "risk": "@run/feedback/risk/model.json",
+    "chgnet": "",
+    "verifier": "@run/feedback/verifier/relative_verifier.pt"
   },
   "runtime": {
     "devices": [
@@ -67,7 +67,7 @@
       "max_new_tokens": 96
     }
   },
-  "b0": {
+  "constructor": {
     "epochs": 2,
     "batch_size": 1,
     "effective_batch_size": 16,
@@ -92,7 +92,7 @@
     "eval_max_batches": 50,
     "temperature": 0.7
   },
-  "c1": {
+  "periodic": {
     "temperature": 0.7,
     "training": {
       "epochs": 1,
@@ -123,7 +123,7 @@
       "scheduler_patience": 30
     }
   },
-  "c2": {
+  "feedback": {
     "temperature": 0.7,
     "protect_sun": true,
     "candidates": 8,
@@ -146,8 +146,8 @@
       "heads_lr": 0.0001,
       "reference_kl_weight": 1.0,
       "permute_atoms": true,
-      "light_epochs": 1,
-      "light_content_lr": 1e-06,
+      "refit_epochs": 1,
+      "refit_content_lr": 1e-06,
       "value_epochs": 64,
       "value_sources_per_batch": 32,
       "value_head_lr": 0.001,
@@ -160,8 +160,8 @@
       "risk_seed": 20260915,
       "plans": "@run/data/plans/train.jsonl",
       "sources": 1000,
-      "light_beta": 0.1,
-      "light_fraction": 0.25,
+      "refit_beta": 0.1,
+      "refit_fraction": 0.25,
       "warmup_micro_batch_size": 4
     }
   },
@@ -177,7 +177,7 @@
     "coverage_cutoffs": null
   },
   "sampling": {
-    "plans": "preset:H1A2_1000",
+    "plans": "preset:mp20_default",
     "requests": 1000
   }
 }

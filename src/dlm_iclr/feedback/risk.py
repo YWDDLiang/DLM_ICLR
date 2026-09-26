@@ -42,7 +42,7 @@ def contact_features(before, after, positions):
 
 
 def features(before_record, after_record, positions):
-    from dlm_iclr.c2.value import geometry_features
+    from dlm_iclr.feedback.value import geometry_features
 
     before = structure(before_record)
     after = structure(after_record)

@@ -1,4 +1,4 @@
-"""H1A2 training: fresh LoRA, then a separate optimizer/scheduler stage."""
+"""Planner adaptation with two sequential training stages."""
 
 import subprocess
 import sys

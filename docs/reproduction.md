@@ -9,12 +9,12 @@ The public module names and checkpoint keys are:
 | Component | Command | Config key |
 | --- | --- | --- |
 | Planner | `planner` | `planner` |
-| Base DLM constructor | `constructor` | `b0` |
-| Periodic construction | `periodic` | `c1` |
+| Base DLM constructor | `constructor` | `constructor` |
+| Periodic construction | `periodic` | `periodic` |
 | Continuous diffusion | `diffusion` | `diffusion` |
-| Physical feedback | `feedback` | `c2`, `value`, `risk` |
+| Physical feedback | `feedback` | `feedback`, `verifier`, `risk` |
 
-The `b0`, `c1`, `c2` command aliases and `dlm` entry point remain supported. New commands use `crystaldlm`. The Python package is `dlm_iclr`.
+Use `crystaldlm` for command-line execution. The Python package is `dlm_iclr`.
 
 ```bash
 bash scripts/reproduce.sh --config configs/local.json --device cuda:0
@@ -25,7 +25,7 @@ Worker counts are set under `runtime`. Each stage finishes before the next. The 
 
 ## Plans and data
 
-MP-20 uses `preset:H1A2_1000`. Perov-5 and MPTS-52 use a supplied Plan JSONL. Each row has a unique `source_id` and a `plan_state`; saved prompts and body/refiner seeds retain their original values. Missing prompts and seeds are constructed deterministically.
+MP-20 uses `preset:mp20_default`. Perov-5 and MPTS-52 use a supplied Plan JSONL. Each row has a unique `source_id` and a `plan_state`; saved prompts and body/refiner seeds retain their original values. Missing prompts and seeds are constructed deterministically.
 
 ```json
 {"source_id":"example:0","body_eligible":true,"plan_state":{"N":5,"elements":["Ca","Ti","O"],"counts":[1,1,3],"formula":"CaTiO3","reduced_formula":"CaTiO3","charge_bucket":"neutral_plausible","oxidation_candidates":"unknown","anion_framework":"oxide","lattice_system":"cubic","spacegroup_bucket":"sg_195_230","volume_per_atom_bin":"volpa_010_014","prototype_key":"example"}}
@@ -64,7 +64,7 @@ crystaldlm sample diffusion --config configs/local.json --output outputs/mp20/sa
 bash scripts/reproduce.sh --config configs/local.json --stage inference --skip-prepare
 ```
 
-Feedback retains confirmed S.U.N. references and applies learned reconstruction/selection to other editable references (`c2.protect_sun=true`). Selection includes the unchanged reference. Submitted geometry is saved before physical relaxation.
+Feedback retains confirmed S.U.N. references and applies learned reconstruction/selection to other editable references (`feedback.protect_sun=true`). Selection includes the unchanged reference. Submitted geometry is saved before physical relaxation.
 
 ## Evaluation
 

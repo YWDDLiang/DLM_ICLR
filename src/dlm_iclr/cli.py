@@ -27,18 +27,18 @@ def parser():
     p.add_argument("--source")
     p.add_argument("--output", type=Path)
     p = commands.add_parser("train", parents=[common], help="Train a module or the full stack")
-    p.add_argument("module", type=module_key, choices=["planner", "b0", "c1", "diffusion", "c2", "all"],
+    p.add_argument("module", type=module_key, choices=["planner", "constructor", "periodic", "diffusion", "feedback", "all"],
                    metavar="{planner,constructor,periodic,diffusion,feedback,all}")
     p.add_argument("--device", default=None)
     p.add_argument("--resume", action="store_true")
     p.add_argument("--include-planner", action="store_true", help="Include Planner when module=all")
     p.add_argument(
         "--stage", type=feedback_stage_key,
-        choices=["warmup", "collect", "label", "compile", "editor", "light", "value", "risk"],
+        choices=["warmup", "collect", "label", "compile", "reconstruction", "refit", "verifier", "risk"],
         metavar="{warmup,collect,label,compile,reconstruction,refit,verifier,risk}"
     )
     p = commands.add_parser("sample", parents=[common], help="Sample one stage")
-    p.add_argument("module", type=module_key, choices=["planner", "b0", "c1", "diffusion", "c2"],
+    p.add_argument("module", type=module_key, choices=["planner", "constructor", "periodic", "diffusion", "feedback"],
                    metavar="{planner,constructor,periodic,diffusion,feedback}")
     p.add_argument("--plans")
     p.add_argument("--output", type=Path)
@@ -47,17 +47,17 @@ def parser():
         "run", parents=[common], help="Plan -> periodic draft -> diffusion reference -> feedback -> metrics"
     )
     p.add_argument("--plans", required=True)
-    p.add_argument("--constructor", type=module_key, choices=["b0", "c1"], default="c1",
+    p.add_argument("--constructor", type=module_key, choices=["constructor", "periodic"], default="periodic",
                    metavar="{constructor,periodic}")
     p.add_argument("--output", type=Path)
     p.add_argument(
-        "--from-stage", type=module_key, default="c1",
-        choices=["b0", "c1", "diffusion", "hull", "physics", "c2", "evaluate"],
+        "--from-stage", type=module_key, default="periodic",
+        choices=["constructor", "periodic", "diffusion", "hull", "physics", "feedback", "evaluate"],
         metavar="{constructor,periodic,diffusion,hull,physics,feedback,evaluate}"
     )
     p.add_argument(
         "--to-stage", type=module_key, default="evaluate",
-        choices=["b0", "c1", "diffusion", "hull", "physics", "c2", "evaluate"],
+        choices=["constructor", "periodic", "diffusion", "hull", "physics", "feedback", "evaluate"],
         metavar="{constructor,periodic,diffusion,hull,physics,feedback,evaluate}"
     )
     p = commands.add_parser("hull", parents=[common], help="Query Materials Project competitor energies")
@@ -98,21 +98,21 @@ def main(argv=None):
         from .data.selection import select
         result = select(config, source=args.source, output=args.output)
     elif args.command == "train":
-        if int(os.environ.get("WORLD_SIZE", "1")) > 1 and args.module != "b0":
+        if int(os.environ.get("WORLD_SIZE", "1")) > 1 and args.module != "constructor":
             raise ValueError(
-                "torchrun is supported by B0; use independent workers for sampling and evaluation"
+                "torchrun is supported by base constructor; use independent workers for sampling and evaluation"
             )
         import importlib
 
-        modules = (["planner"] if args.include_planner else []) + ["b0", "c1", "c2"] if args.module == "all" else [args.module]
+        modules = (["planner"] if args.include_planner else []) + ["constructor", "periodic", "feedback"] if args.module == "all" else [args.module]
         result = {}
         for module in modules:
             implementation = importlib.import_module(
-                f"dlm_iclr.{module}." + ("workflow" if module in ("planner", "c2") else "trainer")
+                f"dlm_iclr.{module}." + ("workflow" if module in ("planner", "feedback") else "trainer")
             )
             kwargs = {"resume": args.resume}
             kwargs["device"] = args.device
-            if module == "c2":
+            if module == "feedback":
                 kwargs["only"] = args.stage
             result[module] = implementation.train(config, **kwargs)
     elif args.command == "sample":

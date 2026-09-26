@@ -106,7 +106,7 @@ def quantize_arrays(arrays, vocabulary):
         config=FixedSlotConfig(),
     )
     if diagnostics.length_clips or diagnostics.angle_clips or diagnostics.coord_clips:
-        raise ValueError("expert target clipped by B0 quantization")
+        raise ValueError("expert target clipped by base constructor quantization")
     tokens = [
         token.replace("_100>", "_000>") if token.startswith(("<X_", "<Y_", "<Z_")) else token
         for token in tokens
@@ -114,7 +114,7 @@ def quantize_arrays(arrays, vocabulary):
     try:
         ids = [int(vocabulary[token]) for token in tokens]
     except KeyError as error:
-        raise ValueError("target token is outside the preserved B0 vocabulary") from error
+        raise ValueError("target token is outside the preserved base constructor vocabulary") from error
     decoded = parse_dynamic_answer("".join(tokens), strict=True)
     return ids, decoded, asdict(diagnostics)
 

@@ -1,4 +1,4 @@
-"""Fixed-Plan generation using the retained R03 schedule and paired noise."""
+"""Composition-conditioned crystal generation with paired sampling noise."""
 
 from __future__ import annotations
 from collections import Counter
@@ -88,7 +88,7 @@ def construct(
             schedule, task["body_noise_seed"] if noise_seed_override is None else noise_seed_override
         )
         if axis_sampler.enabled:
-            from dlm_iclr.c1.sampling import axis_predictor
+            from dlm_iclr.periodic.sampling import axis_predictor
 
             optional = {"predictor": axis_predictor, "candidate_sampler": axis_sampler}
     generated = paired_llada.generate_paired_exact_plan(
@@ -154,7 +154,7 @@ class Constructor:
         task = dict(plan, schedule=axis_schedule(plan["plan_state"]))
         axis_sampler = None
         if self.axis_head is not None:
-            from dlm_iclr.c1.sampling import AxisCandidateSampler
+            from dlm_iclr.periodic.sampling import AxisCandidateSampler
 
             axis_sampler = AxisCandidateSampler(
                 self.axis_head,

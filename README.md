@@ -32,7 +32,7 @@ python -m pip install -r requirements.txt
 
 ## Quick start
 
-The default is **MP-20 with 1000 fixed H1A2 Plans**. Planner training is optional.
+The default is **MP-20 with 1000 fixed Plans**. Planner training is optional.
 
 Place `train.csv`, `val.csv`, and `test.csv` in `datasets/mp20/`. Set the dataset and frozen diffusion checkpoint paths in `configs/local.json`.
 
@@ -69,7 +69,7 @@ Run each with `bash`, adding `--config configs/local.json` and optionally `--ski
 
 | Dataset | Argument | Atoms per cell | Plans |
 | --- | --- | --- | --- |
-| MP-20 | `mp20` | 1–20 | Included H1A2 panel |
+| MP-20 | `mp20` | 1–20 | Included MP-20 Plan set |
 | Perov-5 | `perov-5` | 5 | User-supplied JSONL |
 | MPTS-52 | `mpts-52` | 1–52 | User-supplied JSONL |
 

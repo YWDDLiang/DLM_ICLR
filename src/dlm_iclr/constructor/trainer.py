@@ -28,7 +28,7 @@ class CrystalDataset(Dataset):
         prompt = self.tokenizer(prompt_text, add_special_tokens=False)["input_ids"]
         sequence = self.tokenizer(prompt_text + row["answer"], add_special_tokens=False)["input_ids"]
         if len(sequence) > self.max_length:
-            raise ValueError(f"Increase b0.max_length for source {row['source_id']}")
+            raise ValueError(f"Increase constructor.max_length for source {row['source_id']}")
         return sequence, len(prompt)
 
 
@@ -54,7 +54,7 @@ def train(config, *, device="cuda:0", resume=False):
     from .._core.llada_resize import ensure_llada_vocab_size
     from .._core.transformers_compat import ensure_create_bidirectional_mask, ensure_llada2_rope_parameters
 
-    root, recipe = run_root(config), config["b0"]
+    root, recipe = run_root(config), config["constructor"]
     world = int(os.environ.get("WORLD_SIZE", "1"))
     rank = int(os.environ.get("RANK", "0"))
     if world > 1:
@@ -107,7 +107,7 @@ def train(config, *, device="cuda:0", resume=False):
         if recipe["max_length"] == "auto"
         else recipe["max_length"]
     )
-    dataset = CrystalDataset(root / "data/b0/train.jsonl", tokenizer, max_length)
+    dataset = CrystalDataset(root / "data/constructor/train.jsonl", tokenizer, max_length)
     sampler = DistributedSampler(dataset, num_replicas=world, rank=rank, shuffle=True, seed=0)
     loader = DataLoader(
         dataset,
@@ -128,7 +128,7 @@ def train(config, *, device="cuda:0", resume=False):
         return max(recipe["min_lr_ratio"], 0.5 * (1 + math.cos(math.pi * progress)))
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, multiplier)
-    output = root / "b0"
+    output = root / "constructor"
     step = start_epoch = cursor = 0
     best_loss = float("inf")
     resumed_rng = None
@@ -151,7 +151,7 @@ def train(config, *, device="cuda:0", resume=False):
     train_model = (
         torch.nn.parallel.DistributedDataParallel(model, device_ids=[device.index]) if world > 1 else model
     )
-    validation = CrystalDataset(root / "data/b0/val.jsonl", tokenizer, max_length)
+    validation = CrystalDataset(root / "data/constructor/val.jsonl", tokenizer, max_length)
     val_sampler = DistributedSampler(validation, num_replicas=world, rank=rank, shuffle=False)
     val_loader = DataLoader(
         validation,
@@ -234,7 +234,7 @@ def train(config, *, device="cuda:0", resume=False):
                 optimizer.zero_grad(set_to_none=True)
                 step += 1
                 if rank == 0 and step % 20 == 0:
-                    print({"stage": "b0", "step": step, "total": steps, "loss": float(loss)}, flush=True)
+                    print({"stage": "constructor", "step": step, "total": steps, "loss": float(loss)}, flush=True)
                 if step % recipe["save_steps"] == 0 or step == steps:
                     checkpoint(
                         epoch + int(micro + 1 == len(loader)), 0 if micro + 1 == len(loader) else micro + 1

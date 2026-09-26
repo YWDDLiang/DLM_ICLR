@@ -15,7 +15,7 @@ from dlm_iclr.runtime.io import read_rows, write_rows, write_json
 from dlm_iclr.runtime.pipeline import stage_settings
 
 ROOT = Path(__file__).resolve().parents[1]
-PANEL = ROOT / "src/dlm_iclr/data/presets/plans/H1A2_1000.jsonl"
+PANEL = ROOT / "src/dlm_iclr/data/presets/plans/mp20_default.jsonl"
 
 
 def fresh(code, *args):
@@ -32,7 +32,7 @@ def fresh(code, *args):
 def test_frozen_panel_selection_and_identity():
     manifest = json.loads(PANEL.with_suffix(".manifest.json").read_text())
     original = read_rows(PANEL)
-    rows, _ = load_plans("preset:H1A2_1000", requests=1000)
+    rows, _ = load_plans("preset:mp20_default", requests=1000)
     assert len(rows) == 1000
     assert all(validate_plan(r) is None for r in rows)
     assert rows[0]["source_id"] == "H1A2_1200:0000"
@@ -71,7 +71,7 @@ from dlm_iclr._core.h1_llm_planner import build_planner_user_prompt
 from dlm_iclr.data.plans import validate_plan
 from dlm_iclr._core.r5_plan_state import build_body_prompt
 from dlm_iclr._core.expert_edit import ExpertEditConfig
-from dlm_iclr.c2.scope import feasible_modes
+from dlm_iclr.feedback.scope import feasible_modes
 n=MAX_ATOMS
 answer,_=arrays_to_dynamic_answer([6,6,6],[90,90,90],['Si']*n,[[i/n,0,0] for i in range(n)])
 assert len(parse_dynamic_answer(answer)['species']) == n
@@ -94,7 +94,7 @@ from dlm_iclr.data.selection import select
 try: select(c)
 except ValueError as e: assert 'requires' in str(e)
 else: raise AssertionError('missing panel accepted')
-try: select(c, source='preset:H1A2_1000')
+try: select(c, source='preset:mp20_default')
 except ValueError as e: assert 'MP20 only' in str(e)
 else: raise AssertionError('MP20 panel used for Perov')
 ''')
@@ -103,24 +103,24 @@ else: raise AssertionError('MP20 panel used for Perov')
 
 def test_constructor_outputs_and_resumption_are_isolated(tmp_path):
     c = load()
-    plans, _ = load_plans("H1A2_1000", requests=1)
-    stage_settings(c, "b0", plans, tmp_path)
+    plans, _ = load_plans("mp20_default", requests=1)
+    stage_settings(c, "constructor", plans, tmp_path)
     with pytest.raises(ValueError, match="separate output"):
-        stage_settings(c, "c1", plans, tmp_path)
-    c["b0"]["temperature"] = 0.9
+        stage_settings(c, "periodic", plans, tmp_path)
+    c["constructor"]["temperature"] = 0.9
     with pytest.raises(ValueError, match="changed"):
-        stage_settings(c, "b0", plans, tmp_path)
+        stage_settings(c, "constructor", plans, tmp_path)
 
 
-def test_b0_policy_retains_native_constraints_without_c1():
-    from dlm_iclr.c1.generation import construct
+def test_base_constructor_retains_native_constraints_without_periodic_head():
+    from dlm_iclr.periodic.generation import construct
     import inspect
     c = load()
-    policy = backend_config(c, stage="b0").inference
+    policy = backend_config(c, stage="constructor").inference
     assert not policy.geometry_monitor and not policy.construction_recovery
     assert not policy.adaptive_lattice_recovery
     assert inspect.signature(construct).parameters["geometry_monitor"].default is True
-    from dlm_iclr.c1.generation import Constructor
+    from dlm_iclr.periodic.generation import Constructor
     from dlm_iclr._core.dynamic_crystal import build_special_tokens
     class Tokenizer:
         def get_vocab(self):
@@ -143,7 +143,7 @@ def test_one_command_uses_fresh_stages_and_never_trains_planner_by_default(tmp_p
     assert [x[4] for x in commands if x[3] == "train"] == ["constructor", "periodic", "feedback"]
     assert config["sampling"]["requests"] == config["planner"]["sampling"]["requests"] == 1000
     assert "--with-planner" not in commands[0]
-    assert config["c2"]["training"]["plans"] == "@run/data/plans/train.jsonl"
+    assert config["feedback"]["training"]["plans"] == "@run/data/plans/train.jsonl"
 
 
 def test_pipeline_evaluates_all_endpoints_without_relabeling(tmp_path, monkeypatch):
@@ -165,8 +165,8 @@ def test_pipeline_evaluates_all_endpoints_without_relabeling(tmp_path, monkeypat
     monkeypatch.setattr(direct, "evaluate_direct", direct_metric)
     monkeypatch.setattr(workflow, "evaluate", physical_metric)
     monkeypatch.setattr(hull, "query", lambda *a, **k: calls.append("hull"))
-    pipeline.run(c, "preset:H1A2_1000", output=tmp_path)
-    assert calls == ["c1", "diffusion", "hull", "direct:raw", "sun:raw", "direct:refined", "sun:refined", "c2", "direct:edited", "sun:edited"]
+    pipeline.run(c, "preset:mp20_default", output=tmp_path)
+    assert calls == ["periodic", "diffusion", "hull", "direct:raw", "sun:raw", "direct:refined", "sun:refined", "feedback", "direct:edited", "sun:edited"]
 
 
 def test_direct_unknown_fingerprint_is_not_counted_as_invalid(tmp_path, monkeypatch):

@@ -1,10 +1,10 @@
 import itertools
 import numpy as np
 import torch
-from dlm_iclr.c1.distribution import PeriodicAxisLaw
-from dlm_iclr.c2.revision import tilted_probabilities
-from dlm_iclr.b0.objective import corrupt
-from dlm_iclr.c2.teacher import probabilities
+from dlm_iclr.periodic.distribution import PeriodicAxisLaw
+from dlm_iclr.feedback.revision import tilted_probabilities
+from dlm_iclr.constructor.objective import corrupt
+from dlm_iclr.feedback.teacher import probabilities
 from dlm_iclr.evaluation.workflow import qualify, summary
 
 

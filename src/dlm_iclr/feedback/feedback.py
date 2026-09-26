@@ -5,7 +5,7 @@ import copy
 import math
 from dlm_iclr._core.r03_physics_transfer import geometry_support_report
 from dlm_iclr.runtime.io import fingerprint
-from dlm_iclr.c2.proposals import action_positions, COUNTS, MODES
+from dlm_iclr.feedback.proposals import action_positions, COUNTS, MODES
 
 INVALID = {"generation_failure", "invalid_raw", "invalid_terminal"}
 
@@ -87,7 +87,7 @@ def target_action(before, target):
 
 def generator_target_records(plans, generated, current, edited, scores, tokenizer):
     """Create the exact full-token teacher structures before labelling them."""
-    from dlm_iclr.c1.generation import make_record
+    from dlm_iclr.periodic.generation import make_record
 
     inverse = {int(value): key for key, value in tokenizer.get_vocab().items()}
     result = []

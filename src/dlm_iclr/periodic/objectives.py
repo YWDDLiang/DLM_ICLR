@@ -19,7 +19,7 @@ from dlm_iclr._core.fixed_slot import FixedSlotConfig, SYMBOL_TO_Z, MASK_TOKEN_I
 from dlm_iclr._core.llada_generation import _lattice_matrix_from_token_ids
 from dlm_iclr._core.paired_noise import derive_subseed
 from dlm_iclr.runtime.io import fingerprint
-from dlm_iclr.c1.distribution import PeriodicAxisLaw, collapse_alias_logits
+from dlm_iclr.periodic.distribution import PeriodicAxisLaw, collapse_alias_logits
 
 
 class AxisTrainingSchema:
@@ -112,7 +112,7 @@ def forward_views(model, tokenizer, views, *, max_length=1024):
     if not views:
         raise ValueError("Empty microbatch")
     if model.training or any(p.requires_grad for p in model.parameters()):
-        raise ValueError("B0 must be frozen eval")
+        raise ValueError("base constructor must be frozen eval")
     device = next(model.parameters()).device
     sequences = []
     prefix_lengths = []
@@ -139,7 +139,7 @@ def forward_views(model, tokenizer, views, *, max_length=1024):
     finally:
         hook.remove()
     if calls[0] != 1:
-        raise RuntimeError("Frozen B0 actual forward count differs from one microbatch call")
+        raise RuntimeError("Frozen base constructor actual forward count differs from one microbatch call")
     if not out.hidden_states or out.hidden_states[-1].shape[:2] != ids.shape:
         raise ValueError("DLM final hidden layout changed")
     predictions = []
@@ -201,7 +201,7 @@ def loss_from_prediction(head, schema, view, prediction, *, temperature=0.7):
 
 def frozen_versions(model):
     if model.training or any(p.requires_grad for p in model.parameters()):
-        raise ValueError("Frozen B0 state changed")
+        raise ValueError("Frozen base constructor state changed")
     return tuple(
         (n, id(v), v.data_ptr(), v._version, str(v.dtype), str(v.device))
         for n, v in list(model.named_parameters()) + list(model.named_buffers())

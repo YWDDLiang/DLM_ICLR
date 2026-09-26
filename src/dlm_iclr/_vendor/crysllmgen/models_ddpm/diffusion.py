@@ -84,7 +84,7 @@ class CSPDiffusion(nn.Module):
         alphas_cumprod = self.beta_scheduler.alphas_cumprod[times]
 
         c0 = torch.sqrt(alphas_cumprod)
-        c1 = torch.sqrt(1.0 - alphas_cumprod)
+        periodic = torch.sqrt(1.0 - alphas_cumprod)
 
         sigmas = self.sigma_scheduler.sigmas[times]
         sigmas_norm = self.sigma_scheduler.sigmas_norm[times]
@@ -94,7 +94,7 @@ class CSPDiffusion(nn.Module):
 
         rand_l, rand_x = torch.randn_like(lattices), torch.randn_like(frac_coords)
 
-        input_lattice = c0[:, None, None] * lattices + c1[:, None, None] * rand_l
+        input_lattice = c0[:, None, None] * lattices + periodic[:, None, None] * rand_l
         sigmas_per_atom = sigmas.repeat_interleave(batch.num_atoms)[:, None]
         sigmas_norm_per_atom = sigmas_norm.repeat_interleave(batch.num_atoms)[:, None]
         input_frac_coords = (frac_coords + sigmas_per_atom * rand_x) % 1.0
@@ -171,7 +171,7 @@ class CSPDiffusion(nn.Module):
             sigma_norm = self.sigma_scheduler.sigmas_norm[t]
 
             c0 = 1.0 / torch.sqrt(alphas)
-            c1 = (1 - alphas) / torch.sqrt(1 - alphas_cumprod)
+            periodic = (1 - alphas) / torch.sqrt(1 - alphas_cumprod)
 
             x_t = traj[t]["frac_coords"]
             l_t = traj[t]["lattices"]
@@ -224,7 +224,7 @@ class CSPDiffusion(nn.Module):
             x_t_minus_1 = x_t_minus_05 - step_size * pred_x + std_x * rand_x if not self.keep_coords else x_t
 
             l_t_minus_1 = (
-                c0 * (l_t_minus_05 - c1 * pred_l) + sigmas * rand_l if not self.keep_lattice else l_t
+                c0 * (l_t_minus_05 - periodic * pred_l) + sigmas * rand_l if not self.keep_lattice else l_t
             )
 
             traj[t - 1] = {

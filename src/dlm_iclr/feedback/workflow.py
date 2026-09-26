@@ -16,8 +16,8 @@ def collect(config, *, device="cuda:0"):
     from .value import ValueNetwork
 
     root = run_root(config)
-    out = root / "c2/collection"
-    source = config["c2"]["training"].get("plans", "@run/data/plans/train.jsonl")
+    out = root / "feedback/collection"
+    source = config["feedback"]["training"].get("plans", "@run/data/plans/train.jsonl")
     source = (
         str(root / source[5:])
         if source.startswith("@run/")
@@ -26,16 +26,16 @@ def collect(config, *, device="cuda:0"):
         else str(path(config, source))
     )
     plans, _ = load_plans(source)
-    limit = config["c2"]["training"].get("sources", 1000)
+    limit = config["feedback"]["training"].get("sources", 1000)
     plans = plans[:limit] if limit else plans
     if any(p.get("provenance", {}).get("usage_role") != "train" for p in plans):
-        raise ValueError("C2 collection needs training Plan sources")
+        raise ValueError("FeedbackReconstructor collection needs training Plan sources")
     write_rows(out / "plans.jsonl", plans)
-    sample(config, "c1", output=out)
+    sample(config, "periodic", output=out)
     sample(config, "diffusion", output=out)
     model, tokenizer = load_editor(
         asset(config, "dlm"),
-        str(root / "c2/warmup/checkpoint"),
+        str(root / "feedback/warmup/checkpoint"),
         setup_device(device, threads=config["runtime"]["threads"]),
     )
     quality = model.quality_head.state_dict()
@@ -49,7 +49,7 @@ def collect(config, *, device="cuda:0"):
         value.head.bias.zero_()
     editor = Editor(model, tokenizer, value.eval(), backend_config(config).inference)
     bundles = []
-    width = config["c2"]["batch_size"]
+    width = config["feedback"]["batch_size"]
     for start in range(0, len(plans), width):
         cache = out / "batches" / f"{start:06d}.json"
         if cache.exists():
@@ -64,7 +64,7 @@ def collect(config, *, device="cuda:0"):
             ]
             write_json(cache, produced)
         bundles.extend(produced)
-        print({"stage": "c2-collect", "completed": len(bundles), "requests": len(plans)}, flush=True)
+        print({"stage": "feedback-collect", "completed": len(bundles), "requests": len(plans)}, flush=True)
     write_rows(out / "bundles.jsonl", bundles)
     return {"requests": len(bundles), "bundles": str(out / "bundles.jsonl")}
 
@@ -75,10 +75,10 @@ def label(config):
     from ..evaluation.physics import label_records
 
     root = run_root(config)
-    out = root / "c2/labels"
-    bundles = read_rows(root / "c2/collection/bundles.jsonl")
+    out = root / "feedback/labels"
+    bundles = read_rows(root / "feedback/collection/bundles.jsonl")
     groups = {"current": [b["F"]["record"] for b in bundles]}
-    for rank in range(config["c2"]["candidates"]):
+    for rank in range(config["feedback"]["candidates"]):
         groups[f"candidate_{rank}"] = [
             next(
                 (c["record"] for c in b["E"]["candidates"] if c["rank"] == rank),
@@ -118,12 +118,12 @@ def compile_data(config):
     from .._core.r03_physics_transfer import build_repair_constraints
 
     root = run_root(config)
-    bundles = read_rows(root / "c2/collection/bundles.jsonl")
+    bundles = read_rows(root / "feedback/collection/bundles.jsonl")
     scores = {
-        n: read_rows(root / "c2/labels" / f"{n}.jsonl")
-        for n in ["current", *[f"candidate_{r}" for r in range(config["c2"]["candidates"])]]
+        n: read_rows(root / "feedback/labels" / f"{n}.jsonl")
+        for n in ["current", *[f"candidate_{r}" for r in range(config["feedback"]["candidates"])]]
     }
-    tokenizer = AutoTokenizer.from_pretrained(root / "c2/warmup/checkpoint", trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(root / "feedback/warmup/checkpoint", trust_remote_code=True)
     _, editor, value = compile_sources(
         [b["plan"] for b in bundles],
         [b["G"] for b in bundles],
@@ -133,30 +133,30 @@ def compile_data(config):
         tokenizer=tokenizer,
         support=build_repair_constraints(tokenizer),
     )
-    write_rows(root / "c2/data/editor.jsonl", editor)
-    write_rows(root / "c2/data/value.jsonl", value)
-    recipe = config["c2"]["training"]
+    write_rows(root / "feedback/data/reconstruction.jsonl", editor)
+    write_rows(root / "feedback/data/verifier.jsonl", value)
+    recipe = config["feedback"]["training"]
     light, report = build(
         editor,
         bundles,
         scores,
         seed=recipe["seed"],
-        beta=recipe.get("light_beta", 0.1),
-        fraction=recipe.get("light_fraction", 0.25),
+        beta=recipe.get("refit_beta", 0.1),
+        fraction=recipe.get("refit_fraction", 0.25),
     )
-    write_rows(root / "c2/data/light.jsonl", light)
-    write_json(root / "c2/data/teacher.json", report)
-    return {"editor_sources": len(editor), "value_pairs": len(value), "light": report}
+    write_rows(root / "feedback/data/refit.jsonl", light)
+    write_json(root / "feedback/data/teacher.json", report)
+    return {"editor_sources": len(editor), "value_pairs": len(value), "refit": report}
 
 
 def fit_risk(config):
     from .risk import features, target, fit_risk
 
     root = run_root(config)
-    bundles = read_rows(root / "c2/collection/bundles.jsonl")
+    bundles = read_rows(root / "feedback/collection/bundles.jsonl")
     scores = {
-        n: read_rows(root / "c2/labels" / f"{n}.jsonl")
-        for n in ["current", *[f"candidate_{r}" for r in range(config["c2"]["candidates"])]]
+        n: read_rows(root / "feedback/labels" / f"{n}.jsonl")
+        for n in ["current", *[f"candidate_{r}" for r in range(config["feedback"]["candidates"])]]
     }
     x = []
     y = []
@@ -175,8 +175,8 @@ def fit_risk(config):
                 x.append(features(before, after, positions))
                 y.append(outcome)
                 sources.append(source)
-    model = fit_risk(x, y, sources, seed=config["c2"]["training"]["risk_seed"])
-    write_json(root / "c2/risk/model.json", model)
+    model = fit_risk(x, y, sources, seed=config["feedback"]["training"]["risk_seed"])
+    write_json(root / "feedback/risk/model.json", model)
     return {"rows": len(y), "sources": len(set(sources)), "metrics": model["metrics"]}
 
 
@@ -195,58 +195,58 @@ def stage(config, name, *, device="cuda:0", resume=False):
         return compile_data(config)
     if name == "risk":
         return fit_risk(config)
-    if name in ("editor", "light", "value"):
+    if name in ("reconstruction", "refit", "verifier"):
         from ..runtime.device import setup_device
 
         device = setup_device(device, threads=config["runtime"]["threads"])
-    if name == "value":
+    if name == "verifier":
         from .value_training import train_value
 
         target = train_value(
             cfg,
-            root / "c2/data/value.jsonl",
-            root / "c2/value",
-            editor_checkpoint=str(root / "c2/light/checkpoint"),
+            root / "feedback/data/verifier.jsonl",
+            root / "feedback/verifier",
+            editor_checkpoint=str(root / "feedback/refit/checkpoint"),
             device=device,
         )
         return {"checkpoint": str(target)}
     from .training import train_actor
 
-    if name == "editor":
+    if name == "reconstruction":
         target = train_actor(
             "E",
             cfg,
-            root / "c2/data/editor.jsonl",
-            root / "c2/editor",
-            checkpoint=str(root / "c2/warmup/checkpoint"),
+            root / "feedback/data/reconstruction.jsonl",
+            root / "feedback/reconstruction",
+            checkpoint=str(root / "feedback/warmup/checkpoint"),
             device=device,
             resume=resume,
         )
-    elif name == "light":
-        cfg.training.epochs = config["c2"]["training"]["light_epochs"]
-        cfg.training.editor_content_lr = config["c2"]["training"]["light_content_lr"]
+    elif name == "refit":
+        cfg.training.epochs = config["feedback"]["training"]["refit_epochs"]
+        cfg.training.editor_content_lr = config["feedback"]["training"]["refit_content_lr"]
         target = train_actor(
             "E",
             cfg,
-            root / "c2/data/light.jsonl",
-            root / "c2/light",
-            checkpoint=str(root / "c2/editor/checkpoint"),
+            root / "feedback/data/refit.jsonl",
+            root / "feedback/refit",
+            checkpoint=str(root / "feedback/reconstruction/checkpoint"),
             device=device,
             parameter_scope="lora_heads",
             resume=resume,
         )
     else:
-        raise ValueError(f"Unknown C2 training stage: {name}")
+        raise ValueError(f"Unknown FeedbackReconstructor training stage: {name}")
     return {"checkpoint": str(target)}
 
 
 def train(config, *, device="cuda:0", resume=False, only=None):
-    stages = [only] if only else ["warmup", "collect", "label", "compile", "editor", "light", "value", "risk"]
+    stages = [only] if only else ["warmup", "collect", "label", "compile", "reconstruction", "refit", "verifier", "risk"]
     root = run_root(config)
     for name in stages:
-        receipt = root / "c2/stages" / f"{name}.json"
+        receipt = root / "feedback/stages" / f"{name}.json"
         if resume and receipt.exists():
             continue
         result = stage(config, name, device=device, resume=resume)
         write_json(receipt, result)
-    return {"checkpoint": asset(config, "c2"), "stages": stages}
+    return {"checkpoint": asset(config, "feedback"), "stages": stages}

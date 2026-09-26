@@ -5,16 +5,20 @@ import multiprocessing as mp
 from pathlib import Path
 from .config import run_root, asset, backend_config
 from .io import read_json, read_rows, write_json, write_rows, fingerprint
+from .names import MODULE_NAMES, module_key
 
-STAGES = {"b0": "raw", "c1": "raw", "diffusion": "refined", "c2": "edited"}
+STAGES = {"constructor": "raw", "periodic": "raw", "diffusion": "refined", "feedback": "edited"}
 
 
 def stage_settings(config, stage, plans, output):
+    stage = module_key(stage)
+    if any((output / f"{previous}.settings.json").exists() for previous in MODULE_NAMES):
+        raise ValueError("This output directory uses earlier stage metadata; choose a new output directory.")
     roles = {
-        "b0": ["dlm", "b0"],
-        "c1": ["dlm", "b0", "c1"],
-        "diffusion": ["b0", "diffusion"],
-        "c2": ["dlm", "c2", "value", "risk"],
+        "constructor": ["dlm", "constructor"],
+        "periodic": ["dlm", "constructor", "periodic"],
+        "diffusion": ["constructor", "diffusion"],
+        "feedback": ["dlm", "feedback", "verifier", "risk"],
     }[stage]
     assets = {}
     for role in roles:
@@ -27,16 +31,16 @@ def stage_settings(config, stage, plans, output):
         }
     definition = {"plans": fingerprint(plans), "models": assets, "settings": config[stage],
                   "dataset": config["dataset"]}
-    if stage in ("b0", "c1"):
-        other = "c1" if stage == "b0" else "b0"
+    if stage in ("constructor", "periodic"):
+        other = "periodic" if stage == "constructor" else "constructor"
         if (output / f"{other}.settings.json").exists():
-            raise ValueError("B0 and C1 require separate output directories")
-    previous = {"diffusion": "c1", "c2": "diffusion"}.get(stage)
-    if stage == "diffusion" and (output / "b0.settings.json").exists():
-        previous = "b0"
+            raise ValueError("base constructor and periodic construction require separate output directories")
+    previous = {"diffusion": "periodic", "feedback": "diffusion"}.get(stage)
+    if stage == "diffusion" and (output / "constructor.settings.json").exists():
+        previous = "constructor"
     if previous:
         definition["input_stage"] = read_json(output / f"{previous}.settings.json")
-    if stage == "c2":
+    if stage == "feedback":
         definition["evaluation"] = config["evaluation"]
     signature = fingerprint(definition)
     target = output / f"{stage}.settings.json"
@@ -60,16 +64,16 @@ def _worker(stage, config, plans, output, rank, world, device, protected):
     ]
     if not indices:
         return
-    if stage in ("b0", "c1"):
-        from ..c1.generation import Constructor
-        from ..c1.trainer import load_head
+    if stage in ("constructor", "periodic"):
+        from ..periodic.generation import Constructor
+        from ..periodic.trainer import load_head
         from .models import load_model_and_tokenizer
 
         model, tokenizer = load_model_and_tokenizer(
-            asset(config, "dlm"), asset(config, "b0"), device, mean_resizing=False
+            asset(config, "dlm"), asset(config, "constructor"), device, mean_resizing=False
         )
         model.eval().requires_grad_(False)
-        head = load_head(asset(config, "c1"), device) if stage == "c1" else None
+        head = load_head(asset(config, "periodic"), device) if stage == "periodic" else None
         generator = Constructor(model, tokenizer, cfg.inference, axis_head=head)
         for done, i in enumerate(indices, 1):
             value = generator.generate(plans[i])
@@ -85,7 +89,7 @@ def _worker(stage, config, plans, output, rank, world, device, protected):
         from transformers import AutoTokenizer
         from ..diffusion.refinement import Refiner
 
-        tokenizer = AutoTokenizer.from_pretrained(asset(config, "b0"), trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(asset(config, "constructor"), trust_remote_code=True)
         refiner = Refiner(
             asset(config, "diffusion"),
             tokenizer,
@@ -103,11 +107,11 @@ def _worker(stage, config, plans, output, rank, world, device, protected):
             write_json(root / "refined" / f"{i:06d}.json", refiner.refine(plans[i], generated))
             print({"stage": stage, "worker": rank, "completed": done, "assigned": len(indices)}, flush=True)
     else:
-        from ..c2.editor import Editor
-        from ..c2.value import load_value
-        from ..c2.model import C2
-        from ..c2.revision import OnePassRepair
-        from ..c2.risk import RiskModel
+        from ..feedback.editor import Editor
+        from ..feedback.value import load_value
+        from ..feedback.model import FeedbackReconstructor
+        from ..feedback.revision import OnePassRepair
+        from ..feedback.risk import RiskModel
         from .models import load_editor
 
         active = [i for i in indices if plans[i]["source_id"] not in protected]
@@ -130,23 +134,23 @@ def _worker(stage, config, plans, output, rank, world, device, protected):
                 )
         if not active:
             return
-        model, tokenizer = load_editor(asset(config, "dlm"), asset(config, "c2"), device)
-        value = load_value(asset(config, "value"))
+        model, tokenizer = load_editor(asset(config, "dlm"), asset(config, "feedback"), device)
+        value = load_value(asset(config, "verifier"))
         risk = RiskModel.load(asset(config, "risk"))
         settings = dict(
-            config["c2"]["revision"],
-            editor_max_calls=config["c2"]["max_calls"],
-            temperature=config["c2"]["temperature"],
+            config["feedback"]["revision"],
+            editor_max_calls=config["feedback"]["max_calls"],
+            temperature=config["feedback"]["temperature"],
         )
-        c2 = C2(
+        feedback = FeedbackReconstructor(
             Editor(model, tokenizer, value, cfg.inference),
             OnePassRepair(model, tokenizer, value, risk, settings),
         )
-        batch_size = config["c2"]["batch_size"]
+        batch_size = config["feedback"]["batch_size"]
         for start in range(0, len(active), batch_size):
             selected = active[start : start + batch_size]
             refined = [read_json(root / "refined" / f"{i:06d}.json") for i in selected]
-            bundles = c2.edit_many([plans[i] for i in selected], refined)
+            bundles = feedback.edit_many([plans[i] for i in selected], refined)
             for i, bundle in zip(selected, bundles):
                 bundle["decision"] = {"protected_sun": False}
                 write_json(root / "edited" / f"{i:06d}.json", bundle)
@@ -162,6 +166,7 @@ def _worker(stage, config, plans, output, rank, world, device, protected):
 
 
 def sample(config, stage, *, plans=None, output=None):
+    stage = module_key(stage)
     output = Path(output) if output else run_root(config) / "samples"
     if plans is not None:
         from ..data.plans import load_plans
@@ -174,7 +179,7 @@ def sample(config, stage, *, plans=None, output=None):
         planned = read_rows(output / "plans.jsonl")
     stage_settings(config, stage, planned, output)
     protected = set()
-    if stage == "c2" and config["c2"]["protect_sun"]:
+    if stage == "feedback" and config["feedback"]["protect_sun"]:
         from ..evaluation.physics import record_key
 
         scores = read_rows(output / "evaluation/refined/scores.jsonl")
@@ -183,12 +188,12 @@ def sample(config, stage, *, plans=None, output=None):
             s["source_id"] != r["source_id"] or s["record_key"] != record_key(r)
             for s, r in zip(scores, refined)
         ):
-            raise ValueError("Evaluate the current refined structures before applying C2")
+            raise ValueError("Evaluate the current refined structures before applying FeedbackReconstructor")
         protected = {s["source_id"] for s in scores if s["strict_sun"] is True}
     devices = config["runtime"]["devices"]
     count = (
         config["runtime"]["generation_workers_per_device"]
-        if stage in ("b0", "c1")
+        if stage in ("constructor", "periodic")
         else config["runtime"]["refine_workers_per_device"]
         if stage == "diffusion"
         else 1
@@ -216,8 +221,8 @@ def sample(config, stage, *, plans=None, output=None):
     bundles = []
     for i in range(len(planned)):
         value = read_json(output / STAGES[stage] / f"{i:06d}.json")
-        records.append(value["E"]["record"] if stage == "c2" else value["record"])
-        if stage == "c2":
+        records.append(value["E"]["record"] if stage == "feedback" else value["record"])
+        if stage == "feedback":
             bundles.append(value)
     write_rows(output / f"{STAGES[stage]}.jsonl", records)
     if bundles:
@@ -225,15 +230,16 @@ def sample(config, stage, *, plans=None, output=None):
     return {"stage": stage, "requests": len(records), "records": str(output / f"{STAGES[stage]}.jsonl")}
 
 
-def run(config, plans, *, output=None, start="c1", end="evaluate", constructor="c1"):
+def run(config, plans, *, output=None, start="periodic", end="evaluate", constructor="periodic"):
     from ..evaluation.hull import query
     from ..evaluation.workflow import evaluate
 
+    start, end, constructor = map(module_key, (start, end, constructor))
     root = Path(output) if output else run_root(config) / "samples"
     from ..evaluation.direct import evaluate_direct
-    stages = [constructor, "diffusion", "hull", "physics", "c2", "evaluate"]
-    if start == "c1" and constructor == "b0":
-        start = "b0"
+    stages = [constructor, "diffusion", "hull", "physics", "feedback", "evaluate"]
+    if start == "periodic" and constructor == "constructor":
+        start = "constructor"
     if start not in stages or end not in stages or stages.index(start) > stages.index(end):
         raise ValueError("Invalid stage range for this constructor")
     if start != constructor and plans:

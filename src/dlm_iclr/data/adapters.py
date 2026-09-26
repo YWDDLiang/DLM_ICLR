@@ -138,7 +138,7 @@ def prepare(config, *, with_planner=False):
                     "provenance": provenance,
                 }
                 for field, stage in [("body_noise_seed", "G"), ("refiner_noise_seed", "F")]:
-                    planned[field] = int(fingerprint([config["b0"]["seed"], source_id, stage])[:15], 16)
+                    planned[field] = int(fingerprint([config["constructor"]["seed"], source_id, stage])[:15], 16)
                 plans.append(planned)
                 max_prompt, max_answer = max(max_prompt, len(prefix)), max(max_answer, len(ids))
             except (ValueError, KeyError, TypeError) as error:
@@ -147,7 +147,7 @@ def prepare(config, *, with_planner=False):
                 print({"split": split, "processed": index + 1, "prepared": len(structures)}, flush=True)
         for folder, values in [
             ("structures", structures),
-            ("b0", bodies),
+            ("constructor", bodies),
             ("planner", planner_rows),
             ("plans", plans),
             ("failures", failures),

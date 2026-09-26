@@ -26,7 +26,7 @@ def profile(name):
                     "length_max_bin": 500,
                     "splits": {s: f"../datasets/{name}/{s}.csv" for s in ("train", "val", "test")}},
         "output": f"../outputs/{name}",
-        "sampling": {"plans": "preset:H1A2_1000" if name == "mp20" else None, "requests": 1000},
+        "sampling": {"plans": "preset:mp20_default" if name == "mp20" else None, "requests": 1000},
         "evaluation": {"coverage_cutoffs": cutoffs},
     }
 
