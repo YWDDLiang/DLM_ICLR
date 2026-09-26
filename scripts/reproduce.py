@@ -24,7 +24,7 @@ def parser():
     p.add_argument("--dataset", help="mp20 (default), perov-5, mpts-52")
     p.add_argument("--config", type=Path)
     p.add_argument("--plans", type=Path, help="Saved Plan JSONL; required for non-MP20 inference")
-    p.add_argument("--num-samples", type=int, default=1000)
+    p.add_argument("--num-samples", type=int, help="Override the configured request count (default: 1000)")
     p.add_argument("--output", type=Path, help="Run root, including data, checkpoints and samples")
     p.add_argument("--device", help="Torch device, e.g. cuda:0")
     p.add_argument("--set", dest="overrides", action="append", default=[])
@@ -37,9 +37,12 @@ def parser():
 def resolve(args):
     config_path = args.config or REPO / "configs" / (canonical_name(args.dataset or "mp20") + ".json")
     c = load(config_path, args.overrides, dataset=args.dataset)
-    if args.num_samples < 1:
-        raise ValueError("--num-samples must be positive")
-    c["sampling"]["requests"] = c["planner"]["sampling"]["requests"] = args.num_samples
+    requests = c["sampling"]["requests"] if args.num_samples is None else args.num_samples
+    if type(requests) is not int or requests < 1:
+        raise ValueError("The request count must be a positive integer")
+    c["sampling"]["requests"] = requests
+    if args.num_samples is not None:
+        c["planner"]["sampling"]["requests"] = requests
     if args.output:
         c["output"] = str(args.output.resolve())
     if args.device:

@@ -16,18 +16,28 @@ def canonical_name(name):
     return ALIASES.get(name, name)
 
 
+def coverage_cutoffs(name):
+    """Return an independent copy of the dataset's default coverage thresholds."""
+    name = canonical_name(name)
+    if name == "carbon":
+        return [0.2, 4.0]
+    if name not in PROFILES:
+        raise ValueError(f"No coverage preset for {name!r}; supply explicit coverage_cutoffs")
+    return list(PROFILES[name][3])
+
+
 def profile(name):
     name = canonical_name(name)
     if name not in PROFILES:
         raise ValueError(f"Unsupported dataset {name!r}; choose {', '.join(PROFILES)}")
-    minimum, maximum, label, cutoffs = PROFILES[name]
+    minimum, maximum, label, _ = PROFILES[name]
     return {
         "dataset": {"name": name, "label": label, "min_atoms": minimum, "max_atoms": maximum,
                     "length_max_bin": 500,
                     "splits": {s: f"../datasets/{name}/{s}.csv" for s in ("train", "val", "test")}},
         "output": f"../outputs/{name}",
         "sampling": {"plans": "preset:mp20_default" if name == "mp20" else None, "requests": 1000},
-        "evaluation": {"coverage_cutoffs": cutoffs},
+        "evaluation": {"coverage_cutoffs": coverage_cutoffs(name)},
     }
 
 

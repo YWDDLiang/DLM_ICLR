@@ -2,8 +2,6 @@
 
 import random
 import torch
-from dlm_iclr._core.fixed_slot import MASK_TOKEN_ID
-from dlm_iclr._core.rsi_preference import legal_vector, numeric_order
 from dlm_iclr._core.expert_edit import inference_view, materialize_edit_batch
 
 
@@ -28,99 +26,6 @@ def epoch_indices(size, *, batch_size, world, epochs, seed):
         indices.extend(extra[:padding])
         for start in range(0, len(indices), width):
             yield epoch, indices[start : start + width]
-
-
-def training_view(example, target, cut, branch, *, mask_seed=0):
-    n = example["num_sites"]
-    if branch == "G" and example.get("plan_state"):
-        groups = example["generation_groups"]
-        expected = set(numeric_order(n, "G"))
-        positions = [pos for group in groups for pos in group]
-        if len(positions) != len(expected) or set(positions) != expected:
-            raise ValueError("registered native groups changed numeric support")
-        rng = random.Random(mask_seed)
-        # Native semantic groups stay in order; cover possible reveal subsets
-        # within each confidence-remasked group instead of one site ordering.
-        order = []
-        for positions in groups:
-            positions = list(positions)
-            rng.shuffle(positions)
-            order.extend(positions)
-    else:
-        order = (
-            example.get("action_positions", numeric_order(n, branch))
-            if branch == "E"
-            else numeric_order(n, branch)
-        )
-    if not 0 <= cut < len(order):
-        raise ValueError("invalid mask cut")
-    if branch == "E":
-        from dlm_iclr._core.ranked_feedback import validate_action_target
-
-        validate_action_target(example["current_tokens"], target, order)
-    current = list(target)
-    for pos in order[cut:]:
-        current[pos] = MASK_TOKEN_ID
-    return {
-        "example": example,
-        "target": target,
-        "current": current,
-        "position": order[cut],
-        "order": order,
-        "reveal": cut / len(order),
-    }
-
-
-def conditional_batch(model, tokenizer, views, branch, support):
-    """One transformer forward for multiple independent conditional views."""
-    device = next(model.parameters()).device
-    prefixes = [tokenizer(v["example"]["prompt"], add_special_tokens=False)["input_ids"] for v in views]
-    if branch == "G":
-        width = max(len(p) + len(v["current"]) for p, v in zip(prefixes, views))
-        ids = torch.full((len(views), width), int(tokenizer.pad_token_id), device=device, dtype=torch.long)
-        attention = torch.zeros_like(ids)
-        for i, (prefix, view) in enumerate(zip(prefixes, views)):
-            body = prefix + view["current"]
-            ids[i, : len(body)] = torch.tensor(body, device=device)
-            attention[i, : len(body)] = 1
-        output = model(ids, attention_mask=attention)
-    else:
-        examples = [
-            inference_view(
-                prefix,
-                v["example"]["current_tokens"],
-                v["current"],
-                v["example"]["num_sites"],
-                1,
-                v["order"],
-                remaining=80,
-                reveal=v["reveal"],
-            )
-            for prefix, v in zip(prefixes, views)
-        ]
-        batch = materialize_edit_batch(examples, tokenizer, device)
-        output = model(
-            batch["input_ids"], attention_mask=batch["attention_mask"], edit_context=batch["edit_context"]
-        )
-    values, distributions = [], []
-    for i, (prefix, view) in enumerate(zip(prefixes, views)):
-        pos = view["position"]
-        target = int(view["target"][pos])
-        vector, report = legal_vector(
-            output.logits[i, len(prefix) + pos].float(),
-            view["current"],
-            view["example"]["num_sites"],
-            pos,
-            support,
-        )
-        minimum = torch.finfo(vector.dtype).min
-        if not report["available"] or vector[target] <= minimum:
-            raise ValueError("minibatch target absent from unchanged hard support")
-        legal = (vector.detach() > minimum).nonzero().flatten()
-        logp = (vector[legal] / 0.7).log_softmax(-1)
-        values.append(logp[(legal == target).nonzero().item()])
-        distributions.append(logp)
-    return torch.stack(values), distributions
 
 
 def editor_head_loss(model, tokenizer, examples, device, *, detach_content=False, site_objective="binary"):

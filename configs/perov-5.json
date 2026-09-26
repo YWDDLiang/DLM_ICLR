@@ -19,10 +19,6 @@
     "diffusion": "../checkpoints/perov-5/diffusion.pt"
   },
   "evaluation": {
-    "direct": "full",
-    "coverage_cutoffs": [
-      0.2,
-      4.0
-    ]
+    "direct": "full"
   }
 }

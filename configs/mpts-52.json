@@ -19,10 +19,6 @@
     "diffusion": "../checkpoints/mpts-52/diffusion.pt"
   },
   "evaluation": {
-    "direct": "full",
-    "coverage_cutoffs": [
-      0.4,
-      10.0
-    ]
+    "direct": "full"
   }
 }

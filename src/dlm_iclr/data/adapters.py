@@ -3,7 +3,7 @@
 import csv
 from pathlib import Path
 from .plans import composition_key
-from ..runtime.io import fingerprint, read_rows, write_rows, write_json
+from ..runtime.io import fingerprint, read_json, read_rows, write_rows, write_json
 from ..runtime.config import path, run_root, asset
 
 
@@ -34,7 +34,7 @@ def align_sites(arrays, plan):
     ), order
 
 
-def prepare(config, *, with_planner=False):
+def prepare(config, *, with_planner=False, force=False):
     from transformers import AutoTokenizer
     from pymatgen.core import Structure
     from .._core.dynamic_crystal import (
@@ -46,14 +46,23 @@ def prepare(config, *, with_planner=False):
     from .._core.fixed_slot import metadata_from_csv_row
     from .._core.r5_plan_state import plan_state_from_arrays, build_body_prompt
     from ..planner.prepare import build_records_for_plan
+    from .preparation import input_identity, tokenizer_identity, read_receipt, matches, outputs
 
     root = run_root(config) / "data"
     tokenizer = AutoTokenizer.from_pretrained(asset(config, "dlm"), trust_remote_code=True)
     tokenizer.add_special_tokens({"additional_special_tokens": build_special_tokens()})
     tokenizer.pad_token = tokenizer.pad_token or tokenizer.eos_token
-    tokenizer.save_pretrained(root / "tokenizer")
     planner_tokenizer = (AutoTokenizer.from_pretrained(asset(config, "planner_base"), trust_remote_code=True)
                          if with_planner else None)
+    identity = input_identity(config, tokenizer)
+    planner_hash = tokenizer_identity(planner_tokenizer) if with_planner else None
+    planner_identity = fingerprint([identity, planner_hash]) if identity and planner_hash else None
+    previous = read_receipt(root)
+    if not force and matches(root, previous.get("core"), identity) and (
+        not with_planner or matches(root, previous.get("planner"), planner_identity)
+    ):
+        return dict(read_json(root / "statistics.json"), reused=True)
+    tokenizer.save_pretrained(root / "tokenizer")
     dataset = config["dataset"]
     statistics = {"dataset": dataset["name"], "splits": {}}
     max_prompt = max_answer = 0
@@ -148,11 +157,12 @@ def prepare(config, *, with_planner=False):
         for folder, values in [
             ("structures", structures),
             ("constructor", bodies),
-            ("planner", planner_rows),
             ("plans", plans),
             ("failures", failures),
         ]:
             write_rows(root / folder / f"{split}.jsonl", values)
+        if with_planner:
+            write_rows(root / "planner" / f"{split}.jsonl", planner_rows)
         statistics["splits"][split] = {
             "prepared": len(structures),
             "failed": len(failures),
@@ -161,4 +171,15 @@ def prepare(config, *, with_planner=False):
     statistics["max_length"] = min(768, max(256, max_prompt + max_answer + 48))
     statistics["observed_max_length"] = max_prompt + max_answer
     write_json(root / "statistics.json", statistics)
-    return statistics
+    files = [root / folder / f"{split}.jsonl"
+             for folder in ("structures", "constructor", "plans", "failures")
+             for split in dataset["splits"]]
+    files += [root / "statistics.json", *[p for p in (root / "tokenizer").rglob("*") if p.is_file()]]
+    receipt = {"core": {"identity": identity, "files": outputs(root, files)}}
+    if with_planner:
+        receipt["planner"] = {"identity": planner_identity,
+                              "files": outputs(root, [root / "planner" / f"{s}.jsonl" for s in dataset["splits"]])}
+    elif previous.get("planner"):
+        receipt["planner"] = previous["planner"]
+    write_json(root / "preparation.json", receipt)
+    return dict(statistics, reused=False)

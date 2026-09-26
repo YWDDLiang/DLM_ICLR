@@ -21,7 +21,7 @@ bash scripts/reproduce.sh --config configs/local.json --device cuda:0
 bash scripts/reproduce.sh --config configs/local.json --set 'runtime.devices=["cuda:0","cuda:1"]'
 ```
 
-Worker counts are set under `runtime`. Each stage finishes before the next. The launcher saves its resolved config and input identities for resumption.
+Worker counts are set under `runtime`. Each stage finishes before the next. The launcher saves its resolved config and input identities for resumption. Data preparation reuses matching input/output hashes; `crystaldlm prepare --force` rebuilds it.
 
 ## Plans and data
 

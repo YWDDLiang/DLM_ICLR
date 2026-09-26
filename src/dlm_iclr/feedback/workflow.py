@@ -1,7 +1,5 @@
 """Reusable stages for geometric warm-up, physical supervision and local revision."""
 
-from copy import deepcopy
-from pathlib import Path
 from ..runtime.config import run_root, asset, path, backend_config
 from ..runtime.io import read_rows, read_json, write_rows, write_json
 
@@ -112,10 +110,8 @@ def label(config):
 
 
 def compile_data(config):
-    from transformers import AutoTokenizer
     from .feedback import compile_sources
     from .teacher import build
-    from .._core.r03_physics_transfer import build_repair_constraints
 
     root = run_root(config)
     bundles = read_rows(root / "feedback/collection/bundles.jsonl")
@@ -123,15 +119,11 @@ def compile_data(config):
         n: read_rows(root / "feedback/labels" / f"{n}.jsonl")
         for n in ["current", *[f"candidate_{r}" for r in range(config["feedback"]["candidates"])]]
     }
-    tokenizer = AutoTokenizer.from_pretrained(root / "feedback/warmup/checkpoint", trust_remote_code=True)
-    _, editor, value = compile_sources(
+    editor, value = compile_sources(
         [b["plan"] for b in bundles],
-        [b["G"] for b in bundles],
         [b["F"] for b in bundles],
         [b["E"] for b in bundles],
         scores,
-        tokenizer=tokenizer,
-        support=build_repair_constraints(tokenizer),
     )
     write_rows(root / "feedback/data/reconstruction.jsonl", editor)
     write_rows(root / "feedback/data/verifier.jsonl", value)

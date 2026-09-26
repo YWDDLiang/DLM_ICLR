@@ -9,10 +9,10 @@ import math
 from pathlib import Path
 from dlm_iclr.evaluation.inputs import normalize_records, reconstruct
 from dlm_iclr.runtime.io import file_hash, read_rows, write_json, write_rows
+from dlm_iclr.runtime.datasets import coverage_cutoffs as default_coverage_cutoffs
 
 BASIC_METRICS = ("comp_valid", "struct_valid")
 FULL_METRICS = (*BASIC_METRICS, "valid", "wdist_density", "wdist_num_elems", "cov_recall", "cov_precision")
-COVERAGE_CUTOFFS = {"mp20": (0.4, 10.0), "carbon": (0.2, 4.0), "perovskite": (0.2, 4.0), "perov-5": (0.2, 4.0), "mpts-52": (0.4, 10.0)}
 
 
 @lru_cache(maxsize=8192)
@@ -74,8 +74,8 @@ def evaluate_direct(
         raise ValueError("Direct fingerprint workers must be positive")
     if metrics == "full" and (reference is None or not Path(reference).is_file()):
         raise ValueError("Full Direct evaluation requires an existing --reference CSV or JSONL")
-    if metrics == "full" and dataset not in COVERAGE_CUTOFFS and coverage_cutoffs is None:
-        raise ValueError(f"Unknown Direct coverage cutoff preset: {dataset}")
+    if metrics == "full" and coverage_cutoffs is None:
+        coverage_cutoffs = default_coverage_cutoffs(dataset)
     from dlm_iclr._vendor.crysllmgen.validity import structure_validity
 
     records = normalize_records(records)
@@ -184,7 +184,7 @@ def evaluate_direct(
                     4,
                 ),
             )
-        struc_cutoff, comp_cutoff = coverage_cutoffs or COVERAGE_CUTOFFS[dataset]
+        struc_cutoff, comp_cutoff = coverage_cutoffs
         cov = coverage(
             generated, ground_truth, struc_cutoff=struc_cutoff, comp_cutoff=comp_cutoff, requested=len(rows)
         )

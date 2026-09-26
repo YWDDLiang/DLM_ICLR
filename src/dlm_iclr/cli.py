@@ -23,6 +23,7 @@ def parser():
     p.add_argument("--output", type=Path, default=Path("configs/local.json"))
     p = commands.add_parser("prepare", parents=[common], help="Prepare module datasets from crystal sources")
     p.add_argument("--with-planner", action="store_true", help="Also tokenize optional Planner training data")
+    p.add_argument("--force", action="store_true", help="Rebuild prepared data even when inputs match")
     p = commands.add_parser("plans", parents=[common], help="Select valid Plans in original order, without training")
     p.add_argument("--source")
     p.add_argument("--output", type=Path)
@@ -93,7 +94,7 @@ def main(argv=None):
     elif args.command == "prepare":
         from .data.adapters import prepare
 
-        result = prepare(config, with_planner=args.with_planner)
+        result = prepare(config, with_planner=args.with_planner, force=args.force)
     elif args.command == "plans":
         from .data.selection import select
         result = select(config, source=args.source, output=args.output)
